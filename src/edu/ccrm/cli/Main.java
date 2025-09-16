@@ -20,6 +20,7 @@ public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final StudentService studentService = new StudentService();
     private static final CourseService courseService = new CourseService();
+    private static final InstructorService instructorService = new InstructorService();
     private static final EnrollmentService enrollmentService = new EnrollmentService();
     private static final TranscriptService transcriptService = new TranscriptService();
     private static final ImportExportService importExportService = new ImportExportService();
@@ -35,10 +36,11 @@ public class Main {
             int choice = getUserIntInput("Enter your choice: ");
             switch (choice) {
                 case 1: manageStudents(); break;
-                case 2: manageCourses(); break;
-                case 3: manageEnrollments(); break;
-                case 4: manageFileOperations(); break;
-                case 5: System.out.println("Exiting application."); break mainMenuLoop;
+                case 2: manageInstructors(); break;
+                case 3: manageCourses(); break;
+                case 4: manageEnrollments(); break;
+                case 5: manageFileOperations(); break;
+                case 6: System.out.println("Exiting application."); break mainMenuLoop;
                 default: System.out.println("Invalid choice. Please try again.");
             }
         }
@@ -48,10 +50,11 @@ public class Main {
     private static void printMainMenu() {
         System.out.println("\n--- Main Menu ---");
         System.out.println("1. Manage Students");
-        System.out.println("2. Manage Courses");
-        System.out.println("3. Manage Enrollments & Grades");
-        System.out.println("4. File Operations");
-        System.out.println("5. Exit");
+        System.out.println("2. Manage Instructors");
+        System.out.println("3. Manage Courses");
+        System.out.println("4. Manage Enrollments & Grades");
+        System.out.println("5. File Operations");
+        System.out.println("6. Exit");
     }
 
     private static void manageStudents() {
@@ -69,6 +72,22 @@ public class Main {
                 case 3: viewStudentTranscript(); break;
                 case 4: updateStudentStatus(); break;
                 case 5: return;
+                default: System.out.println("Invalid choice.");
+            }
+        }
+    }
+    
+    private static void manageInstructors() {
+        while (true) {
+            System.out.println("\n--- Instructor Management ---");
+            System.out.println("1. Add New Instructor");
+            System.out.println("2. List All Instructors");
+            System.out.println("3. Back to Main Menu");
+            int choice = getUserIntInput("Enter choice: ");
+            switch (choice) {
+                case 1: addInstructor(); break;
+                case 2: listAllInstructors(); break;
+                case 3: return;
                 default: System.out.println("Invalid choice.");
             }
         }
@@ -156,6 +175,33 @@ public class Main {
             System.out.println("No students found.");
         } else {
             students.forEach(s -> System.out.println(s.getProfile()));
+        }
+    }
+    
+    private static void addInstructor() {
+        System.out.println("\n--- Add New Instructor ---");
+        int id = getUserIntInput("Enter Instructor ID: ");
+        System.out.print("Enter First Name: ");
+        String firstName = scanner.nextLine();
+        System.out.print("Enter Last Name: ");
+        String lastName = scanner.nextLine();
+        System.out.print("Enter Email: ");
+        String email = scanner.nextLine();
+        System.out.print("Enter Department: ");
+        String department = scanner.nextLine();
+
+        Instructor instructor = new Instructor(id, new Name(firstName, lastName), email, department);
+        instructorService.addInstructor(instructor);
+        System.out.println("Instructor added successfully.");
+    }
+    
+    private static void listAllInstructors() {
+        System.out.println("\n--- All Instructors ---");
+        List<Instructor> instructors = instructorService.getAllInstructorsSortedById();
+        if (instructors.isEmpty()) {
+            System.out.println("No instructors found.");
+        } else {
+            instructors.forEach(i -> System.out.println(i.getProfile()));
         }
     }
 
@@ -392,4 +438,3 @@ public class Main {
         System.out.println("----------------------------");
     }
 }
-
