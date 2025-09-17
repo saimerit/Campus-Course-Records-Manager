@@ -2,7 +2,9 @@ package edu.ccrm.io;
 
 import edu.ccrm.config.AppConfig;
 import edu.ccrm.domain.*;
-import edu.ccrm.service.DataStore;
+import edu.ccrm.service.CourseService;
+import edu.ccrm.service.InstructorService;
+import edu.ccrm.service.StudentService;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +18,9 @@ import java.util.stream.Stream;
 public class ImportExportService {
 
     private final AppConfig config = AppConfig.getInstance();
-    private final DataStore dataStore = DataStore.getInstance();
+    private final StudentService studentService = new StudentService();
+    private final InstructorService instructorService = new InstructorService();
+    private final CourseService courseService = new CourseService();
 
     public void importStudents(Path filePath) throws IOException {
         try (Stream<String> lines = Files.lines(filePath)) {
@@ -30,7 +34,7 @@ public class ImportExportService {
                         Student.Status.valueOf(parts[5]),
                         LocalDate.parse(parts[6])
                 );
-                dataStore.getStudents().put(student.getId(), student);
+                studentService.addStudent(student);
             });
         }
     }
@@ -45,7 +49,7 @@ public class ImportExportService {
                         parts[3],
                         parts[4]
                 );
-                dataStore.getInstructors().put(instructor.getId(), instructor);
+                instructorService.addInstructor(instructor);
             });
         }
     }
@@ -55,7 +59,7 @@ public class ImportExportService {
             lines.skip(1).forEach(line -> {
                 String[] parts = line.split(",");
                 CourseCode courseCode = new CourseCode(parts[0]);
-                Instructor instructor = dataStore.getInstructors().get(Integer.parseInt(parts[4]));
+                Instructor instructor = instructorService.findInstructorById(Integer.parseInt(parts[4]));
                 Course course = new Course.Builder(courseCode)
                         .withTitle(parts[1])
                         .withCredits(Integer.parseInt(parts[2]))
@@ -63,24 +67,24 @@ public class ImportExportService {
                         .withInstructor(instructor)
                         .withSemester(Semester.valueOf(parts[5]))
                         .build();
-                dataStore.getCourses().put(courseCode, course);
+                courseService.addCourse(course);
             });
         }
     }
     
     public void exportData() throws IOException {
         Files.createDirectories(config.getDataDirectory());
-
+        
+        System.out.println("Exporting data from database...");
         exportStudents(config.getStudentsFilePath());
         exportInstructors(config.getInstructorsFilePath());
         exportCourses(config.getCoursesFilePath());
-        exportEnrollments(config.getEnrollmentsFilePath());
         
         System.out.println("Data exported successfully.");
     }
     
     private void exportStudents(Path path) throws IOException {
-        List<String> lines = dataStore.getStudents().values().stream()
+        List<String> lines = studentService.getAllStudentsSortedById().stream()
             .map(Student::toCsvString)
             .collect(Collectors.toList());
         lines.add(0, "id,regNo,firstName,lastName,email,status,registrationDate");
@@ -88,7 +92,7 @@ public class ImportExportService {
     }
     
     private void exportInstructors(Path path) throws IOException {
-        List<String> lines = dataStore.getInstructors().values().stream()
+        List<String> lines = instructorService.getAllInstructorsSortedById().stream()
             .map(Instructor::toCsvString)
             .collect(Collectors.toList());
         lines.add(0, "id,firstName,lastName,email,department");
@@ -96,31 +100,17 @@ public class ImportExportService {
     }
 
     private void exportCourses(Path path) throws IOException {
-        List<String> lines = dataStore.getCourses().values().stream()
+        List<String> lines = courseService.getAllCoursesSortedByCode().stream()
             .map(c -> String.join(",",
                 c.getCourseCode().getCode(),
                 c.getTitle(),
                 String.valueOf(c.getCredits()),
                 c.getDepartment(),
-                String.valueOf(c.getInstructor().getId()),
+                (c.getInstructor() != null) ? String.valueOf(c.getInstructor().getId()) : "",
                 c.getSemester().name()
             ))
             .collect(Collectors.toList());
         lines.add(0, "code,title,credits,department,instructorId,semester");
         Files.write(path, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
-    
-    private void exportEnrollments(Path path) throws IOException {
-        List<String> lines = dataStore.getStudents().values().stream()
-            .flatMap(s -> s.getEnrollments().stream())
-            .map(e -> String.join(",",
-                String.valueOf(e.getStudent().getId()),
-                e.getCourse().getCourseCode().getCode(),
-                e.getGrade().name()
-            ))
-            .collect(Collectors.toList());
-        lines.add(0, "studentId,courseCode,grade");
-        Files.write(path, lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-    }
 }
-

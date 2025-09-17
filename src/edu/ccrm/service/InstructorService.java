@@ -1,32 +1,68 @@
 package edu.ccrm.service;
 
 import edu.ccrm.domain.Instructor;
+import edu.ccrm.domain.Name;
 import edu.ccrm.exception.RecordNotFoundException;
+import edu.ccrm.io.DatabaseManager;
+import java.sql.*;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class InstructorService {
-    private final DataStore dataStore = DataStore.getInstance();
 
     public void addInstructor(Instructor instructor) {
-        dataStore.getInstructors().put(instructor.getId(), instructor);
+        String sql = "INSERT INTO instructors (id, first_name, last_name, email, department) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, instructor.getId());
+            pstmt.setString(2, instructor.getFullName().getFirstName());
+            pstmt.setString(3, instructor.getFullName().getLastName());
+            pstmt.setString(4, instructor.getEmail());
+            pstmt.setString(5, instructor.getDepartment());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public Instructor findInstructorById(int id) {
-        return Optional.ofNullable(dataStore.getInstructors().get(id))
-                .orElseThrow(() -> new RecordNotFoundException("Instructor with ID " + id + " not found."));
+        String sql = "SELECT * FROM instructors WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return new Instructor(
+                        rs.getInt("id"),
+                        new Name(rs.getString("first_name"), rs.getString("last_name")),
+                        rs.getString("email"),
+                        rs.getString("department")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        throw new RecordNotFoundException("Instructor with ID " + id + " not found.");
     }
 
-    public List<Instructor> getAllInstructors() {
-        return new ArrayList<>(dataStore.getInstructors().values());
-    }
-    
     public List<Instructor> getAllInstructorsSortedById() {
-        return dataStore.getInstructors().values().stream()
-                .sorted(Comparator.comparingInt(Instructor::getId))
-                .collect(Collectors.toList());
+        List<Instructor> instructors = new ArrayList<>();
+        String sql = "SELECT * FROM instructors ORDER BY id ASC";
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                Instructor instructor = new Instructor(
+                        rs.getInt("id"),
+                        new Name(rs.getString("first_name"), rs.getString("last_name")),
+                        rs.getString("email"),
+                        rs.getString("department")
+                );
+                instructors.add(instructor);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return instructors;
     }
 }

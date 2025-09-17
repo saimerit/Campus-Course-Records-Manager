@@ -11,6 +11,7 @@ import edu.ccrm.util.RecursiveUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -270,6 +271,7 @@ public class Main {
         }
     }
     
+    // THIS METHOD HAS BEEN RESTRUCTURED TO REMOVE THE WARNING
     private static void searchAndFilterCourses() {
         System.out.println("\n--- Search & Filter Courses ---");
         System.out.println("1. Filter by Department");
@@ -277,12 +279,15 @@ public class Main {
         System.out.println("3. Filter by Instructor ID");
         int choice = getUserIntInput("Enter choice: ");
 
-        Predicate<Course> filter = course -> true;
+        List<Course> filteredCourses = new ArrayList<>();
+        Predicate<Course> filter;
+
         switch (choice) {
             case 1:
                 System.out.print("Enter department: ");
                 String dept = scanner.nextLine();
                 filter = courseService.byDepartment(dept);
+                filteredCourses = courseService.filterCourses(filter);
                 break;
             case 2:
                 System.out.print("Enter semester (" + Arrays.toString(Semester.values()) + "): ");
@@ -290,6 +295,7 @@ public class Main {
                 try {
                     Semester sem = Semester.valueOf(semStr);
                     filter = courseService.bySemester(sem);
+                    filteredCourses = courseService.filterCourses(filter);
                 } catch (IllegalArgumentException e) {
                     System.err.println("Invalid semester.");
                     return;
@@ -298,13 +304,13 @@ public class Main {
             case 3:
                 int instructorId = getUserIntInput("Enter instructor ID: ");
                 filter = courseService.byInstructor(instructorId);
+                filteredCourses = courseService.filterCourses(filter);
                 break;
             default:
                 System.out.println("Invalid choice.");
                 return;
         }
 
-        List<Course> filteredCourses = courseService.filterCourses(filter);
         if (filteredCourses.isEmpty()) {
             System.out.println("No courses match the criteria.");
         } else {

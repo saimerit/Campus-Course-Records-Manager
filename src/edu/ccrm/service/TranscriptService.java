@@ -1,19 +1,22 @@
 package edu.ccrm.service;
 
-import edu.ccrm.domain.Enrollment;
-import edu.ccrm.domain.Grade;
-import edu.ccrm.domain.Student;
-import edu.ccrm.exception.RecordNotFoundException;
+import edu.ccrm.domain.*;
+import edu.ccrm.io.DatabaseManager;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TranscriptService {
-    private final DataStore dataStore = DataStore.getInstance();
+    private final StudentService studentService = new StudentService();
+    private final CourseService courseService = new CourseService();
 
     public String generateTranscript(int studentId) {
-        Student student = dataStore.getStudents().get(studentId);
-        if (student == null) {
-            throw new RecordNotFoundException("Student with ID " + studentId + " not found.");
-        }
+        Student student = studentService.findStudentById(studentId);
+
+        List<Enrollment> enrollments = getEnrollmentsForStudent(studentId);
 
         StringBuilder transcriptBuilder = new StringBuilder();
         transcriptBuilder.append("========================================\n");
@@ -22,7 +25,6 @@ public class TranscriptService {
         transcriptBuilder.append(student.getProfile()).append("\n\n");
         transcriptBuilder.append("--- Enrolled Courses ---\n");
 
-        List<Enrollment> enrollments = student.getEnrollments();
         if (enrollments.isEmpty()) {
             transcriptBuilder.append("No courses enrolled.\n");
         } else {
@@ -37,6 +39,28 @@ public class TranscriptService {
         transcriptBuilder.append("========================================\n");
 
         return transcriptBuilder.toString();
+    }
+
+    private List<Enrollment> getEnrollmentsForStudent(int studentId) {
+        List<Enrollment> enrollments = new ArrayList<>();
+        String sql = "SELECT * FROM enrollments WHERE student_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, studentId);
+            ResultSet rs = pstmt.executeQuery();
+            
+            Student student = studentService.findStudentById(studentId);
+
+            while (rs.next()) {
+                Course course = courseService.findCourseByCode(new CourseCode(rs.getString("course_code")));
+                Grade grade = Grade.valueOf(rs.getString("grade"));
+                enrollments.add(new Enrollment(student, course, grade));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return enrollments;
     }
     
     private double calculateGpa(List<Enrollment> enrollments) {
@@ -53,4 +77,3 @@ public class TranscriptService {
         return (totalCredits == 0) ? 0.0 : totalPoints / totalCredits;
     }
 }
-

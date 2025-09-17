@@ -4,55 +4,75 @@ import edu.ccrm.domain.*;
 import edu.ccrm.exception.DuplicateEnrollmentException;
 import edu.ccrm.exception.MaxCreditLimitExceededException;
 import edu.ccrm.exception.RecordNotFoundException;
-import java.util.Optional;
+import edu.ccrm.io.DatabaseManager;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class EnrollmentService {
-    private final DataStore dataStore = DataStore.getInstance();
-    private static final int MAX_CREDITS_PER_SEMESTER = 20;
+    private final StudentService studentService = new StudentService();
+    private final CourseService courseService = new CourseService();
 
     public void enrollStudent(int studentId, CourseCode courseCode)
-            throws DuplicateEnrollmentException, MaxCreditLimitExceededException {
-        Student student = Optional.ofNullable(dataStore.getStudents().get(studentId))
-                .orElseThrow(() -> new RecordNotFoundException("Student not found."));
+            throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException {
+        
+        studentService.findStudentById(studentId);
+        courseService.findCourseByCode(courseCode);
 
-        Course course = Optional.ofNullable(dataStore.getCourses().get(courseCode))
-                .orElseThrow(() -> new RecordNotFoundException("Course not found."));
-
-        boolean alreadyEnrolled = student.getEnrollments().stream()
-                .anyMatch(e -> e.getCourse().getCourseCode().equals(courseCode));
-        if (alreadyEnrolled) {
-            throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
+        String checkSql = "SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND course_code = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(checkSql)) {
+            ps.setInt(1, studentId);
+            ps.setString(2, courseCode.getCode());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
-        int currentCredits = student.getEnrollments().stream()
-                .filter(e -> e.getCourse().getSemester() == course.getSemester())
-                .mapToInt(e -> e.getCourse().getCredits())
-                .sum();
-        if (currentCredits + course.getCredits() > MAX_CREDITS_PER_SEMESTER) {
-            throw new MaxCreditLimitExceededException("Enrollment exceeds max credit limit for the semester.");
+        String enrollSql = "INSERT INTO enrollments (student_id, course_code, grade) VALUES (?, ?, ?)";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(enrollSql)) {
+            pstmt.setInt(1, studentId);
+            pstmt.setString(2, courseCode.getCode());
+            pstmt.setString(3, Grade.NA.name());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-
-        Enrollment enrollment = new Enrollment(student, course);
-        student.addEnrollment(enrollment);
     }
 
     public void unenrollStudent(int studentId, CourseCode courseCode) {
-        Student student = Optional.ofNullable(dataStore.getStudents().get(studentId))
-                .orElseThrow(() -> new RecordNotFoundException("Student not found."));
-        if (!student.removeEnrollment(courseCode)) {
-            throw new RecordNotFoundException("Enrollment record not found for this student and course.");
+        String sql = "DELETE FROM enrollments WHERE student_id = ? AND course_code = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            pstmt.setString(2, courseCode.getCode());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RecordNotFoundException("Enrollment record not found for this student and course.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
     
     public void recordGrade(int studentId, CourseCode courseCode, Grade grade) {
-        Student student = Optional.ofNullable(dataStore.getStudents().get(studentId))
-                .orElseThrow(() -> new RecordNotFoundException("Student not found."));
-        
-        student.getEnrollments().stream()
-            .filter(e -> e.getCourse().getCourseCode().equals(courseCode))
-            .findFirst()
-            .orElseThrow(() -> new RecordNotFoundException("Student is not enrolled in this course."))
-            .setGrade(grade);
+        String sql = "UPDATE enrollments SET grade = ? WHERE student_id = ? AND course_code = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, grade.name());
+            pstmt.setInt(2, studentId);
+            pstmt.setString(3, courseCode.getCode());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                 throw new RecordNotFoundException("Student is not enrolled in this course.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
-
