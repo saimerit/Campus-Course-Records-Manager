@@ -1,4 +1,4 @@
--- Drop existing tables to start with a clean slate
+-- Drop tables first to ensure a clean setup
 DROP TABLE enrollments;
 DROP TABLE courses;
 DROP TABLE students;
@@ -20,8 +20,7 @@ CREATE TABLE students (
     first_name VARCHAR2(50),
     last_name VARCHAR2(50),
     email VARCHAR2(100),
-    status VARCHAR2(20),
-    registration_date DATE
+    status VARCHAR2(20)
 );
 
 -- Create the Courses table
@@ -44,11 +43,3 @@ CREATE TABLE enrollments (
     CONSTRAINT fk_student FOREIGN KEY (student_id) REFERENCES students(id),
     CONSTRAINT fk_course FOREIGN KEY (course_code) REFERENCES courses(code)
 );
-
--- Insert some sample data
-INSERT INTO instructors VALUES (1, 'John', 'Doe', 'john.doe@example.com', 'Computer Science');
-INSERT INTO students VALUES (101, 'S101', 'Alice', 'Smith', 'alice.smith@example.com', 'ACTIVE', SYSDATE);
-INSERT INTO courses VALUES ('CS101', 'Introduction to Programming', 3, 'Computer Science', 1, 'FALL');
-INSERT INTO enrollments VALUES (101, 'CS101', 'NA');
-
-COMMIT;

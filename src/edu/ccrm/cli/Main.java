@@ -1,13 +1,13 @@
 package edu.ccrm.cli;
 
-import edu.ccrm.config.AppConfig;
+import edu.ccrm.io.DatabaseInitializer; // New import
+// ... other imports
 import edu.ccrm.domain.*;
 import edu.ccrm.exception.*;
 import edu.ccrm.io.BackupService;
 import edu.ccrm.io.ImportExportService;
 import edu.ccrm.service.*;
 import edu.ccrm.util.RecursiveUtil;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +16,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.function.Predicate;
+import edu.ccrm.config.AppConfig;
+
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
@@ -29,6 +31,10 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("Welcome to Campus Course & Records Manager (CCRM)");
+        
+        // Initialize and verify the database schema on startup
+        DatabaseInitializer.initialize();
+        
         printJavaPlatformInfo();
         
         mainMenuLoop:
@@ -47,7 +53,8 @@ public class Main {
         }
         scanner.close();
     }
-
+    
+    // ... the rest of your Main.java methods (printMainMenu, manageStudents, etc.) remain the same
     private static void printMainMenu() {
         System.out.println("\n--- Main Menu ---");
         System.out.println("1. Manage Students");
@@ -271,7 +278,6 @@ public class Main {
         }
     }
     
-    // THIS METHOD HAS BEEN RESTRUCTURED TO REMOVE THE WARNING
     private static void searchAndFilterCourses() {
         System.out.println("\n--- Search & Filter Courses ---");
         System.out.println("1. Filter by Department");
