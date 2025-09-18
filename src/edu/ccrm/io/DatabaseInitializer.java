@@ -18,14 +18,20 @@ public class DatabaseInitializer {
         System.out.println("--- Database Initialization ---");
         try (Connection conn = DatabaseManager.getConnection()) {
             System.out.println("? Database connection successful for user '" + conn.getMetaData().getUserName() + "'.");
-            System.out.println("    - Running schema setup script...");
-            runScriptFromFile(SCRIPT_FILE_PATH); // Run the corrected script runner
-
             System.out.println("    - Verifying schema...");
+
             if (verifySchema(conn)) {
-                System.out.println("? Schema verification successful. All tables are present.");
+                System.out.println("? Schema already exists. Skipping setup script.");
             } else {
-                throw new RuntimeException("Schema verification failed! Tables were not created correctly. Check permissions and SQL script.");
+                System.out.println("    - Schema not found. Running setup script...");
+                runScriptFromFile(SCRIPT_FILE_PATH);
+
+                System.out.println("    - Verifying schema again...");
+                if (verifySchema(conn)) {
+                    System.out.println("? Schema verification successful. All tables are present.");
+                } else {
+                    throw new RuntimeException("Schema verification failed after running setup script. Check permissions and SQL script.");
+                }
             }
         } catch (SQLException | IOException e) {
             System.err.println("? CRITICAL FAILURE DURING DATABASE INITIALIZATION:");
@@ -34,17 +40,10 @@ public class DatabaseInitializer {
         }
     }
 
-    /**
-     * Executes an SQL script from a file, statement by statement.
-     * This version is robustly designed to handle multi-line statements and ignore
-     * "ORA-00942: table or view does not exist" errors, which are expected
-     * when dropping tables that aren't there yet.
-     */
     private static void runScriptFromFile(String filePath) throws IOException, SQLException {
         Path scriptPath = Path.of(filePath);
         String content = Files.readString(scriptPath);
 
-        // Remove comments and split statements by semicolon or slash
         content = content.replaceAll("--.*", "").trim();
         StringTokenizer tokenizer = new StringTokenizer(content, ";/", false);
 
@@ -60,24 +59,16 @@ public class DatabaseInitializer {
                 try {
                     stmt.execute(sql);
                 } catch (SQLException e) {
-                    // ORA-00942: table or view does not exist.
-                    // This is expected on the first run for DROP TABLE commands.
                     if (e.getErrorCode() == 942) {
-                        // System.out.println("    - INFO: Ignored 'table not found' error for: " + sql.split("\\s+")[2]);
                     } else {
-                        // For any other SQL error, we must stop and report it.
                         System.err.println("SQL Error on statement: " + sql);
-                        throw e; // Re-throw the exception to halt initialization
+                        throw e;
                     }
                 }
             }
         }
     }
 
-
-    /**
-     * Verifies that all expected tables exist in the database schema.
-     */
     private static boolean verifySchema(Connection conn) throws SQLException {
         for (String tableName : EXPECTED_TABLES) {
             try (ResultSet rs = conn.getMetaData().getTables(null, null, tableName, null)) {
