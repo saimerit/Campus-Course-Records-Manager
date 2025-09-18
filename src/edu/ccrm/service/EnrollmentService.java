@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EnrollmentService {
     private final StudentService studentService = new StudentService();
@@ -74,5 +76,28 @@ public class EnrollmentService {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public List<Student> getEnrolledStudents(CourseCode courseCode) throws RecordNotFoundException {
+        List<Student> students = new ArrayList<>();
+        String sql = "SELECT s.* FROM students s JOIN enrollments e ON s.id = e.student_id WHERE e.course_code = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, courseCode.getCode());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Student student = new Student(
+                    rs.getInt("id"),
+                    rs.getString("reg_no"),
+                    new Name(rs.getString("first_name"), rs.getString("last_name")),
+                    rs.getString("email")
+                );
+                student.setStatus(Student.Status.valueOf(rs.getString("status")));
+                students.add(student);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching enrolled students: " + e.getMessage());
+        }
+        return students;
     }
 }

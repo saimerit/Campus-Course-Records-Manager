@@ -3,41 +3,39 @@ package edu.ccrm.io;
 import edu.ccrm.config.AppConfig;
 import java.io.IOException;
 import java.nio.file.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class BackupService {
 
-    private final AppConfig config = AppConfig.getInstance();
-
     public void performBackup() throws IOException {
-        Path sourceDir = config.getDataDirectory();
-        if (!Files.exists(sourceDir)) {
-            System.out.println("Data directory does not exist. Nothing to backup.");
-            return;
+        Path backupDir = AppConfig.getInstance().getBackupDirectory();
+        if (!Files.exists(backupDir)) {
+            Files.createDirectories(backupDir);
+            System.out.println("Backup directory created at: " + backupDir);
         }
 
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
-        Path backupTargetDir = config.getBackupDirectory().resolve("backup_" + timestamp);
-        Files.createDirectories(backupTargetDir);
+        String timestamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+        Path backupFile = backupDir.resolve("ccrm-backup-" + timestamp + ".zip");
 
-        try (Stream<Path> stream = Files.walk(sourceDir)) {
-            stream.forEach(sourcePath -> {
-                try {
-                    Path destinationPath = backupTargetDir.resolve(sourceDir.relativize(sourcePath));
-                    if (Files.isDirectory(sourcePath)) {
-                        if (!Files.exists(destinationPath)) {
-                            Files.createDirectory(destinationPath);
-                        }
-                    } else {
-                        Files.copy(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(backupFile))) {
+            Path dataDir = Path.of("app-data"); 
+            try (Stream<Path> paths = Files.walk(dataDir)) {
+                paths.filter(path -> !Files.isDirectory(path)).forEach(path -> {
+                    ZipEntry zipEntry = new ZipEntry(dataDir.relativize(path).toString());
+                    try {
+                        zos.putNextEntry(zipEntry);
+                        Files.copy(path, zos);
+                        zos.closeEntry();
+                    } catch (IOException e) {
+                        System.err.println("Could not add file to zip: " + path);
                     }
-                } catch (IOException e) {
-                    System.err.println("Failed to backup file: " + sourcePath + " - " + e.getMessage());
-                }
-            });
+                });
+            }
+            System.out.println("Backup created successfully at " + backupFile);
         }
-        System.out.println("Backup completed successfully to: " + backupTargetDir);
     }
 }

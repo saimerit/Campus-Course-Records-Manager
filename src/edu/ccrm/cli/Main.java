@@ -365,18 +365,30 @@ public class Main {
     
     private static void recordGrade() {
         System.out.println("\n--- Record Student's Grade ---");
-        int studentId = getUserIntInput("Enter Student ID: ");
         System.out.print("Enter Course Code: ");
         CourseCode courseCode = new CourseCode(scanner.nextLine());
-        System.out.println("Available grades: " + Arrays.toString(Grade.values()));
-        System.out.print("Enter grade: ");
-        String gradeStr = scanner.nextLine().toUpperCase();
+
         try {
-            Grade grade = Grade.valueOf(gradeStr);
-            enrollmentService.recordGrade(studentId, courseCode, grade);
-            System.out.println("Grade recorded successfully.");
-        } catch (IllegalArgumentException e) {
-            System.err.println("Invalid grade provided.");
+            List<Student> enrolledStudents = enrollmentService.getEnrolledStudents(courseCode);
+            if (enrolledStudents.isEmpty()) {
+                System.out.println("No students are enrolled in this course.");
+                return;
+            }
+
+            System.out.println("Available grades: " + Arrays.toString(Grade.values()));
+            for (Student student : enrolledStudents) {
+                System.out.printf("Enter grade for %s: ", student.getRegNo());
+                String gradeStr = scanner.nextLine().toUpperCase();
+                try {
+                    Grade grade = Grade.valueOf(gradeStr);
+                    enrollmentService.recordGrade(student.getId(), courseCode, grade);
+                    System.out.println("Grade recorded successfully.");
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Invalid grade provided. Skipping this student.");
+                } catch (RecordNotFoundException e) {
+                    System.err.println(e.getMessage());
+                }
+            }
         } catch (RecordNotFoundException e) {
             System.err.println(e.getMessage());
         }
