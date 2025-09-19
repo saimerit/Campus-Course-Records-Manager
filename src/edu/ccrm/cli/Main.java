@@ -1,10 +1,12 @@
 package edu.ccrm.cli;
 
-import edu.ccrm.io.DatabaseInitializer; // New import
-// ... other imports
+import edu.ccrm.config.AppConfig;
 import edu.ccrm.domain.*;
-import edu.ccrm.exception.*;
+import edu.ccrm.exception.DuplicateEnrollmentException;
+import edu.ccrm.exception.MaxCreditLimitExceededException;
+import edu.ccrm.exception.RecordNotFoundException;
 import edu.ccrm.io.BackupService;
+import edu.ccrm.io.DatabaseInitializer;
 import edu.ccrm.io.ImportExportService;
 import edu.ccrm.service.*;
 import edu.ccrm.util.RecursiveUtil;
@@ -16,8 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.function.Predicate;
-import edu.ccrm.config.AppConfig;
-
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
@@ -28,33 +28,45 @@ public class Main {
     private static final TranscriptService transcriptService = new TranscriptService();
     private static final ImportExportService importExportService = new ImportExportService();
     private static final BackupService backupService = new BackupService();
+    private static final DatabaseAdminService dbAdminService = new DatabaseAdminService();
 
     public static void main(String[] args) {
         System.out.println("Welcome to Campus Course & Records Manager (CCRM)");
-        
-        // Initialize and verify the database schema on startup
         DatabaseInitializer.initialize();
-        
         printJavaPlatformInfo();
-        
         mainMenuLoop:
         while (true) {
             printMainMenu();
             int choice = getUserIntInput("Enter your choice: ");
             switch (choice) {
-                case 1: manageStudents(); break;
-                case 2: manageInstructors(); break;
-                case 3: manageCourses(); break;
-                case 4: manageEnrollments(); break;
-                case 5: manageFileOperations(); break;
-                case 6: System.out.println("Exiting application."); break mainMenuLoop;
-                default: System.out.println("Invalid choice. Please try again.");
+                case 1:
+                    manageStudents();
+                    break;
+                case 2:
+                    manageInstructors();
+                    break;
+                case 3:
+                    manageCourses();
+                    break;
+                case 4:
+                    manageEnrollments();
+                    break;
+                case 5:
+                    manageFileOperations();
+                    break;
+                case 6:
+                    deleteDatabaseAndExit();
+                    break mainMenuLoop;
+                case 7:
+                    System.out.println("Exiting application.");
+                    break mainMenuLoop;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
             }
         }
         scanner.close();
     }
-    
-    // ... the rest of your Main.java methods (printMainMenu, manageStudents, etc.) remain the same
+
     private static void printMainMenu() {
         System.out.println("\n--- Main Menu ---");
         System.out.println("1. Manage Students");
@@ -62,7 +74,22 @@ public class Main {
         System.out.println("3. Manage Courses");
         System.out.println("4. Manage Enrollments & Grades");
         System.out.println("5. File Operations");
-        System.out.println("6. Exit");
+        System.out.println("6. Delete Database & Exit");
+        System.out.println("7. Exit");
+    }
+
+    private static void deleteDatabaseAndExit() {
+        System.out.println("\n--- Delete Database ---");
+        System.out.print("ARE YOU SURE you want to delete all data? This cannot be undone. (YES/NO): ");
+        String confirmation = scanner.nextLine();
+
+        if (confirmation.equalsIgnoreCase("YES")) {
+            System.out.println("Proceeding with database deletion...");
+            dbAdminService.dropAllTables();
+            System.out.println("Database deleted. Please restart the application.");
+        } else {
+            System.out.println("Database deletion cancelled.");
+        }
     }
 
     private static void manageStudents() {
@@ -75,16 +102,26 @@ public class Main {
             System.out.println("5. Back to Main Menu");
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
-                case 1: addStudent(); break;
-                case 2: listAllStudents(); break;
-                case 3: viewStudentTranscript(); break;
-                case 4: updateStudentStatus(); break;
-                case 5: return;
-                default: System.out.println("Invalid choice.");
+                case 1:
+                    addStudent();
+                    break;
+                case 2:
+                    listAllStudents();
+                    break;
+                case 3:
+                    viewStudentTranscript();
+                    break;
+                case 4:
+                    updateStudentStatus();
+                    break;
+                case 5:
+                    return;
+                default:
+                    System.out.println("Invalid choice.");
             }
         }
     }
-    
+
     private static void manageInstructors() {
         while (true) {
             System.out.println("\n--- Instructor Management ---");
@@ -93,10 +130,16 @@ public class Main {
             System.out.println("3. Back to Main Menu");
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
-                case 1: addInstructor(); break;
-                case 2: listAllInstructors(); break;
-                case 3: return;
-                default: System.out.println("Invalid choice.");
+                case 1:
+                    addInstructor();
+                    break;
+                case 2:
+                    listAllInstructors();
+                    break;
+                case 3:
+                    return;
+                default:
+                    System.out.println("Invalid choice.");
             }
         }
     }
@@ -111,12 +154,22 @@ public class Main {
             System.out.println("5. Back to Main Menu");
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
-                case 1: addCourse(); break;
-                case 2: listAllCourses(); break;
-                case 3: searchAndFilterCourses(); break;
-                case 4: assignInstructorToCourse(); break;
-                case 5: return;
-                default: System.out.println("Invalid choice.");
+                case 1:
+                    addCourse();
+                    break;
+                case 2:
+                    listAllCourses();
+                    break;
+                case 3:
+                    searchAndFilterCourses();
+                    break;
+                case 4:
+                    assignInstructorToCourse();
+                    break;
+                case 5:
+                    return;
+                default:
+                    System.out.println("Invalid choice.");
             }
         }
     }
@@ -130,15 +183,23 @@ public class Main {
             System.out.println("4. Back to Main Menu");
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
-                case 1: enrollStudent(); break;
-                case 2: unenrollStudent(); break;
-                case 3: recordGrade(); break;
-                case 4: return;
-                default: System.out.println("Invalid choice.");
+                case 1:
+                    enrollStudent();
+                    break;
+                case 2:
+                    unenrollStudent();
+                    break;
+                case 3:
+                    recordGrade();
+                    break;
+                case 4:
+                    return;
+                default:
+                    System.out.println("Invalid choice.");
             }
         }
     }
-    
+
     private static void manageFileOperations() {
         while (true) {
             System.out.println("\n--- File Operations ---");
@@ -149,12 +210,22 @@ public class Main {
             System.out.println("5. Back to Main Menu");
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
-                case 1: importData(); break;
-                case 2: exportData(); break;
-                case 3: createBackup(); break;
-                case 4: showBackupSize(); break;
-                case 5: return;
-                default: System.out.println("Invalid choice.");
+                case 1:
+                    importData();
+                    break;
+                case 2:
+                    exportData();
+                    break;
+                case 3:
+                    createBackup();
+                    break;
+                case 4:
+                    showBackupSize();
+                    break;
+                case 5:
+                    return;
+                default:
+                    System.out.println("Invalid choice.");
             }
         }
     }
@@ -185,7 +256,7 @@ public class Main {
             students.forEach(s -> System.out.println(s.getProfile()));
         }
     }
-    
+
     private static void addInstructor() {
         System.out.println("\n--- Add New Instructor ---");
         int id = getUserIntInput("Enter Instructor ID: ");
@@ -202,7 +273,7 @@ public class Main {
         instructorService.addInstructor(instructor);
         System.out.println("Instructor added successfully.");
     }
-    
+
     private static void listAllInstructors() {
         System.out.println("\n--- All Instructors ---");
         List<Instructor> instructors = instructorService.getAllInstructorsSortedById();
@@ -277,7 +348,7 @@ public class Main {
             courses.forEach(System.out::println);
         }
     }
-    
+
     private static void searchAndFilterCourses() {
         System.out.println("\n--- Search & Filter Courses ---");
         System.out.println("1. Filter by Department");
@@ -323,7 +394,7 @@ public class Main {
             filteredCourses.forEach(System.out::println);
         }
     }
-    
+
     private static void assignInstructorToCourse() {
         System.out.println("\n--- Assign Instructor to Course ---");
         System.out.print("Enter Course Code: ");
@@ -336,7 +407,7 @@ public class Main {
             System.err.println(e.getMessage());
         }
     }
-    
+
     private static void enrollStudent() {
         System.out.println("\n--- Enroll Student in Course ---");
         int studentId = getUserIntInput("Enter Student ID: ");
@@ -349,7 +420,7 @@ public class Main {
             System.err.println("Enrollment failed: " + e.getMessage());
         }
     }
-    
+
     private static void unenrollStudent() {
         System.out.println("\n--- Unenroll Student from Course ---");
         int studentId = getUserIntInput("Enter Student ID: ");
@@ -362,7 +433,7 @@ public class Main {
             System.err.println("Unenrollment failed: " + e.getMessage());
         }
     }
-    
+
     private static void recordGrade() {
         System.out.println("\n--- Record Student's Grade ---");
         System.out.print("Enter Course Code: ");
@@ -393,7 +464,7 @@ public class Main {
             System.err.println(e.getMessage());
         }
     }
-    
+
     private static void importData() {
         System.out.println("\n--- Import Data from CSV ---");
         System.out.println("This will import instructors, students, and courses from the 'test-data' directory.");
@@ -409,7 +480,7 @@ public class Main {
             System.err.println("Error during import: " + e.getMessage());
         }
     }
-    
+
     private static void exportData() {
         System.out.println("\n--- Export Data to CSV ---");
         try {
@@ -418,7 +489,7 @@ public class Main {
             System.err.println("Error during export: " + e.getMessage());
         }
     }
-    
+
     private static void createBackup() {
         System.out.println("\n--- Create a Backup ---");
         try {
@@ -427,7 +498,7 @@ public class Main {
             System.err.println("Backup failed: " + e.getMessage());
         }
     }
-    
+
     private static void showBackupSize() {
         System.out.println("\n--- Show Backup Directory Size ---");
         Path backupDir = AppConfig.getInstance().getBackupDirectory();
@@ -453,7 +524,7 @@ public class Main {
         scanner.nextLine();
         return value;
     }
-    
+
     private static void printJavaPlatformInfo() {
         System.out.println("\n--- About Java Platforms ---");
         System.out.println("Java SE (Standard Edition): The core Java platform for developing desktop, server, and console applications.");

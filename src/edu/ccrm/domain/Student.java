@@ -7,7 +7,8 @@ public class Student extends Person {
     public enum Status {
         ACTIVE,
         INACTIVE,
-        GRADUATED
+        GRADUATED,
+        PROBATION
     }
 
     private String regNo;

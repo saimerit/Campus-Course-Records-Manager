@@ -20,7 +20,8 @@ CREATE TABLE STUDENTS (
     first_name VARCHAR2(50),
     last_name VARCHAR2(50),
     email VARCHAR2(100),
-    status VARCHAR2(20)
+    status VARCHAR2(20),
+    registration_date DATE
 );
 
 -- Create the Courses table
