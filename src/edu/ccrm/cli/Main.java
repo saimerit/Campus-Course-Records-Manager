@@ -2,6 +2,7 @@ package edu.ccrm.cli;
 
 import edu.ccrm.config.AppConfig;
 import edu.ccrm.domain.*;
+import edu.ccrm.exception.DataIntegrityException;
 import edu.ccrm.exception.DuplicateEnrollmentException;
 import edu.ccrm.exception.MaxCreditLimitExceededException;
 import edu.ccrm.exception.RecordNotFoundException;
@@ -232,19 +233,23 @@ public class Main {
 
     private static void addStudent() {
         System.out.println("\n--- Add New Student ---");
-        int id = getUserIntInput("Enter Student ID: ");
-        System.out.print("Enter Registration Number: ");
-        String regNo = scanner.nextLine();
-        System.out.print("Enter First Name: ");
-        String firstName = scanner.nextLine();
-        System.out.print("Enter Last Name: ");
-        String lastName = scanner.nextLine();
-        System.out.print("Enter Email: ");
-        String email = scanner.nextLine();
+        try {
+            int id = getUserIntInput("Enter Student ID: ");
+            System.out.print("Enter Registration Number: ");
+            String regNo = scanner.nextLine();
+            System.out.print("Enter First Name: ");
+            String firstName = scanner.nextLine();
+            System.out.print("Enter Last Name: ");
+            String lastName = scanner.nextLine();
+            System.out.print("Enter Email: ");
+            String email = scanner.nextLine();
 
-        Student student = new Student(id, regNo, new Name(firstName, lastName), email);
-        studentService.addStudent(student);
-        System.out.println("Student added successfully.");
+            Student student = new Student(id, regNo, new Name(firstName, lastName), email);
+            studentService.addStudent(student);
+            System.out.println("Student added successfully.");
+        } catch (DataIntegrityException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
     }
 
     private static void listAllStudents() {
@@ -259,19 +264,23 @@ public class Main {
 
     private static void addInstructor() {
         System.out.println("\n--- Add New Instructor ---");
-        int id = getUserIntInput("Enter Instructor ID: ");
-        System.out.print("Enter First Name: ");
-        String firstName = scanner.nextLine();
-        System.out.print("Enter Last Name: ");
-        String lastName = scanner.nextLine();
-        System.out.print("Enter Email: ");
-        String email = scanner.nextLine();
-        System.out.print("Enter Department: ");
-        String department = scanner.nextLine();
+        try {
+            int id = getUserIntInput("Enter Instructor ID: ");
+            System.out.print("Enter First Name: ");
+            String firstName = scanner.nextLine();
+            System.out.print("Enter Last Name: ");
+            String lastName = scanner.nextLine();
+            System.out.print("Enter Email: ");
+            String email = scanner.nextLine();
+            System.out.print("Enter Department: ");
+            String department = scanner.nextLine();
 
-        Instructor instructor = new Instructor(id, new Name(firstName, lastName), email, department);
-        instructorService.addInstructor(instructor);
-        System.out.println("Instructor added successfully.");
+            Instructor instructor = new Instructor(id, new Name(firstName, lastName), email, department);
+            instructorService.addInstructor(instructor);
+            System.out.println("Instructor added successfully.");
+        } catch (DataIntegrityException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
     }
 
     private static void listAllInstructors() {
@@ -314,17 +323,18 @@ public class Main {
 
     private static void addCourse() {
         System.out.println("\n--- Add New Course ---");
-        System.out.print("Enter Course Code (e.g., CS101): ");
-        CourseCode code = new CourseCode(scanner.nextLine());
-        System.out.print("Enter Course Title: ");
-        String title = scanner.nextLine();
-        int credits = getUserIntInput("Enter Credits: ");
-        System.out.print("Enter Department: ");
-        String department = scanner.nextLine();
-        System.out.println("Available semesters: " + Arrays.toString(Semester.values()));
-        System.out.print("Enter Semester: ");
-        String semesterStr = scanner.nextLine().toUpperCase();
         try {
+            System.out.print("Enter Course Code (e.g., CS101): ");
+            CourseCode code = new CourseCode(scanner.nextLine());
+            System.out.print("Enter Course Title: ");
+            String title = scanner.nextLine();
+            int credits = getUserIntInput("Enter Credits: ");
+            System.out.print("Enter Department: ");
+            String department = scanner.nextLine();
+            System.out.println("Available semesters: " + Arrays.toString(Semester.values()));
+            System.out.print("Enter Semester: ");
+            String semesterStr = scanner.nextLine().toUpperCase();
+
             Semester semester = Semester.valueOf(semesterStr);
             Course course = new Course.Builder(code)
                     .withTitle(title)
@@ -336,6 +346,8 @@ public class Main {
             System.out.println("Course added successfully.");
         } catch (IllegalArgumentException e) {
             System.err.println("Invalid semester provided.");
+        } catch (DataIntegrityException e) {
+            System.err.println("Error: " + e.getMessage());
         }
     }
 

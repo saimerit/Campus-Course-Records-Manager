@@ -1,5 +1,5 @@
 id,firstName,lastName,email,department
-1,Aanjan,Kumar,Aanjan.kumar@vitbhopal.ac.in,SCOPE
-2,Kommarasamy,G,Kommarasamy.g@vitbhopal.ac.in,SCAI
-3,Virendra Singh,Khuswah,khuswah.virendra@gmail.com,SCAI
-13,32,23,42,243qdeq
+1,John,Smith,john.smith@university.edu,Computer Science
+2,Jane,Doe,jane.doe@university.edu,Software Engineering
+3,Peter,Jones,peter.jones@university.edu,Data Science
+4,Mary,Williams,mary.williams@university.edu,Cybersecurity

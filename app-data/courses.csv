@@ -1,4 +1,5 @@
 code,title,credits,department,instructorId,semester
-CSE2006,Programming in Java,4,SCOPE,2,FALL
-CSE3005,Software Engineering,4,SCOPE,1,FALL
-CSE3015,AWS Cloud Practitioner,4,SCAI,3,FALL
+CS101,Introduction to Programming,3,Computer Science,1,FALL
+CY401,Network Security,3,Cybersecurity,4,SPRING
+DS301,Machine Learning,4,Data Science,3,SPRING
+SE201,Software Design Principles,4,Software Engineering,2,FALL

@@ -1,6 +1,7 @@
 package edu.ccrm.service;
 
 import edu.ccrm.domain.*;
+import edu.ccrm.exception.DataIntegrityException;
 import edu.ccrm.exception.RecordNotFoundException;
 import edu.ccrm.io.DatabaseManager;
 import java.sql.*;
@@ -15,6 +16,9 @@ public class CourseService {
     private final InstructorService instructorService = new InstructorService();
 
     public void addCourse(Course course) {
+        if (courseExists(course.getCourseCode())) {
+            throw new DataIntegrityException("Course with code " + course.getCourseCode() + " already exists.");
+        }
         String sql = "INSERT INTO courses (code, title, credits, department, instructor_id, semester) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -135,5 +139,20 @@ public class CourseService {
 
     public Predicate<Course> bySemester(Semester semester) {
         return course -> course.getSemester() == semester;
+    }
+
+    private boolean courseExists(CourseCode courseCode) {
+        String sql = "SELECT COUNT(*) FROM courses WHERE code = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, courseCode.getCode());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

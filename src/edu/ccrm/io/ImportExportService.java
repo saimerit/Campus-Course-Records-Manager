@@ -2,6 +2,7 @@ package edu.ccrm.io;
 
 import edu.ccrm.config.AppConfig;
 import edu.ccrm.domain.*;
+import edu.ccrm.exception.DataIntegrityException;
 import edu.ccrm.service.CourseService;
 import edu.ccrm.service.InstructorService;
 import edu.ccrm.service.StudentService;
@@ -21,7 +22,6 @@ public class ImportExportService {
     private final StudentService studentService = new StudentService();
     private final InstructorService instructorService = new InstructorService();
     private final CourseService courseService = new CourseService();
-
     public void importStudents(Path filePath) throws IOException {
         try (Stream<String> lines = Files.lines(filePath)) {
             lines.skip(1).forEach(line -> {
@@ -34,7 +34,11 @@ public class ImportExportService {
                         Student.Status.valueOf(parts[5]),
                         LocalDate.parse(parts[6])
                 );
-                studentService.addStudent(student);
+                try {
+                    studentService.addStudent(student);
+                } catch (DataIntegrityException e) {
+                    System.err.println("Skipping duplicate student: " + e.getMessage());
+                }
             });
         }
     }
@@ -49,7 +53,11 @@ public class ImportExportService {
                         parts[3],
                         parts[4]
                 );
-                instructorService.addInstructor(instructor);
+                try {
+                    instructorService.addInstructor(instructor);
+                } catch (DataIntegrityException e) {
+                    System.err.println("Skipping duplicate instructor: " + e.getMessage());
+                }
             });
         }
     }
@@ -67,7 +75,11 @@ public class ImportExportService {
                         .withInstructor(instructor)
                         .withSemester(Semester.valueOf(parts[5]))
                         .build();
-                courseService.addCourse(course);
+                try {
+                    courseService.addCourse(course);
+                } catch (DataIntegrityException e) {
+                    System.err.println("Skipping duplicate course: " + e.getMessage());
+                }
             });
         }
     }

@@ -2,6 +2,7 @@ package edu.ccrm.service;
 
 import edu.ccrm.domain.Name;
 import edu.ccrm.domain.Student;
+import edu.ccrm.exception.DataIntegrityException;
 import edu.ccrm.exception.RecordNotFoundException;
 import edu.ccrm.io.DatabaseManager;
 import java.sql.*;
@@ -11,7 +12,9 @@ import java.util.List;
 public class StudentService {
 
     public void addStudent(Student student) {
-        // This is the corrected SQL query with all 7 columns
+        if (studentExists(student.getId(), student.getRegNo())) {
+            throw new DataIntegrityException("Student with ID " + student.getId() + " or registration number " + student.getRegNo() + " already exists.");
+        }
         String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -23,7 +26,6 @@ public class StudentService {
             pstmt.setString(4, student.getFullName().getLastName());
             pstmt.setString(5, student.getEmail());
             pstmt.setString(6, student.getStatus().name());
-            // This line correctly sets the 7th parameter: the registration date
             pstmt.setDate(7, java.sql.Date.valueOf(student.getRegistrationDate()));
 
             pstmt.executeUpdate();
@@ -51,7 +53,6 @@ public class StudentService {
 
     public List<Student> getAllStudentsSortedById() {
         List<Student> students = new ArrayList<>();
-        // This query is also updated to fetch the registration_date
         String sql = "SELECT id, reg_no, first_name, last_name, email, status, registration_date FROM students ORDER BY id";
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -76,7 +77,6 @@ public class StudentService {
     }
 
     public Student findStudentById(int studentId) throws RecordNotFoundException {
-        // And this query is updated to fetch the registration_date
         String sql = "SELECT id, reg_no, first_name, last_name, email, status, registration_date FROM students WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -98,5 +98,21 @@ public class StudentService {
            System.err.println("Error finding student by ID: " + e.getMessage());
         }
         return null;
+    }
+
+    private boolean studentExists(int id, String regNo) {
+        String sql = "SELECT COUNT(*) FROM students WHERE id = ? OR reg_no = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.setString(2, regNo);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
