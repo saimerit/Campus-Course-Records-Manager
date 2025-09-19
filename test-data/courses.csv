@@ -1,4 +1,4 @@
-code,title,credits,department,instructorId,semester
+code,title,credits,department,instructor_id,semester
 CS101,Introduction to Programming,3,Computer Science,1,FALL
 SE201,Software Design Principles,4,Software Engineering,2,FALL
 DS301,Machine Learning,4,Data Science,3,SPRING

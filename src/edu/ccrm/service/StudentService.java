@@ -12,14 +12,19 @@ import java.util.List;
 public class StudentService {
 
     public void addStudent(Student student) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            addStudent(student, conn);
+        } catch (SQLException e) {
+            System.err.println("Error getting database connection: " + e.getMessage());
+        }
+    }
+
+    public void addStudent(Student student, Connection conn) {
         if (studentExists(student.getId(), student.getRegNo())) {
             throw new DataIntegrityException("Student with ID " + student.getId() + " or registration number " + student.getRegNo() + " already exists.");
         }
         String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date) VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, student.getId());
             pstmt.setString(2, student.getRegNo());
             pstmt.setString(3, student.getFullName().getFirstName());
@@ -27,9 +32,7 @@ public class StudentService {
             pstmt.setString(5, student.getEmail());
             pstmt.setString(6, student.getStatus().name());
             pstmt.setDate(7, java.sql.Date.valueOf(student.getRegistrationDate()));
-
             pstmt.executeUpdate();
-
         } catch (SQLException e) {
             System.err.println("Error adding student: " + e.getMessage());
             e.printStackTrace();
@@ -54,11 +57,9 @@ public class StudentService {
     public List<Student> getAllStudentsSortedById() {
         List<Student> students = new ArrayList<>();
         String sql = "SELECT id, reg_no, first_name, last_name, email, status, registration_date FROM students ORDER BY id";
-
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
                 Student student = new Student(
                         rs.getInt("id"),

@@ -10,19 +10,24 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-
 public class CourseService {
 
     private final InstructorService instructorService = new InstructorService();
 
     public void addCourse(Course course) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            addCourse(course, conn);
+        } catch (SQLException e) {
+            System.err.println("Error getting database connection: " + e.getMessage());
+        }
+    }
+
+    public void addCourse(Course course, Connection conn) {
         if (courseExists(course.getCourseCode())) {
             throw new DataIntegrityException("Course with code " + course.getCourseCode() + " already exists.");
         }
         String sql = "INSERT INTO courses (code, title, credits, department, instructor_id, semester) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, course.getCourseCode().getCode());
             pstmt.setString(2, course.getTitle());
             pstmt.setInt(3, course.getCredits());
@@ -34,7 +39,6 @@ public class CourseService {
             }
             pstmt.setString(6, course.getSemester().name());
             pstmt.executeUpdate();
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -44,17 +48,14 @@ public class CourseService {
         String sql = "SELECT * FROM courses WHERE code = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setString(1, courseCode.getCode());
             ResultSet rs = pstmt.executeQuery();
-
             if (rs.next()) {
                 int instructorId = rs.getInt("instructor_id");
                 Instructor instructor = null;
                 if (!rs.wasNull()) {
                     instructor = instructorService.findInstructorById(instructorId);
                 }
-
                 return new Course.Builder(new CourseCode(rs.getString("code")))
                         .withTitle(rs.getString("title"))
                         .withCredits(rs.getInt("credits"))
@@ -72,15 +73,12 @@ public class CourseService {
     public void assignInstructor(CourseCode courseCode, int instructorId) {
         findCourseByCode(courseCode);
         instructorService.findInstructorById(instructorId);
-
         String sql = "UPDATE courses SET instructor_id = ? WHERE code = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
             pstmt.setInt(1, instructorId);
             pstmt.setString(2, courseCode.getCode());
             pstmt.executeUpdate();
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -91,11 +89,9 @@ public class CourseService {
         String sql = "SELECT c.code, c.title, c.credits, c.department, c.semester, " +
                      "i.id as inst_id, i.first_name, i.last_name, i.email as inst_email, i.department as inst_dept " +
                      "FROM courses c LEFT JOIN instructors i ON c.instructor_id = i.id ORDER BY c.code ASC";
-
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
                 Instructor instructor = null;
                 int instructorId = rs.getInt("inst_id");
@@ -107,7 +103,6 @@ public class CourseService {
                         rs.getString("inst_dept")
                     );
                 }
-
                 Course course = new Course.Builder(new CourseCode(rs.getString("code")))
                         .withTitle(rs.getString("title"))
                         .withCredits(rs.getInt("credits"))
@@ -122,7 +117,7 @@ public class CourseService {
         }
         return courses;
     }
-    
+
     public List<Course> filterCourses(Predicate<Course> predicate) {
         return getAllCoursesSortedByCode().stream()
                 .filter(predicate)

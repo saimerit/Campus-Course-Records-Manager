@@ -12,12 +12,19 @@ import java.util.List;
 public class InstructorService {
 
     public void addInstructor(Instructor instructor) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            addInstructor(instructor, conn);
+        } catch (SQLException e) {
+            System.err.println("Error getting database connection: " + e.getMessage());
+        }
+    }
+
+    public void addInstructor(Instructor instructor, Connection conn) {
         if (instructorExists(instructor.getId())) {
             throw new DataIntegrityException("Instructor with ID " + instructor.getId() + " already exists.");
         }
         String sql = "INSERT INTO instructors (id, first_name, last_name, email, department) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, instructor.getId());
             pstmt.setString(2, instructor.getFullName().getFirstName());
             pstmt.setString(3, instructor.getFullName().getLastName());

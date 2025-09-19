@@ -479,18 +479,7 @@ public class Main {
 
     private static void importData() {
         System.out.println("\n--- Import Data from CSV ---");
-        System.out.println("This will import instructors, students, and courses from the 'test-data' directory.");
-        try {
-            importExportService.importInstructors(Path.of("test-data/instructors.csv"));
-            System.out.println("Instructors imported.");
-            importExportService.importStudents(Path.of("test-data/students.csv"));
-            System.out.println("Students imported.");
-            importExportService.importCourses(Path.of("test-data/courses.csv"));
-            System.out.println("Courses imported.");
-            System.out.println("All data imported successfully.");
-        } catch (IOException e) {
-            System.err.println("Error during import: " + e.getMessage());
-        }
+        importExportService.importData();
     }
 
     private static void exportData() {
