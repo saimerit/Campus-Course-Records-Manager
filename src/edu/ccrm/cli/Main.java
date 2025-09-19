@@ -22,7 +22,7 @@ import java.util.function.Predicate;
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
-    
+
     // --- Service Initialization ---
     // Create a single instance of each service.
     private static final StudentService studentService = new StudentService();
@@ -233,7 +233,7 @@ public class Main {
             }
         }
     }
-    
+
     private static void importDataWithOptions() {
         System.out.println("\n--- Import Data from CSV ---");
         System.out.println("1. Import Courses");
@@ -302,7 +302,18 @@ public class Main {
         if (students.isEmpty()) {
             System.out.println("No students found.");
         } else {
-            students.forEach(s -> System.out.println(s.getProfile()));
+            String[] headers = {"ID", "Reg No", "Name", "Email", "Status"};
+            List<String[]> rows = new ArrayList<>();
+            for (Student s : students) {
+                rows.add(new String[]{
+                        String.valueOf(s.getId()),
+                        s.getRegNo(),
+                        s.getFullName().toString(),
+                        s.getEmail(),
+                        s.getStatus().toString()
+                });
+            }
+            printTable(headers, rows);
         }
     }
 
@@ -333,7 +344,17 @@ public class Main {
         if (instructors.isEmpty()) {
             System.out.println("No instructors found.");
         } else {
-            instructors.forEach(i -> System.out.println(i.getProfile()));
+            String[] headers = {"ID", "Name", "Email", "Department"};
+            List<String[]> rows = new ArrayList<>();
+            for (Instructor i : instructors) {
+                rows.add(new String[]{
+                        String.valueOf(i.getId()),
+                        i.getFullName().toString(),
+                        i.getEmail(),
+                        i.getDepartment()
+                });
+            }
+            printTable(headers, rows);
         }
     }
 
@@ -401,7 +422,7 @@ public class Main {
         if (courses.isEmpty()) {
             System.out.println("No courses found.");
         } else {
-            courses.forEach(System.out::println);
+            printCoursesTable(courses);
         }
     }
 
@@ -447,7 +468,7 @@ public class Main {
         if (filteredCourses.isEmpty()) {
             System.out.println("No courses match the criteria.");
         } else {
-            filteredCourses.forEach(System.out::println);
+            printCoursesTable(filteredCourses);
         }
     }
 
@@ -571,5 +592,61 @@ public class Main {
         System.out.println("Java EE (Enterprise Edition): Built on top of Java SE, it provides APIs for large-scale, multi-tiered, and reliable enterprise applications.");
         System.out.println("Java ME (Micro Edition): A subset of Java SE for developing applications for mobile devices and embedded systems with limited resources.");
         System.out.println("----------------------------");
+    }
+
+    private static void printTable(String[] headers, List<String[]> rows) {
+        // Find the maximum width for each column
+        int[] maxWidths = new int[headers.length];
+        for (int i = 0; i < headers.length; i++) {
+            maxWidths[i] = headers[i].length();
+        }
+        for (String[] row : rows) {
+            for (int i = 0; i < row.length; i++) {
+                if (row[i].length() > maxWidths[i]) {
+                    maxWidths[i] = row[i].length();
+                }
+            }
+        }
+
+        // Build the format string
+        StringBuilder formatBuilder = new StringBuilder();
+        for (int maxWidth : maxWidths) {
+            formatBuilder.append("| %-").append(maxWidth).append("s ");
+        }
+        formatBuilder.append("|\n");
+        String format = formatBuilder.toString();
+
+        // Print header
+        System.out.printf(format, (Object[]) headers);
+
+        // Print separator
+        for (int maxWidth : maxWidths) {
+            for (int i = 0; i < maxWidth + 3; i++) {
+                System.out.print("-");
+            }
+        }
+        System.out.println("-");
+
+
+        // Print rows
+        for (String[] row : rows) {
+            System.out.printf(format, (Object[]) row);
+        }
+    }
+
+    private static void printCoursesTable(List<Course> courses) {
+        String[] headers = {"Code", "Title", "Credits", "Department", "Semester", "Instructor"};
+        List<String[]> rows = new ArrayList<>();
+        for (Course c : courses) {
+            rows.add(new String[]{
+                    c.getCourseCode().getCode(),
+                    c.getTitle(),
+                    String.valueOf(c.getCredits()),
+                    c.getDepartment(),
+                    c.getSemester().toString(),
+                    c.getInstructor() != null ? c.getInstructor().getFullName().toString() : "N/A"
+            });
+        }
+        printTable(headers, rows);
     }
 }

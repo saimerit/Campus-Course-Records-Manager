@@ -30,14 +30,34 @@ public class TranscriptService {
         if (enrollments.isEmpty()) {
             transcript.append("No courses enrolled.\n");
         } else {
+            // Table Header
+            transcript.append(String.format("%-10s | %-40s | %-10s | %-10s\n", "Code", "Title", "Credits", "Grade"));
+            transcript.append("-----------------------------------------------------------------------------\n");
+
             for (Enrollment enrollment : enrollments) {
-                transcript.append("Course: ").append(enrollment.getCourse().getTitle());
-                transcript.append(" (").append(enrollment.getCourse().getCourseCode().getCode()).append(")\n");
-                transcript.append("Credits: ").append(enrollment.getCourse().getCredits()).append("\n");
-                transcript.append("Grade: ").append(enrollment.getGrade() != null ? enrollment.getGrade() : "Not Graded").append("\n\n");
+                transcript.append(String.format("%-10s | %-40s | %-10d | %-10s\n",
+                        enrollment.getCourse().getCourseCode().getCode(),
+                        enrollment.getCourse().getTitle(),
+                        enrollment.getCourse().getCredits(),
+                        enrollment.getGrade() != null ? enrollment.getGrade() : "Not Graded"));
+            }
+
+            double cgpa = calculateCGPA(enrollments);
+            transcript.append(String.format("\nCumulative Grade Point Average (CGPA): %.2f\n", cgpa));
+        }
+        transcript.append("\n--- End of Transcript ---");
+        return transcript.toString();
+    }
+
+    private double calculateCGPA(List<Enrollment> enrollments) {
+        double totalPoints = 0;
+        int totalCredits = 0;
+        for (Enrollment enrollment : enrollments) {
+            if (enrollment.getGrade() != null) {
+                totalPoints += enrollment.getGrade().getPoints() * enrollment.getCourse().getCredits();
+                totalCredits += enrollment.getCourse().getCredits();
             }
         }
-        transcript.append("--- End of Transcript ---");
-        return transcript.toString();
+        return totalCredits == 0 ? 0 : totalPoints / totalCredits;
     }
 }
