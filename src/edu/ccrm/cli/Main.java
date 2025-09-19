@@ -22,12 +22,15 @@ import java.util.function.Predicate;
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
+    
+    // --- Service Initialization ---
+    // Create a single instance of each service.
     private static final StudentService studentService = new StudentService();
-    private static final CourseService courseService = new CourseService();
     private static final InstructorService instructorService = new InstructorService();
-    private static final EnrollmentService enrollmentService = new EnrollmentService();
-    private static final TranscriptService transcriptService = new TranscriptService();
-    private static final ImportExportService importExportService = new ImportExportService();
+    private static final CourseService courseService = new CourseService(instructorService);
+    private static final EnrollmentService enrollmentService = new EnrollmentService(studentService, courseService);
+    private static final TranscriptService transcriptService = new TranscriptService(studentService, enrollmentService);
+    private static final ImportExportService importExportService = new ImportExportService(studentService, instructorService, courseService, enrollmentService);
     private static final BackupService backupService = new BackupService();
     private static final DatabaseAdminService dbAdminService = new DatabaseAdminService();
 
@@ -212,7 +215,7 @@ public class Main {
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
                 case 1:
-                    importData();
+                    importDataWithOptions();
                     break;
                 case 2:
                     exportData();
@@ -230,6 +233,47 @@ public class Main {
             }
         }
     }
+    
+    private static void importDataWithOptions() {
+        System.out.println("\n--- Import Data from CSV ---");
+        System.out.println("1. Import Courses");
+        System.out.println("2. Import Students");
+        System.out.println("3. Import Instructors");
+        System.out.println("4. Import Enrollments");
+        System.out.println("5. Import All");
+        int choice = getUserIntInput("Enter your choice: ");
+
+        switch (choice) {
+            case 1:
+                importExportService.importCourses();
+                break;
+            case 2:
+                importExportService.importStudents();
+                break;
+            case 3:
+                importExportService.importInstructors();
+                break;
+            case 4:
+                importExportService.importEnrollments();
+                break;
+            case 5:
+                importExportService.importInstructors();
+                importExportService.importStudents();
+                System.out.println("Waiting for 5 seconds before importing courses to ensure data consistency...");
+                try {
+                    Thread.sleep(5000); // 5-second delay
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Delay interrupted: " + e.getMessage());
+                }
+                importExportService.importCourses();
+                importExportService.importEnrollments();
+                break;
+            default:
+                System.out.println("Invalid choice.");
+        }
+    }
+
 
     private static void addStudent() {
         System.out.println("\n--- Add New Student ---");
@@ -475,11 +519,6 @@ public class Main {
         } catch (RecordNotFoundException e) {
             System.err.println(e.getMessage());
         }
-    }
-
-    private static void importData() {
-        System.out.println("\n--- Import Data from CSV ---");
-        importExportService.importData();
     }
 
     private static void exportData() {

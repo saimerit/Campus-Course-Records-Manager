@@ -5,24 +5,24 @@ import edu.ccrm.domain.Name;
 import edu.ccrm.exception.DataIntegrityException;
 import edu.ccrm.exception.RecordNotFoundException;
 import edu.ccrm.io.DatabaseManager;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class InstructorService {
 
-    public void addInstructor(Instructor instructor) {
+    public InstructorService() {}
+
+    public void addInstructor(Instructor instructor) throws DataIntegrityException {
         try (Connection conn = DatabaseManager.getConnection()) {
             addInstructor(instructor, conn);
         } catch (SQLException e) {
-            System.err.println("Error getting database connection: " + e.getMessage());
+            throw new DataIntegrityException("Database error adding instructor: " + e.getMessage(), e);
         }
     }
 
-    public void addInstructor(Instructor instructor, Connection conn) {
-        if (instructorExists(instructor.getId())) {
-            throw new DataIntegrityException("Instructor with ID " + instructor.getId() + " already exists.");
-        }
+    public void addInstructor(Instructor instructor, Connection conn) throws DataIntegrityException {
         String sql = "INSERT INTO instructors (id, first_name, last_name, email, department) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, instructor.getId());
@@ -32,63 +32,58 @@ public class InstructorService {
             pstmt.setString(5, instructor.getDepartment());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Instructor findInstructorById(int id) {
-        String sql = "SELECT * FROM instructors WHERE id = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return new Instructor(
-                        rs.getInt("id"),
-                        new Name(rs.getString("first_name"), rs.getString("last_name")),
-                        rs.getString("email"),
-                        rs.getString("department")
-                );
+            if ("23505".equals(e.getSQLState())) {
+                throw new DataIntegrityException("Instructor with ID " + instructor.getId() + " already exists.", e);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataIntegrityException("Error adding instructor: " + e.getMessage(), e);
         }
-        throw new RecordNotFoundException("Instructor with ID " + id + " not found.");
     }
 
     public List<Instructor> getAllInstructorsSortedById() {
         List<Instructor> instructors = new ArrayList<>();
-        String sql = "SELECT * FROM instructors ORDER BY id ASC";
+        String sql = "SELECT * FROM instructors ORDER BY id";
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                Instructor instructor = new Instructor(
-                        rs.getInt("id"),
-                        new Name(rs.getString("first_name"), rs.getString("last_name")),
-                        rs.getString("email"),
-                        rs.getString("department")
-                );
-                instructors.add(instructor);
+                instructors.add(mapRowToInstructor(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Database error fetching all instructors: " + e.getMessage());
         }
         return instructors;
     }
 
-    private boolean instructorExists(int id) {
-        String sql = "SELECT COUNT(*) FROM instructors WHERE id = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
+    public Instructor findInstructorById(int instructorId) throws RecordNotFoundException {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            return findInstructorById(instructorId, conn);
+        } catch (SQLException e) {
+            throw new RecordNotFoundException("Database error finding instructor: " + e.getMessage());
+        }
+    }
+
+    public Instructor findInstructorById(int instructorId, Connection conn) throws RecordNotFoundException {
+        String sql = "SELECT * FROM instructors WHERE id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, instructorId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapRowToInstructor(rs);
+                } else {
+                    throw new RecordNotFoundException("Instructor with ID " + instructorId + " not found.");
+                }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RecordNotFoundException("Database error finding instructor by ID: " + e.getMessage(), e);
         }
-        return false;
+    }
+
+    private Instructor mapRowToInstructor(ResultSet rs) throws SQLException {
+        return new Instructor(
+                rs.getInt("id"),
+                new Name(rs.getString("first_name"), rs.getString("last_name")),
+                rs.getString("email"),
+                rs.getString("department")
+        );
     }
 }

@@ -4,6 +4,7 @@ import edu.ccrm.domain.*;
 import edu.ccrm.exception.DataIntegrityException;
 import edu.ccrm.exception.RecordNotFoundException;
 import edu.ccrm.io.DatabaseManager;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,20 +13,21 @@ import java.util.stream.Collectors;
 
 public class CourseService {
 
-    private final InstructorService instructorService = new InstructorService();
+    private final InstructorService instructorService;
 
-    public void addCourse(Course course) {
+    public CourseService(InstructorService instructorService) {
+        this.instructorService = instructorService;
+    }
+
+    public void addCourse(Course course) throws DataIntegrityException {
         try (Connection conn = DatabaseManager.getConnection()) {
             addCourse(course, conn);
         } catch (SQLException e) {
-            System.err.println("Error getting database connection: " + e.getMessage());
+            throw new DataIntegrityException("Database error adding course: " + e.getMessage(), e);
         }
     }
 
-    public void addCourse(Course course, Connection conn) {
-        if (courseExists(course.getCourseCode())) {
-            throw new DataIntegrityException("Course with code " + course.getCourseCode() + " already exists.");
-        }
+    public void addCourse(Course course, Connection conn) throws DataIntegrityException {
         String sql = "INSERT INTO courses (code, title, credits, department, instructor_id, semester) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, course.getCourseCode().getCode());
@@ -40,92 +42,71 @@ public class CourseService {
             pstmt.setString(6, course.getSemester().name());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Course findCourseByCode(CourseCode courseCode) {
-        String sql = "SELECT * FROM courses WHERE code = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, courseCode.getCode());
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                int instructorId = rs.getInt("instructor_id");
-                Instructor instructor = null;
-                if (!rs.wasNull()) {
-                    instructor = instructorService.findInstructorById(instructorId);
-                }
-                return new Course.Builder(new CourseCode(rs.getString("code")))
-                        .withTitle(rs.getString("title"))
-                        .withCredits(rs.getInt("credits"))
-                        .withDepartment(rs.getString("department"))
-                        .withSemester(Semester.valueOf(rs.getString("semester")))
-                        .withInstructor(instructor)
-                        .build();
+            if ("23505".equals(e.getSQLState())) {
+                throw new DataIntegrityException("Course with code " + course.getCourseCode().getCode() + " already exists.", e);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        throw new RecordNotFoundException("Course with code " + courseCode + " not found.");
-    }
-
-    public void assignInstructor(CourseCode courseCode, int instructorId) {
-        findCourseByCode(courseCode);
-        instructorService.findInstructorById(instructorId);
-        String sql = "UPDATE courses SET instructor_id = ? WHERE code = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, instructorId);
-            pstmt.setString(2, courseCode.getCode());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataIntegrityException("Error adding course: " + e.getMessage(), e);
         }
     }
 
     public List<Course> getAllCoursesSortedByCode() {
         List<Course> courses = new ArrayList<>();
-        String sql = "SELECT c.code, c.title, c.credits, c.department, c.semester, " +
-                     "i.id as inst_id, i.first_name, i.last_name, i.email as inst_email, i.department as inst_dept " +
-                     "FROM courses c LEFT JOIN instructors i ON c.instructor_id = i.id ORDER BY c.code ASC";
+        String sql = "SELECT * FROM courses ORDER BY code";
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                Instructor instructor = null;
-                int instructorId = rs.getInt("inst_id");
-                if (!rs.wasNull()) {
-                    instructor = new Instructor(
-                        instructorId,
-                        new Name(rs.getString("first_name"), rs.getString("last_name")),
-                        rs.getString("inst_email"),
-                        rs.getString("inst_dept")
-                    );
-                }
-                Course course = new Course.Builder(new CourseCode(rs.getString("code")))
-                        .withTitle(rs.getString("title"))
-                        .withCredits(rs.getInt("credits"))
-                        .withDepartment(rs.getString("department"))
-                        .withSemester(Semester.valueOf(rs.getString("semester")))
-                        .withInstructor(instructor)
-                        .build();
-                courses.add(course);
+                courses.add(mapRowToCourse(rs, conn));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Database error fetching all courses: " + e.getMessage());
         }
         return courses;
+    }
+
+    public Course findCourseByCode(CourseCode courseCode) throws RecordNotFoundException {
+         try (Connection conn = DatabaseManager.getConnection()) {
+            return findCourseByCode(courseCode, conn);
+        } catch (SQLException e) {
+            throw new RecordNotFoundException("Database error finding course by code: " + e.getMessage());
+        }
+    }
+
+    public Course findCourseByCode(CourseCode courseCode, Connection conn) throws RecordNotFoundException {
+        String sql = "SELECT * FROM courses WHERE code = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, courseCode.getCode());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapRowToCourse(rs, conn);
+                } else {
+                    throw new RecordNotFoundException("Course with code " + courseCode.getCode() + " not found.");
+                }
+            }
+        } catch (SQLException e) {
+             throw new RecordNotFoundException("Database error finding course by code: " + e.getMessage());
+        }
+    }
+
+    public void assignInstructor(CourseCode courseCode, int instructorId) throws RecordNotFoundException {
+        String sql = "UPDATE courses SET instructor_id = ? WHERE code = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, instructorId);
+            pstmt.setString(2, courseCode.getCode());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RecordNotFoundException("Course with code " + courseCode.getCode() + " not found.");
+            }
+        } catch (SQLException e) {
+            throw new RecordNotFoundException("Error assigning instructor: " + e.getMessage(), e);
+        }
     }
 
     public List<Course> filterCourses(Predicate<Course> predicate) {
         return getAllCoursesSortedByCode().stream()
                 .filter(predicate)
                 .collect(Collectors.toList());
-    }
-
-    public Predicate<Course> byInstructor(int instructorId) {
-        return course -> course.getInstructor() != null && course.getInstructor().getId() == instructorId;
     }
 
     public Predicate<Course> byDepartment(String department) {
@@ -136,18 +117,32 @@ public class CourseService {
         return course -> course.getSemester() == semester;
     }
 
-    private boolean courseExists(CourseCode courseCode) {
-        String sql = "SELECT COUNT(*) FROM courses WHERE code = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, courseCode.getCode());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
+    public Predicate<Course> byInstructor(int instructorId) {
+        return course -> course.getInstructor() != null && course.getInstructor().getId() == instructorId;
+    }
+
+    private Course mapRowToCourse(ResultSet rs, Connection conn) throws SQLException {
+        CourseCode code = new CourseCode(rs.getString("code"));
+        String title = rs.getString("title");
+        int credits = rs.getInt("credits");
+        String department = rs.getString("department");
+        Semester semester = Semester.valueOf(rs.getString("semester"));
+        int instructorId = rs.getInt("instructor_id");
+
+        Course.Builder builder = new Course.Builder(code)
+                .withTitle(title)
+                .withCredits(credits)
+                .withDepartment(department)
+                .withSemester(semester);
+
+        if (!rs.wasNull()) {
+            try {
+                Instructor instructor = this.instructorService.findInstructorById(instructorId, conn);
+                builder.withInstructor(instructor);
+            } catch (RecordNotFoundException e) {
+                System.err.println("Warning: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-        return false;
+        return builder.build();
     }
 }
