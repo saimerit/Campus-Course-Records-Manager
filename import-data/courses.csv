@@ -1,18 +1,18 @@
-"code","title","credits","department","instructor_id","semester"
-"CS101","Introduction to Computer Science",3,"Computer Science",101,"FALL"
-"MATH201","Calculus I",4,"Mathematics",102,"FALL"
-"PHYS101","General Physics I",4,"Physics",103,"SPRING"
-"CHEM101","General Chemistry I",4,"Chemistry",104,"FALL"
-"ENG101","English Composition I",3,"English",105,"SPRING"
-"CS201","Data Structures",3,"Computer Science",101,"SPRING"
-"CS301","Algorithms",3,"Computer Science",101,"FALL"
-"MATH301","Linear Algebra",3,"Mathematics",102,"SPRING"
-"PHYS201","General Physics II",4,"Physics",103,"FALL"
-"CHEM201","Organic Chemistry I",4,"Chemistry",104,"SPRING"
-"ENG201","English Literature",3,"English",105,"FALL"
-"CS401","Operating Systems",3,"Computer Science",106,"FALL"
-"CS402","Database Systems",3,"Computer Science",106,"SPRING"
-"EE201","Circuit Theory",4,"Electrical Engineering",107,"FALL"
-"ME301","Thermodynamics",3,"Mechanical Engineering",108,"SPRING"
-"ART101","Introduction to Art History",3,"Art",109,"FALL"
-"MUS101","Music Appreciation",3,"Music",110,"SPRING"
+code,title,credits,department,instructor_id,semester
+CS101,Introduction to Computer Science,3,Computer Science,101,FALL
+MATH201,Calculus I,4,Mathematics,102,FALL
+PHYS101,General Physics I,4,Physics,103,SPRING
+CHEM101,General Chemistry I,4,Chemistry,104,FALL
+ENG101,English Composition I,3,English,105,SPRING
+CS201,Data Structures,3,Computer Science,101,SPRING
+CS301,Algorithms,3,Computer Science,101,FALL
+MATH301,Linear Algebra,3,Mathematics,102,SPRING
+PHYS201,General Physics II,4,Physics,103,FALL
+CHEM201,Organic Chemistry I,4,Chemistry,104,SPRING
+ENG201,English Literature,3,English,105,FALL
+CS401,Operating Systems,3,Computer Science,106,FALL
+CS402,Database Systems,3,Computer Science,106,SPRING
+EE201,Circuit Theory,4,Electrical Engineering,107,FALL
+ME301,Thermodynamics,3,Mechanical Engineering,108,SPRING
+ART101,Introduction to Art History,3,Art,109,FALL
+MUS101,Music Appreciation,3,Music,110,SPRING
