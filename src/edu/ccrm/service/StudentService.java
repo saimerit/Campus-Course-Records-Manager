@@ -93,6 +93,24 @@ public class StudentService {
         }
     }
 
+    public void updateStudent(Student student) throws RecordNotFoundException, DataIntegrityException {
+        String sql = "UPDATE students SET first_name = ?, last_name = ?, email = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, student.getFullName().getFirstName());
+            pstmt.setString(2, student.getFullName().getLastName());
+            pstmt.setString(3, student.getEmail());
+            pstmt.setInt(4, student.getId());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RecordNotFoundException("Student with ID " + student.getId() + " not found.");
+            }
+        } catch (SQLException e) {
+            throw new DataIntegrityException("Database error updating student: " + e.getMessage(), e);
+        }
+    }
+
+
     public Student mapRowToStudent(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         String regNo = rs.getString("reg_no");

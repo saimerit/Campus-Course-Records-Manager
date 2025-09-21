@@ -103,7 +103,8 @@ public class Main {
             System.out.println("2. List All Students");
             System.out.println("3. View Student Profile & Transcript");
             System.out.println("4. Update Student Status");
-            System.out.println("5. Back to Main Menu");
+            System.out.println("5. Update Student Details");
+            System.out.println("6. Back to Main Menu");
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
                 case 1:
@@ -119,6 +120,9 @@ public class Main {
                     updateStudentStatus();
                     break;
                 case 5:
+                    updateStudentDetails();
+                    break;
+                case 6:
                     return;
                 default:
                     System.out.println("Invalid choice.");
@@ -131,7 +135,8 @@ public class Main {
             System.out.println("\n--- Instructor Management ---");
             System.out.println("1. Add New Instructor");
             System.out.println("2. List All Instructors");
-            System.out.println("3. Back to Main Menu");
+            System.out.println("3. Update Instructor Details");
+            System.out.println("4. Back to Main Menu");
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
                 case 1:
@@ -141,6 +146,9 @@ public class Main {
                     listAllInstructors();
                     break;
                 case 3:
+                    updateInstructorDetails();
+                    break;
+                case 4:
                     return;
                 default:
                     System.out.println("Invalid choice.");
@@ -385,6 +393,79 @@ public class Main {
             System.err.println(e.getMessage());
         }
     }
+
+    private static void updateStudentDetails() {
+        System.out.println("\n--- Update Student Details ---");
+        int studentId = getUserIntInput("Enter Student ID: ");
+        try {
+            Student student = studentService.findStudentById(studentId);
+            System.out.print("Enter new First Name (or press Enter to keep '" + student.getFullName().getFirstName() + "'): ");
+            String firstName = scanner.nextLine();
+            if (firstName.isEmpty()) {
+                firstName = student.getFullName().getFirstName();
+            }
+
+            System.out.print("Enter new Last Name (or press Enter to keep '" + student.getFullName().getLastName() + "'): ");
+            String lastName = scanner.nextLine();
+            if (lastName.isEmpty()) {
+                lastName = student.getFullName().getLastName();
+            }
+
+            System.out.print("Enter new Email (or press Enter to keep '" + student.getEmail() + "'): ");
+            String email = scanner.nextLine();
+            if (email.isEmpty()) {
+                email = student.getEmail();
+            }
+
+            Student updatedStudent = new Student(studentId, student.getRegNo(), new Name(firstName, lastName), email, student.getStatus(), student.getRegistrationDate());
+            studentService.updateStudent(updatedStudent);
+            System.out.println("Student details updated successfully.");
+        } catch (RecordNotFoundException e) {
+            System.err.println(e.getMessage());
+        } catch (DataIntegrityException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+
+    private static void updateInstructorDetails() {
+        System.out.println("\n--- Update Instructor Details ---");
+        int instructorId = getUserIntInput("Enter Instructor ID: ");
+        try {
+            Instructor instructor = instructorService.findInstructorById(instructorId);
+            System.out.print("Enter new First Name (or press Enter to keep '" + instructor.getFullName().getFirstName() + "'): ");
+            String firstName = scanner.nextLine();
+            if (firstName.isEmpty()) {
+                firstName = instructor.getFullName().getFirstName();
+            }
+
+            System.out.print("Enter new Last Name (or press Enter to keep '" + instructor.getFullName().getLastName() + "'): ");
+            String lastName = scanner.nextLine();
+            if (lastName.isEmpty()) {
+                lastName = instructor.getFullName().getLastName();
+            }
+
+            System.out.print("Enter new Email (or press Enter to keep '" + instructor.getEmail() + "'): ");
+            String email = scanner.nextLine();
+            if (email.isEmpty()) {
+                email = instructor.getEmail();
+            }
+            
+            System.out.print("Enter new Department (or press Enter to keep '" + instructor.getDepartment() + "'): ");
+            String department = scanner.nextLine();
+            if (department.isEmpty()) {
+                department = instructor.getDepartment();
+            }
+
+            Instructor updatedInstructor = new Instructor(instructorId, new Name(firstName, lastName), email, department);
+            instructorService.updateInstructor(updatedInstructor);
+            System.out.println("Instructor details updated successfully.");
+        } catch (RecordNotFoundException e) {
+            System.err.println(e.getMessage());
+        } catch (DataIntegrityException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+
 
     private static void addCourse() {
         System.out.println("\n--- Add New Course ---");

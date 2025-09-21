@@ -77,6 +77,24 @@ public class InstructorService {
             throw new RecordNotFoundException("Database error finding instructor by ID: " + e.getMessage(), e);
         }
     }
+    
+    public void updateInstructor(Instructor instructor) throws RecordNotFoundException, DataIntegrityException {
+        String sql = "UPDATE instructors SET first_name = ?, last_name = ?, email = ?, department = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, instructor.getFullName().getFirstName());
+            pstmt.setString(2, instructor.getFullName().getLastName());
+            pstmt.setString(3, instructor.getEmail());
+            pstmt.setString(4, instructor.getDepartment());
+            pstmt.setInt(5, instructor.getId());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RecordNotFoundException("Instructor with ID " + instructor.getId() + " not found.");
+            }
+        } catch (SQLException e) {
+            throw new DataIntegrityException("Database error updating instructor: " + e.getMessage(), e);
+        }
+    }
 
     private Instructor mapRowToInstructor(ResultSet rs) throws SQLException {
         return new Instructor(
