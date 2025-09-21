@@ -6,7 +6,7 @@ DROP TABLE INSTRUCTORS;
 
 -- Create the Instructors table
 CREATE TABLE INSTRUCTORS (
-    id NUMBER PRIMARY KEY,
+    FiD VARCHAR2(20) PRIMARY KEY,
     first_name VARCHAR2(50),
     last_name VARCHAR2(50),
     email VARCHAR2(100),
@@ -15,8 +15,8 @@ CREATE TABLE INSTRUCTORS (
 
 -- Create the Students table
 CREATE TABLE STUDENTS (
-    id NUMBER PRIMARY KEY,
-    reg_no VARCHAR2(20) UNIQUE,
+    id NUMBER,
+    reg_no VARCHAR2(20) PRIMARY KEY,
     first_name VARCHAR2(50),
     last_name VARCHAR2(50),
     email VARCHAR2(100),
@@ -30,17 +30,17 @@ CREATE TABLE COURSES (
     title VARCHAR2(100),
     credits NUMBER,
     department VARCHAR2(100),
-    instructor_id NUMBER,
+    instructor_id VARCHAR2(20),
     semester VARCHAR2(20),
-    CONSTRAINT fk_instructor FOREIGN KEY (instructor_id) REFERENCES INSTRUCTORS(id)
+    CONSTRAINT fk_instructor FOREIGN KEY (instructor_id) REFERENCES INSTRUCTORS(FiD)
 );
 
 -- Create the Enrollments table
 CREATE TABLE ENROLLMENTS (
-    student_id NUMBER,
+    student_reg_no VARCHAR2(20),
     course_code VARCHAR2(10),
     grade VARCHAR2(2),
-    PRIMARY KEY (student_id, course_code),
-    CONSTRAINT fk_student FOREIGN KEY (student_id) REFERENCES STUDENTS(id),
+    PRIMARY KEY (student_reg_no, course_code),
+    CONSTRAINT fk_student FOREIGN KEY (student_reg_no) REFERENCES STUDENTS(reg_no),
     CONSTRAINT fk_course FOREIGN KEY (course_code) REFERENCES COURSES(code)
 );

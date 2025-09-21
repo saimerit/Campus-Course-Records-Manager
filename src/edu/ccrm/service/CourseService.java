@@ -43,9 +43,9 @@ public class CourseService {
       pstmt.setInt(3, course.getCredits());
       pstmt.setString(4, course.getDepartment());
       if (course.getInstructor() != null) {
-        pstmt.setInt(5, course.getInstructor().getId());
+        pstmt.setString(5, course.getInstructor().getFiD());
       } else {
-        pstmt.setNull(5, Types.INTEGER);
+        pstmt.setNull(5, Types.VARCHAR);
       }
       pstmt.setString(6, course.getSemester().name());
       pstmt.executeUpdate();
@@ -115,14 +115,14 @@ public class CourseService {
     }
   }
 
-  public void assignInstructor(CourseCode courseCode, int instructorId)
+  public void assignInstructor(CourseCode courseCode, String instructorId)
     throws RecordNotFoundException {
     String sql = "UPDATE courses SET instructor_id = ? WHERE code = ?";
     try (
       Connection conn = DatabaseManager.getConnection();
       PreparedStatement pstmt = conn.prepareStatement(sql)
     ) {
-      pstmt.setInt(1, instructorId);
+      pstmt.setString(1, instructorId);
       pstmt.setString(2, courseCode.getCode());
       int affectedRows = pstmt.executeUpdate();
       if (affectedRows == 0) {
@@ -153,10 +153,10 @@ public class CourseService {
     return course -> course.getSemester() == semester;
   }
 
-  public Predicate<Course> byInstructor(int instructorId) {
+  public Predicate<Course> byInstructor(String instructorId) {
     return course ->
       course.getInstructor() != null &&
-      course.getInstructor().getId() == instructorId;
+      course.getInstructor().getFiD().equals(instructorId);
   }
 
   private Course mapRowToCourse(ResultSet rs, Connection conn)
@@ -166,7 +166,7 @@ public class CourseService {
     int credits = rs.getInt("credits");
     String department = rs.getString("department");
     Semester semester = Semester.valueOf(rs.getString("semester"));
-    int instructorId = rs.getInt("instructor_id");
+    String instructorId = rs.getString("instructor_id");
 
     Course.Builder builder = new Course.Builder(code)
       .withTitle(title)
@@ -174,9 +174,9 @@ public class CourseService {
       .withDepartment(department)
       .withSemester(semester);
 
-    if (!rs.wasNull()) {
+    if (instructorId != null && !rs.wasNull()) {
       try {
-        Instructor instructor = this.instructorService.findInstructorById(
+        Instructor instructor = this.instructorService.findInstructorByFiD(
             instructorId,
             conn
           );

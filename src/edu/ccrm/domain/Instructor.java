@@ -2,10 +2,16 @@ package edu.ccrm.domain;
 
 public class Instructor extends Person {
     private String department;
+    private String fId;
 
-    public Instructor(int id, Name fullName, String email, String department) {
-        super(id, fullName, email);
+    public Instructor(String fId, Name fullName, String email, String department) {
+        super(0, fullName, email); 
+        this.fId = fId;
         this.department = department;
+    }
+
+    public String getFiD() {
+        return fId;
     }
 
     public String getDepartment() {
@@ -18,14 +24,14 @@ public class Instructor extends Person {
 
     @Override
     public String getProfile() {
-        return String.format("Instructor | ID: %d, Name: %s, Email: %s, Department: %s",
-                getId(), getFullName(), getEmail(), department);
+        return String.format("Instructor | FiD: %s, Name: %s, Email: %s, Department: %s",
+                fId, getFullName(), getEmail(), department);
     }
     
     @Override
     public String toCsvString() {
         return String.join(",",
-                String.valueOf(getId()),
+                getFiD(),
                 getFullName().getFirstName(),
                 getFullName().getLastName(),
                 getEmail(),

@@ -3,6 +3,8 @@ package edu.ccrm.io;
 import edu.ccrm.config.AppConfig;
 import edu.ccrm.domain.*;
 import edu.ccrm.exception.DataIntegrityException;
+import edu.ccrm.exception.DuplicateEnrollmentException;
+import edu.ccrm.exception.MaxCreditLimitExceededException;
 import edu.ccrm.exception.RecordNotFoundException;
 import edu.ccrm.service.CourseService;
 import edu.ccrm.service.EnrollmentService;
@@ -40,7 +42,7 @@ public class ImportExportService {
   }
 
   public void importStudents() {
-    System.out.println("    - Importing students.csv...");
+    System.out.println("     - Importing students.csv...");
     try (Connection conn = DatabaseManager.getConnection()) {
       importStudents(Path.of("import-data/students.csv"), conn);
       System.out.println("? Successfully imported students.csv");
@@ -79,7 +81,7 @@ public class ImportExportService {
   }
 
   public void importInstructors() {
-    System.out.println("    - Importing instructors.csv...");
+    System.out.println("     - Importing instructors.csv...");
     try (Connection conn = DatabaseManager.getConnection()) {
       importInstructors(Path.of("import-data/instructors.csv"), conn);
       System.out.println("? Successfully imported instructors.csv");
@@ -96,7 +98,7 @@ public class ImportExportService {
       while ((line = reader.readLine()) != null) {
         String[] parts = line.split(",");
         Instructor instructor = new Instructor(
-          Integer.parseInt(parts[0]),
+          parts[0],
           new Name(parts[1], parts[2]),
           parts[3],
           parts[4]
@@ -105,7 +107,7 @@ public class ImportExportService {
           instructorService.addInstructor(instructor, conn);
         } catch (DataIntegrityException e) {
           System.err.println(
-            "Instructor with ID " + instructor.getId() + " already exists."
+            "Instructor with FiD " + instructor.getFiD() + " already exists."
           );
         }
       }
@@ -113,7 +115,7 @@ public class ImportExportService {
   }
 
   public void importCourses() {
-    System.out.println("    - Importing courses.csv...");
+    System.out.println("     - Importing courses.csv...");
     try (Connection conn = DatabaseManager.getConnection()) {
       importCourses(Path.of("import-data/courses.csv"), conn);
       System.out.println("? Successfully imported courses.csv");
@@ -131,8 +133,8 @@ public class ImportExportService {
         String[] parts = line.split(",");
         CourseCode courseCode = new CourseCode(parts[0]);
         try {
-          Instructor instructor = instructorService.findInstructorById(
-            Integer.parseInt(parts[4]),
+          Instructor instructor = instructorService.findInstructorByFiD(
+            parts[4],
             conn
           );
           Course course = new Course.Builder(courseCode)
@@ -160,38 +162,51 @@ public class ImportExportService {
   }
 
   public void importEnrollments() {
-    System.out.println("    - Importing enrollments.csv...");
-    try (Connection conn = DatabaseManager.getConnection()) {
-      importEnrollments(Path.of("import-data/enrollments.csv"), conn);
-      System.out.println("? Successfully imported enrollments.csv");
-    } catch (IOException | SQLException e) {
-      System.err.println("Error during enrollment import: " + e.getMessage());
+    System.out.println("     - Importing enrollments.csv...");
+    try {
+        importEnrollments(Path.of("import-data/enrollments.csv"));
+        System.out.println("? Successfully imported enrollments.csv");
+    } catch (IOException e) {
+        System.err.println("Error during enrollment import: " + e.getMessage());
     }
   }
 
-  private void importEnrollments(Path filePath, Connection conn)
-    throws IOException {
-    try (BufferedReader reader = Files.newBufferedReader(filePath)) {
-      String line;
-      reader.readLine(); // Skip header
-      while ((line = reader.readLine()) != null) {
-        String[] parts = line.split(",");
-        int studentId = Integer.parseInt(parts[0]);
-        CourseCode courseCode = new CourseCode(parts[1]);
-        try {
-          enrollmentService.enrollStudent(studentId, courseCode, conn);
-        } catch (Exception e) {
-          System.err.println(
-            "Enrollment for student " +
-            studentId +
-            " in course " +
-            courseCode.getCode() +
-            " already exists."
-          );
-        }
+  private void importEnrollments(Path filePath) throws IOException {
+      try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+          String line;
+          reader.readLine(); // Skip header
+          while ((line = reader.readLine()) != null) {
+              String[] parts = line.split(",");
+              if (parts.length < 2) continue;
+
+              String studentRegNo = parts[0].trim();
+              CourseCode courseCode = new CourseCode(parts[1].trim());
+
+              try {
+                  if (parts.length > 2 && parts[2] != null && !parts[2].trim().isEmpty()) {
+                      Grade grade = Grade.valueOf(parts[2].trim().toUpperCase());
+                      enrollmentService.enrollStudentWithGrade(studentRegNo, courseCode, grade);
+                  } else {
+                      enrollmentService.enrollStudent(studentRegNo, courseCode);
+                  }
+              } catch (DuplicateEnrollmentException e) {
+                  System.out.println("Info: Student " + studentRegNo + " is already enrolled in " + courseCode.getCode() + ". Attempting to update grade.");
+                  if (parts.length > 2 && parts[2] != null && !parts[2].trim().isEmpty()) {
+                      try {
+                         Grade grade = Grade.valueOf(parts[2].trim().toUpperCase());
+                         enrollmentService.recordGrade(studentRegNo, courseCode, grade);
+                      }
+                      catch (Exception gradeException){
+                          System.err.println("Could not record grade for already enrolled student.");
+                      }
+                  }
+              } catch (MaxCreditLimitExceededException | RecordNotFoundException | IllegalArgumentException e) {
+                  System.err.println("Warning: Could not process enrollment for " + studentRegNo + " in " + courseCode.getCode() + ". Reason: " + e.getMessage());
+              }
+          }
       }
-    }
   }
+
 
   public void exportData() throws IOException {
     Files.createDirectories(config.getDataDirectory());
@@ -224,7 +239,7 @@ public class ImportExportService {
       .stream()
       .map(Instructor::toCsvString)
       .collect(Collectors.toList());
-    lines.add(0, "id,firstName,lastName,email,department");
+    lines.add(0, "FiD,firstName,lastName,email,department");
     Files.write(
       path,
       lines,
@@ -245,7 +260,7 @@ public class ImportExportService {
           String.valueOf(c.getCredits()),
           c.getDepartment(),
           (c.getInstructor() != null)
-            ? String.valueOf(c.getInstructor().getId())
+            ? c.getInstructor().getFiD()
             : "",
           c.getSemester().name()
         )
@@ -267,12 +282,13 @@ public class ImportExportService {
       .map(e ->
         String.join(
           ",",
-          String.valueOf(e.getStudent().getId()),
-          e.getCourse().getCourseCode().getCode()
+          e.getStudent().getRegNo(),
+          e.getCourse().getCourseCode().getCode(),
+          e.getGrade() != null ? e.getGrade().name() : ""
         )
       )
       .collect(Collectors.toList());
-    lines.add(0, "studentId,courseCode");
+    lines.add(0, "studentRegNo,courseCode,grade");
     Files.write(
       path,
       lines,

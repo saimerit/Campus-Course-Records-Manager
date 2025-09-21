@@ -16,9 +16,9 @@ public class TranscriptService {
         this.enrollmentService = enrollmentService;
     }
 
-    public String generateTranscript(int studentId) throws RecordNotFoundException {
-        Student student = studentService.findStudentById(studentId);
-        List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(studentId);
+    public String generateTranscript(String studentRegNo) throws RecordNotFoundException {
+        Student student = studentService.findStudentByRegNo(studentRegNo);
+        List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(studentRegNo);
 
         StringBuilder transcript = new StringBuilder();
         transcript.append("--- Transcript for ").append(student.getFullName()).append(" ---\n");

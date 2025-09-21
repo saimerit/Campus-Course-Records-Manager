@@ -24,7 +24,6 @@ public class Main {
     private static final Scanner scanner = new Scanner(System.in);
 
     // --- Service Initialization ---
-    // Create a single instance of each service.
     private static final StudentService studentService = new StudentService();
     private static final InstructorService instructorService = new InstructorService();
     private static final CourseService courseService = new CourseService(instructorService);
@@ -192,7 +191,8 @@ public class Main {
             System.out.println("1. Enroll Student in Course");
             System.out.println("2. Unenroll Student from Course");
             System.out.println("3. Record Student's Grade");
-            System.out.println("4. Back to Main Menu");
+            System.out.println("4. View All Enrollments by Student");
+            System.out.println("5. Back to Main Menu");
             int choice = getUserIntInput("Enter choice: ");
             switch (choice) {
                 case 1:
@@ -205,6 +205,9 @@ public class Main {
                     recordGrade();
                     break;
                 case 4:
+                    viewAllEnrollmentsByStudent();
+                    break;
+                case 5:
                     return;
                 default:
                     System.out.println("Invalid choice.");
@@ -267,14 +270,14 @@ public class Main {
             case 5:
                 importExportService.importInstructors();
                 importExportService.importStudents();
-                System.out.println("Waiting for 5 seconds before importing courses to ensure data consistency...");
+                importExportService.importCourses();
+                System.out.println("Waiting for 5 seconds before importing enrollments to ensure data consistency...");
                 try {
                     Thread.sleep(5000); // 5-second delay
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     System.err.println("Delay interrupted: " + e.getMessage());
                 }
-                importExportService.importCourses();
                 importExportService.importEnrollments();
                 break;
             default:
@@ -328,7 +331,8 @@ public class Main {
     private static void addInstructor() {
         System.out.println("\n--- Add New Instructor ---");
         try {
-            int id = getUserIntInput("Enter Instructor ID: ");
+            System.out.print("Enter Instructor FiD: ");
+            String fId = scanner.nextLine();
             System.out.print("Enter First Name: ");
             String firstName = scanner.nextLine();
             System.out.print("Enter Last Name: ");
@@ -338,7 +342,7 @@ public class Main {
             System.out.print("Enter Department: ");
             String department = scanner.nextLine();
 
-            Instructor instructor = new Instructor(id, new Name(firstName, lastName), email, department);
+            Instructor instructor = new Instructor(fId, new Name(firstName, lastName), email, department);
             instructorService.addInstructor(instructor);
             System.out.println("Instructor added successfully.");
         } catch (DataIntegrityException e) {
@@ -352,11 +356,11 @@ public class Main {
         if (instructors.isEmpty()) {
             System.out.println("No instructors found.");
         } else {
-            String[] headers = {"ID", "Name", "Email", "Department"};
+            String[] headers = {"FiD", "Name", "Email", "Department"};
             List<String[]> rows = new ArrayList<>();
             for (Instructor i : instructors) {
                 rows.add(new String[]{
-                        String.valueOf(i.getId()),
+                        i.getFiD(),
                         i.getFullName().toString(),
                         i.getEmail(),
                         i.getDepartment()
@@ -368,9 +372,10 @@ public class Main {
 
     private static void viewStudentTranscript() {
         System.out.println("\n--- View Student Transcript ---");
-        int studentId = getUserIntInput("Enter Student ID: ");
+        System.out.print("Enter Student Registration Number: ");
+        String regNo = scanner.nextLine();
         try {
-            String transcript = transcriptService.generateTranscript(studentId);
+            String transcript = transcriptService.generateTranscript(regNo);
             System.out.println(transcript);
         } catch (RecordNotFoundException e) {
             System.err.println(e.getMessage());
@@ -379,13 +384,14 @@ public class Main {
 
     private static void updateStudentStatus() {
         System.out.println("\n--- Update Student Status ---");
-        int studentId = getUserIntInput("Enter Student ID: ");
+        System.out.print("Enter Student Registration Number: ");
+        String regNo = scanner.nextLine();
         System.out.println("Available statuses: " + Arrays.toString(Student.Status.values()));
         System.out.print("Enter new status: ");
         String statusStr = scanner.nextLine().toUpperCase();
         try {
             Student.Status newStatus = Student.Status.valueOf(statusStr);
-            studentService.updateStudentStatus(studentId, newStatus);
+            studentService.updateStudentStatus(regNo, newStatus);
             System.out.println("Status updated successfully.");
         } catch (IllegalArgumentException e) {
             System.err.println("Invalid status provided.");
@@ -396,9 +402,10 @@ public class Main {
 
     private static void updateStudentDetails() {
         System.out.println("\n--- Update Student Details ---");
-        int studentId = getUserIntInput("Enter Student ID: ");
+        System.out.print("Enter Student Registration Number: ");
+        String regNo = scanner.nextLine();
         try {
-            Student student = studentService.findStudentById(studentId);
+            Student student = studentService.findStudentByRegNo(regNo);
             System.out.print("Enter new First Name (or press Enter to keep '" + student.getFullName().getFirstName() + "'): ");
             String firstName = scanner.nextLine();
             if (firstName.isEmpty()) {
@@ -417,7 +424,7 @@ public class Main {
                 email = student.getEmail();
             }
 
-            Student updatedStudent = new Student(studentId, student.getRegNo(), new Name(firstName, lastName), email, student.getStatus(), student.getRegistrationDate());
+            Student updatedStudent = new Student(student.getId(), regNo, new Name(firstName, lastName), email, student.getStatus(), student.getRegistrationDate());
             studentService.updateStudent(updatedStudent);
             System.out.println("Student details updated successfully.");
         } catch (RecordNotFoundException e) {
@@ -429,9 +436,10 @@ public class Main {
 
     private static void updateInstructorDetails() {
         System.out.println("\n--- Update Instructor Details ---");
-        int instructorId = getUserIntInput("Enter Instructor ID: ");
+        System.out.print("Enter Instructor FiD: ");
+        String fId = scanner.nextLine();
         try {
-            Instructor instructor = instructorService.findInstructorById(instructorId);
+            Instructor instructor = instructorService.findInstructorByFiD(fId);
             System.out.print("Enter new First Name (or press Enter to keep '" + instructor.getFullName().getFirstName() + "'): ");
             String firstName = scanner.nextLine();
             if (firstName.isEmpty()) {
@@ -456,7 +464,7 @@ public class Main {
                 department = instructor.getDepartment();
             }
 
-            Instructor updatedInstructor = new Instructor(instructorId, new Name(firstName, lastName), email, department);
+            Instructor updatedInstructor = new Instructor(fId, new Name(firstName, lastName), email, department);
             instructorService.updateInstructor(updatedInstructor);
             System.out.println("Instructor details updated successfully.");
         } catch (RecordNotFoundException e) {
@@ -511,7 +519,7 @@ public class Main {
         System.out.println("\n--- Search & Filter Courses ---");
         System.out.println("1. Filter by Department");
         System.out.println("2. Filter by Semester");
-        System.out.println("3. Filter by Instructor ID");
+        System.out.println("3. Filter by Instructor FiD");
         int choice = getUserIntInput("Enter choice: ");
 
         List<Course> filteredCourses = new ArrayList<>();
@@ -537,7 +545,8 @@ public class Main {
                 }
                 break;
             case 3:
-                int instructorId = getUserIntInput("Enter instructor ID: ");
+                System.out.print("Enter instructor FiD: ");
+                String instructorId = scanner.nextLine();
                 filter = courseService.byInstructor(instructorId);
                 filteredCourses = courseService.filterCourses(filter);
                 break;
@@ -557,7 +566,8 @@ public class Main {
         System.out.println("\n--- Assign Instructor to Course ---");
         System.out.print("Enter Course Code: ");
         CourseCode courseCode = new CourseCode(scanner.nextLine());
-        int instructorId = getUserIntInput("Enter Instructor ID to assign: ");
+        System.out.print("Enter Instructor FiD to assign: ");
+        String instructorId = scanner.nextLine();
         try {
             courseService.assignInstructor(courseCode, instructorId);
             System.out.println("Instructor assigned successfully.");
@@ -568,11 +578,12 @@ public class Main {
 
     private static void enrollStudent() {
         System.out.println("\n--- Enroll Student in Course ---");
-        int studentId = getUserIntInput("Enter Student ID: ");
+        System.out.print("Enter Student Registration Number: ");
+        String regNo = scanner.nextLine();
         System.out.print("Enter Course Code: ");
         CourseCode courseCode = new CourseCode(scanner.nextLine());
         try {
-            enrollmentService.enrollStudent(studentId, courseCode);
+            enrollmentService.enrollStudent(regNo, courseCode);
             System.out.println("Enrollment successful.");
         } catch (DuplicateEnrollmentException | MaxCreditLimitExceededException | RecordNotFoundException e) {
             System.err.println("Enrollment failed: " + e.getMessage());
@@ -581,11 +592,12 @@ public class Main {
 
     private static void unenrollStudent() {
         System.out.println("\n--- Unenroll Student from Course ---");
-        int studentId = getUserIntInput("Enter Student ID: ");
+        System.out.print("Enter Student Registration Number: ");
+        String regNo = scanner.nextLine();
         System.out.print("Enter Course Code: ");
         CourseCode courseCode = new CourseCode(scanner.nextLine());
         try {
-            enrollmentService.unenrollStudent(studentId, courseCode);
+            enrollmentService.unenrollStudent(regNo, courseCode);
             System.out.println("Unenrollment successful.");
         } catch (RecordNotFoundException e) {
             System.err.println("Unenrollment failed: " + e.getMessage());
@@ -610,7 +622,7 @@ public class Main {
                 String gradeStr = scanner.nextLine().toUpperCase();
                 try {
                     Grade grade = Grade.valueOf(gradeStr);
-                    enrollmentService.recordGrade(student.getId(), courseCode, grade);
+                    enrollmentService.recordGrade(student.getRegNo(), courseCode, grade);
                     System.out.println("Grade recorded successfully.");
                 } catch (IllegalArgumentException e) {
                     System.err.println("Invalid grade provided. Skipping this student.");
@@ -620,6 +632,44 @@ public class Main {
             }
         } catch (RecordNotFoundException e) {
             System.err.println(e.getMessage());
+        }
+    }
+
+    private static void viewAllEnrollmentsByStudent() {
+        System.out.println("\n--- All Enrollments by Student ---");
+        List<Student> students = studentService.getAllStudentsSortedById();
+        if (students.isEmpty()) {
+            System.out.println("No students found.");
+            return;
+        }
+
+        for (Student student : students) {
+            System.out.println("\n--- Enrollments for " + student.getFullName() + " (Reg No: " + student.getRegNo() + ") ---");
+            try {
+                // Add a 2-second delay before fetching enrollments for each student
+                Thread.sleep(2000);
+                List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(student.getRegNo());
+                if (enrollments.isEmpty()) {
+                    System.out.println("No enrollments found for this student.");
+                } else {
+                    String[] headers = {"Course Code", "Course Title", "Credits", "Grade"};
+                    List<String[]> rows = new ArrayList<>();
+                    for (Enrollment enrollment : enrollments) {
+                        rows.add(new String[]{
+                                enrollment.getCourse().getCourseCode().getCode(),
+                                enrollment.getCourse().getTitle(),
+                                String.valueOf(enrollment.getCourse().getCredits()),
+                                enrollment.getGrade() != null ? enrollment.getGrade().toString() : "Not Graded"
+                        });
+                    }
+                    printTable(headers, rows);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Delay interrupted: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Could not retrieve enrollments for student " + student.getRegNo() + ": " + e.getMessage());
+            }
         }
     }
 

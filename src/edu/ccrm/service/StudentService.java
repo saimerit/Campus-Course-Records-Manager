@@ -58,34 +58,34 @@ public class StudentService {
         return students;
     }
 
-    public Student findStudentById(int studentId) throws RecordNotFoundException {
-        String sql = "SELECT * FROM students WHERE id = ?";
+    public Student findStudentByRegNo(String regNo) throws RecordNotFoundException {
+        String sql = "SELECT * FROM students WHERE reg_no = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, studentId);
+            pstmt.setString(1, regNo);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return mapRowToStudent(rs);
                 } else {
-                    throw new RecordNotFoundException("Student with ID " + studentId + " not found.");
+                    throw new RecordNotFoundException("Student with Reg No. " + regNo + " not found.");
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Database error finding student by ID: " + e.getMessage());
-            throw new RecordNotFoundException("Database error finding student by ID: " + e.getMessage());
+            System.err.println("Database error finding student by Reg No.: " + e.getMessage());
+            throw new RecordNotFoundException("Database error finding student by Reg No.: " + e.getMessage());
         }
     }
 
-    public void updateStudentStatus(int studentId, Student.Status newStatus) throws RecordNotFoundException {
-        String sql = "UPDATE students SET status = ? WHERE id = ?";
+    public void updateStudentStatus(String regNo, Student.Status newStatus) throws RecordNotFoundException {
+        String sql = "UPDATE students SET status = ? WHERE reg_no = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, newStatus.name());
-            pstmt.setInt(2, studentId);
+            pstmt.setString(2, regNo);
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
-                throw new RecordNotFoundException("Student with ID " + studentId + " not found.");
+                throw new RecordNotFoundException("Student with Reg No. " + regNo + " not found.");
             }
         } catch (SQLException e) {
             System.err.println("Database error updating student status: " + e.getMessage());
@@ -94,16 +94,16 @@ public class StudentService {
     }
 
     public void updateStudent(Student student) throws RecordNotFoundException, DataIntegrityException {
-        String sql = "UPDATE students SET first_name = ?, last_name = ?, email = ? WHERE id = ?";
+        String sql = "UPDATE students SET first_name = ?, last_name = ?, email = ? WHERE reg_no = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, student.getFullName().getFirstName());
             pstmt.setString(2, student.getFullName().getLastName());
             pstmt.setString(3, student.getEmail());
-            pstmt.setInt(4, student.getId());
+            pstmt.setString(4, student.getRegNo());
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
-                throw new RecordNotFoundException("Student with ID " + student.getId() + " not found.");
+                throw new RecordNotFoundException("Student with Reg No. " + student.getRegNo() + " not found.");
             }
         } catch (SQLException e) {
             throw new DataIntegrityException("Database error updating student: " + e.getMessage(), e);

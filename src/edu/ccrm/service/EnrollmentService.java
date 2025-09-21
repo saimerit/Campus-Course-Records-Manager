@@ -24,22 +24,22 @@ public class EnrollmentService {
         this.courseService = courseService;
     }
 
-    public void enrollStudent(int studentId, CourseCode courseCode)
+    public void enrollStudent(String studentRegNo, CourseCode courseCode)
             throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException {
         try (Connection conn = DatabaseManager.getConnection()) {
-            enrollStudent(studentId, courseCode, conn);
+            enrollStudent(studentRegNo, courseCode, conn);
         } catch (SQLException e) {
             throw new RuntimeException("Database error during enrollment: " + e.getMessage(), e);
         }
     }
 
-    public void enrollStudent(int studentId, CourseCode courseCode, Connection conn)
+    public void enrollStudent(String studentRegNo, CourseCode courseCode, Connection conn)
             throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException {
-        if (isEnrolled(studentId, courseCode, conn)) {
+        if (isEnrolled(studentRegNo, courseCode, conn)) {
             throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
         }
 
-        int currentCredits = getCurrentCredits(studentId, conn);
+        int currentCredits = getCurrentCredits(studentRegNo, conn);
         Course course = this.courseService.findCourseByCode(courseCode, conn);
 
         if (currentCredits + course.getCredits() > MAX_CREDITS) {
@@ -47,9 +47,9 @@ public class EnrollmentService {
                     "Enrolling in this course would exceed the maximum credit limit of " + MAX_CREDITS);
         }
 
-        String sql = "INSERT INTO enrollments (student_id, course_code) VALUES (?, ?)";
+        String sql = "INSERT INTO enrollments (student_reg_no, course_code) VALUES (?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, studentId);
+            pstmt.setString(1, studentRegNo);
             pstmt.setString(2, courseCode.getCode());
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -57,40 +57,92 @@ public class EnrollmentService {
         }
     }
 
-    public void unenrollStudent(int studentId, CourseCode courseCode) throws RecordNotFoundException {
-        String sql = "DELETE FROM enrollments WHERE student_id = ? AND course_code = ?";
+    /**
+     * Enrolls a student in a course and records their grade in a single transaction.
+     * This is ideal for imports where enrollment and grade are known at the same time.
+     */
+    public void enrollStudentWithGrade(String studentRegNo, CourseCode courseCode, Grade grade)
+            throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try {
+                // Explicitly check for duplicate and throw the exception, making the catch block reachable
+                if (isEnrolled(studentRegNo, courseCode, conn)) {
+                    throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
+                }
+
+                // Proceed with enrollment logic
+                int currentCredits = getCurrentCredits(studentRegNo, conn);
+                Course course = this.courseService.findCourseByCode(courseCode, conn);
+
+                if (currentCredits + course.getCredits() > MAX_CREDITS) {
+                    throw new MaxCreditLimitExceededException("Enrolling in this course would exceed the maximum credit limit.");
+                }
+
+                String insertSql = "INSERT INTO enrollments (student_reg_no, course_code) VALUES (?, ?)";
+                try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+                    pstmt.setString(1, studentRegNo);
+                    pstmt.setString(2, courseCode.getCode());
+                    pstmt.executeUpdate();
+                }
+
+                // Record the grade for the new enrollment
+                recordGrade(studentRegNo, courseCode, grade, conn);
+
+                conn.commit();
+
+            } catch (SQLException | MaxCreditLimitExceededException | RecordNotFoundException | DuplicateEnrollmentException e) {
+                conn.rollback();
+                throw e; 
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error during enrollment with grade: " + e.getMessage(), e);
+        }
+    }
+
+
+    public void unenrollStudent(String studentRegNo, CourseCode courseCode) throws RecordNotFoundException {
+        String sql = "DELETE FROM enrollments WHERE student_reg_no = ? AND course_code = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, studentId);
+            pstmt.setString(1, studentRegNo);
             pstmt.setString(2, courseCode.getCode());
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
-                throw new RecordNotFoundException("Enrollment record not found for student " + studentId + " in course " + courseCode);
+                throw new RecordNotFoundException("Enrollment record not found for student " + studentRegNo + " in course " + courseCode);
             }
         } catch (SQLException e) {
              throw new RecordNotFoundException("Error during unenrollment: " + e.getMessage(), e);
         }
     }
 
-    public void recordGrade(int studentId, CourseCode courseCode, Grade grade) throws RecordNotFoundException {
-        String sql = "UPDATE enrollments SET grade = ? WHERE student_id = ? AND course_code = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public void recordGrade(String studentRegNo, CourseCode courseCode, Grade grade) throws RecordNotFoundException {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            recordGrade(studentRegNo, courseCode, grade, conn);
+        } catch (SQLException e) {
+            throw new RecordNotFoundException("Database error recording grade: " + e.getMessage(), e);
+        }
+    }
+
+    private void recordGrade(String studentRegNo, CourseCode courseCode, Grade grade, Connection conn) throws RecordNotFoundException, SQLException {
+        String sql = "UPDATE enrollments SET grade = ? WHERE student_reg_no = ? AND course_code = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, grade.name());
-            pstmt.setInt(2, studentId);
+            pstmt.setString(2, studentRegNo);
             pstmt.setString(3, courseCode.getCode());
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
-                throw new RecordNotFoundException("Enrollment record not found for student " + studentId + " in course " + courseCode);
+                throw new RecordNotFoundException("Enrollment record not found for student " + studentRegNo + " in course " + courseCode);
             }
-        } catch (SQLException e) {
-            throw new RecordNotFoundException("Error recording grade: " + e.getMessage(), e);
         }
     }
     
     public List<Student> getEnrolledStudents(CourseCode courseCode) throws RecordNotFoundException {
         List<Student> students = new ArrayList<>();
-        String sql = "SELECT s.* FROM students s JOIN enrollments e ON s.id = e.student_id WHERE e.course_code = ?";
+        String sql = "SELECT s.* FROM students s JOIN enrollments e ON s.reg_no = e.student_reg_no WHERE e.course_code = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, courseCode.getCode());
@@ -107,14 +159,14 @@ public class EnrollmentService {
 
     public List<Enrollment> getAllEnrollments() {
         List<Enrollment> enrollments = new ArrayList<>();
-        String sql = "SELECT student_id, course_code, grade FROM enrollments";
+        String sql = "SELECT student_reg_no, course_code, grade FROM enrollments";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
                 try {
-                    Student student = this.studentService.findStudentById(rs.getInt("student_id"));
+                    Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"));
                     Course course = this.courseService.findCourseByCode(new CourseCode(rs.getString("course_code")), conn);
                     
                     Enrollment enrollment = new Enrollment(student, course);
@@ -134,17 +186,17 @@ public class EnrollmentService {
         return enrollments;
     }
     
-    public List<Enrollment> getEnrollmentsForStudent(int studentId) {
+    public List<Enrollment> getEnrollmentsForStudent(String studentRegNo) {
         List<Enrollment> enrollments = new ArrayList<>();
-        String sql = "SELECT student_id, course_code, grade FROM enrollments WHERE student_id = ?";
+        String sql = "SELECT student_reg_no, course_code, grade FROM enrollments WHERE student_reg_no = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setInt(1, studentId);
+            pstmt.setString(1, studentRegNo);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                      try {
-                        Student student = this.studentService.findStudentById(rs.getInt("student_id"));
+                        Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"));
                         Course course = this.courseService.findCourseByCode(new CourseCode(rs.getString("course_code")), conn);
                         
                         Enrollment enrollment = new Enrollment(student, course);
@@ -167,10 +219,10 @@ public class EnrollmentService {
     }
 
 
-    private boolean isEnrolled(int studentId, CourseCode courseCode, Connection conn) {
-        String sql = "SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND course_code = ?";
+    private boolean isEnrolled(String studentRegNo, CourseCode courseCode, Connection conn) {
+        String sql = "SELECT COUNT(*) FROM enrollments WHERE student_reg_no = ? AND course_code = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, studentId);
+            pstmt.setString(1, studentRegNo);
             pstmt.setString(2, courseCode.getCode());
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -183,11 +235,11 @@ public class EnrollmentService {
         return false;
     }
 
-    private int getCurrentCredits(int studentId, Connection conn) {
+    private int getCurrentCredits(String studentRegNo, Connection conn) {
         int totalCredits = 0;
-        String sql = "SELECT SUM(c.credits) FROM courses c JOIN enrollments e ON c.code = e.course_code WHERE e.student_id = ?";
+        String sql = "SELECT SUM(c.credits) FROM courses c JOIN enrollments e ON c.code = e.course_code WHERE e.student_reg_no = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, studentId);
+            pstmt.setString(1, studentRegNo);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     totalCredits = rs.getInt(1);
