@@ -23,21 +23,24 @@ To compile and run the CCRM application, you will need to have the following ins
 
 ### **Steps to Run the Application from the Command Line:**
 
-1. **Clone the Repository**:  
-   git clone \[https://github.com/saimerit/Campus-Course-Records-Manager.git\](https://github.com/saimerit/Campus-Course-Records-Manager.git)  
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/saimerit/Campus-Course-Records-Manager.git  
    cd Campus-Course-Records-Manager
-
-2. Compile the Application:  
-   From the root directory of the project, run the following command to compile all the Java source files:  
+   ```
+3. Compile the Application:  
+   From the root directory of the project, run the following command to compile all the Java source files:
+   ```bash
    javac \-d bin \-cp "lib/ojdbc17.jar" src/edu/ccrm/cli/\*.java src/edu/ccrm/config/\*.java src/edu/ccrm/domain/\*.java src/edu/ccrm/exception/\*.java src/edu/ccrm/io/\*.java src/edu/ccrm/service/\*.java src/edu/ccrm/util/\*.java
-
-3. **Set up the Database**:  
+   ```
+5. **Set up the Database**:  
    * Ensure your Oracle database is running.  
    * Follow the instructions in the "Database Setup" section below to create the necessary user and tables.  
-4. Run the Application:  
-   Once the code is compiled, run the application with this command:  
+6. Run the Application:  
+   Once the code is compiled, run the application with this command:
+   ```bash
    java \-cp "bin;lib/ojdbc17.jar" edu.ccrm.cli.Main
-
+   ```
 The application will then start, and you will see the main menu displayed in the console.
 
 ## **3\. Database Setup**
@@ -47,11 +50,12 @@ This application requires an Oracle database. Follow these steps to set it up:
 ### **Creating the CCRM User**
 
 1. **Connect to your database** as a user with administrative privileges (e.g., SYSTEM).  
-2. **Create the ccrm\_user** by executing the following SQL commands:  
-   CREATE USER ccrm\_user IDENTIFIED BY ccrm\_pass;  
-   GRANT CONNECT, RESOURCE, DBA TO ccrm\_user;
-
-   This creates a user named ccrm\_user with the password ccrm\_pass.
+2. **Create the ccrm_user** by executing the following SQL commands:
+   ```sql
+   CREATE USER ccrm_user IDENTIFIED BY ccrm_pass;  
+   GRANT CONNECT, RESOURCE, DBA TO ccrm_user;
+   ```
+   This creates a user named ccrm_user with the password ccrm_pass.
 
 ### **Initializing the Schema**
 
