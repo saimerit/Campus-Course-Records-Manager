@@ -102,21 +102,22 @@ Select option 5 from the main menu to perform **File Operations**.
 The application uses CSV files for importing and exporting data. The expected format for each file is as follows:
 
 ### **students.csv**
-
-id,reg\_no,first\_name,last\_name,email,status,registration\_date  
+```CSV
+id,reg_no,first_name,last_name,email,status,registration_date  
 1,S001,Alice,Smith,alice.smith@email.com,ACTIVE,2023-01-15
-
+```
 ### **instructors.csv**
-
+```CSV
 FiD,firstName,lastName,email,department  
 101,John,Smith,john.smith@university.edu,Computer Science
-
+```
 ### **courses.csv**
-
-code,title,credits,department,instructor\_id,semester  
+```CSV
+code,title,credits,department,instructor_id,semester  
 CS101,Introduction to Computer Science,3,Computer Science,101,FALL
-
+```
 ### **enrollments.csv**
-
-student\_reg\_no,course\_code,grade  
+```CSV
+student_reg_no,course_code,grade  
 S001,CS101,A  
+```
