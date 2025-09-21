@@ -16,65 +16,111 @@ This project showcases a deep understanding of core Java principles, object-orie
 
 ## **2\. How to Run**
 
-To compile and run the CCRM application, you will need to have the following installed on your system:
+To compile and run the CCRM application from the command line, you will need to have the following installed on your system:
 
 * **Java Development Kit (JDK)**: Version 11 or higher.  
-* **Oracle Database**: The application is configured to connect to an Oracle database (like Oracle 10g XE or later).
+* **Oracle Database**: The application is configured to connect to an Oracle database.
 
-### **Steps to Run the Application from the Command Line:**
+### **Steps to Run the Application:**
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/saimerit/Campus-Course-Records-Manager.git  
-   cd Campus-Course-Records-Manager
-   ```
-3. Compile the Application:  
-   From the root directory of the project, run the following command to compile all the Java source files:
+1. **Clone the Repository**:  
+   git clone https://github.com/saimerit/Campus-Course-Records-Manager.git
+
+2. Compile the Application:  
+   From the root directory of the project, run the following command. This compiles all source files and places the .class files in the bin directory, including the Oracle JDBC driver in the classpath.  
    ```bash
    javac \-d bin \-cp "lib/ojdbc17.jar" src/edu/ccrm/cli/\*.java src/edu/ccrm/config/\*.java src/edu/ccrm/domain/\*.java src/edu/ccrm/exception/\*.java src/edu/ccrm/io/\*.java src/edu/ccrm/service/\*.java src/edu/ccrm/util/\*.java
-   ```
-5. **Set up the Database**:  
+    ```
+3. **Set up the Database**:  
    * Ensure your Oracle database is running.  
-   * Follow the instructions in the "Database Setup" section below to create the necessary user and tables.  
-6. Run the Application:  
-   Once the code is compiled, run the application with this command:
+   * Follow the instructions in the "Database Setup" section below to create the necessary user. The application will create the tables automatically on first run.  
+4. Run the Application:  
+   Once compiled, run the application with this command, ensuring the bin folder and the JDBC driver are on the classpath.  
    ```bash
    java \-cp "bin;lib/ojdbc17.jar" edu.ccrm.cli.Main
-   ```
+    ```
 The application will then start, and you will see the main menu displayed in the console.
 
 ## **3\. Database Setup**
 
-This application requires an Oracle database. Follow these steps to set it up:
+This application requires an Oracle database.
 
 ### **Creating the CCRM User**
 
 1. **Connect to your database** as a user with administrative privileges (e.g., SYSTEM).  
-2. **Create the ccrm_user** by executing the following SQL commands:
-   ```sql
+2. **Create the ccrm\_user**: Execute the following SQL commands:  
+    ```SQL
    CREATE USER ccrm_user IDENTIFIED BY ccrm_pass;  
    GRANT CONNECT, RESOURCE, DBA TO ccrm_user;
-   ```
+    ```
    This creates a user named ccrm_user with the password ccrm_pass.
 
 ### **Initializing the Schema**
 
-The application can initialize the database schema for you. The first time you run the Main.java application, it will detect that the tables are missing and execute the database\_setup.sql script to create the STUDENTS, INSTRUCTORS, COURSES, and ENROLLMENTS tables.
+The application handles schema creation automatically. The first time you run the Main.java application, it will detect that the tables are missing and execute the database\_setup.sql script to create them.
 
-## **4\. Project Structure and Key Technologies**
+## **4\. Evolution of Java**
 
-| Category | File/Class/Technology Used |
+* **1995**: Java is publicly announced by Sun Microsystems.  
+* **1996**: JDK 1.0 is released.  
+* **2004**: Java SE 5.0 (initially numbered 1.5) is released, introducing major features like generics, annotations, and autoboxing.  
+* **2014**: Java SE 8 is released, with the most significant changes being the introduction of Lambda expressions and the Stream API.  
+* **2018**: Oracle introduces a new 6-month release cadence, starting with Java SE 10\.  
+* **2021**: Java SE 17 is released as the latest Long-Term Support (LTS) version.
+
+## **5\. Java ME vs. SE vs. EE**
+
+| Feature | Java ME (Micro Edition) | Java SE (Standard Edition) | Java EE (Enterprise Edition) |
+| :---- | :---- | :---- | :---- |
+| **Primary Use** | Mobile devices, embedded systems, and other resource-constrained devices. | Desktop applications, servers, and console applications. | Large-scale, distributed, and web-based enterprise applications. |
+| **APIs** | A subset of Java SE APIs, with additional libraries for mobile development. | The core Java platform, including the JVM, core libraries, and development tools. | A superset of Java SE, with additional APIs for enterprise features like servlets and JSPs. |
+| **Target Audience** | Developers for mobile phones and embedded devices. | General-purpose Java developers. | Enterprise application developers. |
+
+## **6\. JDK vs. JRE vs. JVM**
+
+* **JVM (Java Virtual Machine)**: An abstract machine that provides a runtime environment in which Java bytecode can be executed. It is platform-dependent.  
+* **JRE (Java Runtime Environment)**: A software package that contains the JVM, necessary libraries, and other components to *run* Java applications.  
+* **JDK (Java Development Kit)**: A superset of the JRE that includes everything needed to *develop* Java applications, including the compiler (javac), debugger, and other tools.
+
+## **7\. IDE Setup**
+
+While the application is designed to be run from the command line, you can also set it up in an IDE for development.
+
+### **Eclipse IDE Setup**
+
+1. **Import Project**: File \> Import \> General \> Existing Projects into Workspace.  
+2. **Add JDBC Driver**: Right-click the project \> Build Path \> Configure Build Path. Go to the Libraries tab, select Classpath, click Add JARs..., and add the lib/ojdbc17.jar file.
+
+### **Visual Studio Code Setup**
+
+1. **Install Extension**: Install the "Extension Pack for Java" from Microsoft.  
+2. **Open Project**: Go to File \> Open Folder... and select the project's root directory.  
+3. **Add JDBC Driver**: In the "JAVA PROJECTS" explorer view, find "Referenced Libraries," click the \+ icon, and add the lib/ojdbc17.jar file.
+
+## **8\. Mapping of Syllabus Topics to Project Files**
+
+| Syllabus Topic | File/Class/Method Where Demonstrated |
 | :---- | :---- |
-| **Core Logic & Domain** | Student.java, Course.java, Instructor.java, Enrollment.java |
-| **Database Connectivity** | java.sql (JDBC), ojdbc17.jar, DatabaseManager.java |
-| **Service Layer** | StudentService.java, CourseService.java, etc. (Handles business logic) |
-| **Command-Line Interface** | Main.java (Handles user input and displays menus) |
-| **File I/O & Backups** | java.nio.file, java.util.zip, ImportExportService.java, BackupService.java |
-| **Configuration** | AppConfig.java (Singleton pattern for managing file paths) |
-| **Exception Handling** | Custom exceptions like RecordNotFoundException.java |
-| **Design Patterns** | Singleton (AppConfig), Builder (Course.java) |
+| **Encapsulation** | Student.java, Course.java (private fields with public getters/setters) |
+| **Inheritance** | Person.java (abstract base class for Student and Instructor) |
+| **Polymorphism** | TranscriptService.java (using Person references) |
+| **Abstraction** | Person.java (abstract class with abstract methods) |
+| **Interfaces** | Searchable.java (functional interface for searching) |
+| **NIO.2 and Streams** | ImportExportService.java, BackupService.java (for file I/O) |
+| **Lambda Expressions** | CourseService.java (used for filtering courses with predicates) |
+| **Singleton Design Pattern** | AppConfig.java (ensuring a single configuration instance) |
+| **Builder Design Pattern** | Course.java (nested Builder class for object construction) |
+| **Custom Exceptions** | DuplicateEnrollmentException.java, MaxCreditLimitExceededException.java |
 
-## **5\. Acknowledgements**
+## **9\. Enabling Assertions**
+
+To enable assertions when running from the command line, use the \-ea (or \-enableassertions) flag:
+```bash
+java \-ea \-cp "bin;lib/ojdbc17.jar" edu.ccrm.cli.Main
+```
+In an IDE, add \-ea to the "VM arguments" in your run configuration.
+
+## **10\. Acknowledgements**
 
 * This project was created as part of the "Programming in Java" course on the VitYarthi portal.  
 * All code is original and written by Sai Ardhendu Kalivarapu.
