@@ -1,5 +1,22 @@
 id,regNo,firstName,lastName,email,status,registrationDate
-101,S2023001,Alice,Johnson,alice.j@email.com,ACTIVE,2023-08-15
-102,S2023002,Bob,Brown,bob.b@email.com,ACTIVE,2023-08-16
-103,S2023003,Charlie,Davis,charlie.d@email.com,PROBATION,2023-08-17
-104,S2023004,Diana,Miller,diana.m@email.com,GRADUATED,2023-08-18
+1,S001,Alice,Kenison,alice.kenison@gmail.com,ACTIVE,2023-01-15
+2,S002,Bob,Johnson,bob.johnson@email.com,ACTIVE,2023-01-16
+3,S003,Charlie,Brown,charlie.brown@email.com,ACTIVE,2023-01-17
+4,S004,Diana,Miller,diana.miller@email.com,ACTIVE,2023-01-18
+5,S005,Eve,Davis,eve.davis@email.com,ACTIVE,2023-01-19
+6,S006,Frank,Wilson,frank.wilson@email.com,ACTIVE,2023-01-20
+7,S007,Grace,Taylor,grace.taylor@email.com,ACTIVE,2023-01-21
+8,S008,Henry,Anderson,henry.anderson@email.com,ACTIVE,2023-01-22
+9,S009,Ivy,Thomas,ivy.thomas@email.com",ACTIVE,2023-01-23
+10,S010,Jack,Jackson,jack.jackson@email.com,ACTIVE,2023-01-24
+16,S016,Olivia,Chen,olivia.c@example.com,ACTIVE,2023-03-01
+17,S017,Noah,Garcia,noah.g@example.com,ACTIVE,2023-03-02
+18,S018,Emma,Martinez,emma.m@example.com,INACTIVE,2023-03-03
+19,S019,Liam,Robinson,liam.r@example.com,ACTIVE,2023-03-04
+20,S020,Ava,Clark,ava.c@example.com,GRADUATED,2023-03-05
+21,S021,William,Lewis,william.l@example.com,ACTIVE,2023-03-06
+22,S022,Sophia,Walker,sophia.w@example.com,ACTIVE,2023-03-07
+23,S023,Mason,Hall,mason.h@example.com,INACTIVE,2023-03-08
+24,S024,Isabella,Allen,isabella.a@example.com,ACTIVE,2023-03-09
+25,S025,Ethan,Young,ethan.y@example.com,GRADUATED,2023-03-10
+31,S031,Sai Ardhendu,Kalivarapu,saiardhendu10@gmail.com,ACTIVE,2025-09-21

@@ -1,5 +1,29 @@
 code,title,credits,department,instructorId,semester
-CS101,Introduction to Programming,3,Computer Science,1,FALL
-CY401,Network Security,3,Cybersecurity,4,SPRING
-DS301,Machine Learning,4,Data Science,3,SPRING
-SE201,Software Design Principles,4,Software Engineering,2,FALL
+ANTH101,Cultural Anthropology,3,Anthropology,117,FALL
+ART101,Introduction to Art History,3,Art,109,FALL
+ART205,Painting I,2,Fine Arts,120,SPRING
+CHEM101,General Chemistry I,4,Chemistry,104,FALL
+CHEM201,Organic Chemistry I,4,Chemistry,104,SPRING
+CS101,Introduction to Computer Science,3,Computer Science,101,FALL
+CS201,Data Structures,3,Computer Science,101,SPRING
+CS301,Algorithms,3,Computer Science,101,FALL
+CS401,Operating Systems,3,Computer Science,106,FALL
+CS402,Database Systems,3,Computer Science,106,SPRING
+ECON101,Principles of Microeconomics,3,Economics,115,SPRING
+EE2003,Digital Logic and Design,4,Electrical Engineering,131,WINTER
+EE201,Circuit Theory,4,Electrical Engineering,107,FALL
+ENG101,English Composition I,3,English,105,SPRING
+ENG201,English Literature,3,English,105,FALL
+GEO201,World Geography,3,Geography,118,FALL
+HIST201,World History,3,History,112,FALL
+LING301,Introduction to Linguistics,3,Linguistics,119,SPRING
+MATH201,Calculus I,4,Mathematics,102,FALL
+MATH301,Linear Algebra,3,Mathematics,102,SPRING
+ME301,Thermodynamics,3,Mechanical Engineering,108,SPRING
+MUS101,Music Appreciation,3,Music,110,SPRING
+PHIL101,Introduction to Philosophy,3,Philosophy,111,FALL
+PHYS101,General Physics I,4,Physics,103,SPRING
+PHYS201,General Physics II,4,Physics,103,FALL
+POLI201,American Government,3,Political Science,114,SPRING
+PSYC201,Introduction to Psychology,3,Psychology,116,SPRING
+SOC101,Introduction to Sociology,3,Sociology,113,FALL
