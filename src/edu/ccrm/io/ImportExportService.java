@@ -163,15 +163,26 @@ public class ImportExportService {
 
   public void importEnrollments() {
     System.out.println("     - Importing enrollments.csv...");
-    try {
-        importEnrollments(Path.of("import-data/enrollments.csv"));
-        System.out.println("? Successfully imported enrollments.csv");
-    } catch (IOException e) {
-        System.err.println("Error during enrollment import: " + e.getMessage());
+    try (Connection conn = DatabaseManager.getConnection()) {
+        conn.setAutoCommit(false);
+        try {
+            importEnrollments(Path.of("import-data/enrollments.csv"), conn);
+            conn.commit();
+            System.out.println("? Successfully imported enrollments.csv");
+        } catch (IOException | SQLException | RuntimeException e) {
+            conn.rollback();
+            System.err.println("An unexpected error occurred during data import: " + e.getMessage());
+            // Optionally, print the stack trace for more detailed debugging
+            e.printStackTrace();
+        } finally {
+            conn.setAutoCommit(true);
+        }
+    } catch (SQLException e) {
+        System.err.println("Database connection error during enrollment import: " + e.getMessage());
     }
   }
 
-  private void importEnrollments(Path filePath) throws IOException {
+  private void importEnrollments(Path filePath, Connection conn) throws IOException, SQLException {
       try (BufferedReader reader = Files.newBufferedReader(filePath)) {
           String line;
           reader.readLine(); // Skip header
@@ -185,9 +196,9 @@ public class ImportExportService {
               try {
                   if (parts.length > 2 && parts[2] != null && !parts[2].trim().isEmpty()) {
                       Grade grade = Grade.valueOf(parts[2].trim().toUpperCase());
-                      enrollmentService.enrollStudentWithGrade(studentRegNo, courseCode, grade);
+                      enrollmentService.enrollStudentWithGrade(studentRegNo, courseCode, grade, conn);
                   } else {
-                      enrollmentService.enrollStudent(studentRegNo, courseCode);
+                      enrollmentService.enrollStudent(studentRegNo, courseCode, conn);
                   }
               } catch (DuplicateEnrollmentException e) {
                   System.out.println("Info: Student " + studentRegNo + " is already enrolled in " + courseCode.getCode() + ". Attempting to update grade.");
@@ -205,6 +216,58 @@ public class ImportExportService {
               }
           }
       }
+  }
+
+  public void importStudentsFromTestData() {
+    System.out.println("     - Importing students.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+      importStudents(Path.of("test-data/students.csv"), conn);
+      System.out.println("? Successfully imported students.csv");
+    } catch (IOException | SQLException e) {
+      System.err.println("Error during student import: " + e.getMessage());
+    }
+  }
+
+
+  public void importInstructorsFromTestData() {
+    System.out.println("     - Importing instructors.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+      importInstructors(Path.of("test-data/instructors.csv"), conn);
+      System.out.println("? Successfully imported instructors.csv");
+    } catch (IOException | SQLException e) {
+      System.err.println("Error during instructor import: " + e.getMessage());
+    }
+  }
+
+  public void importCoursesFromTestData() {
+    System.out.println("     - Importing courses.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+      importCourses(Path.of("test-data/courses.csv"), conn);
+      System.out.println("? Successfully imported courses.csv");
+    } catch (IOException | SQLException e) {
+      System.err.println("Error during course import: " + e.getMessage());
+    }
+  }
+
+  public void importEnrollmentsFromTestData() {
+    System.out.println("     - Importing enrollments.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+        conn.setAutoCommit(false);
+        try {
+            importEnrollments(Path.of("test-data/enrollments.csv"), conn);
+            conn.commit();
+            System.out.println("? Successfully imported enrollments.csv");
+        } catch (IOException | SQLException | RuntimeException e) {
+            conn.rollback();
+            System.err.println("An unexpected error occurred during data import: " + e.getMessage());
+            // Optionally, print the stack trace for more detailed debugging
+            e.printStackTrace();
+        } finally {
+            conn.setAutoCommit(true);
+        }
+    } catch (SQLException e) {
+        System.err.println("Database connection error during enrollment import: " + e.getMessage());
+    }
   }
 
 

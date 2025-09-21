@@ -34,7 +34,7 @@ public class EnrollmentService {
     }
 
     public void enrollStudent(String studentRegNo, CourseCode courseCode, Connection conn)
-            throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException {
+            throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException, SQLException {
         if (isEnrolled(studentRegNo, courseCode, conn)) {
             throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
         }
@@ -53,54 +53,65 @@ public class EnrollmentService {
             pstmt.setString(2, courseCode.getCode());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RecordNotFoundException("Failed to enroll student: " + e.getMessage(), e);
+            // Wrapping with RecordNotFoundException is misleading here.
+            // Let's throw a more appropriate runtime exception or a checked SQLException
+            throw new SQLException("Failed to enroll student: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Enrolls a student in a course and records their grade in a single transaction.
-     * This is ideal for imports where enrollment and grade are known at the same time.
+     * Enrolls a student in a course and records their grade. This method is suitable for single enrollments
+     * as it handles its own transaction.
      */
     public void enrollStudentWithGrade(String studentRegNo, CourseCode courseCode, Grade grade)
             throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException {
         try (Connection conn = DatabaseManager.getConnection()) {
             conn.setAutoCommit(false);
-
             try {
-                // Explicitly check for duplicate and throw the exception, making the catch block reachable
-                if (isEnrolled(studentRegNo, courseCode, conn)) {
-                    throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
-                }
-
-                // Proceed with enrollment logic
-                int currentCredits = getCurrentCredits(studentRegNo, conn);
-                Course course = this.courseService.findCourseByCode(courseCode, conn);
-
-                if (currentCredits + course.getCredits() > MAX_CREDITS) {
-                    throw new MaxCreditLimitExceededException("Enrolling in this course would exceed the maximum credit limit.");
-                }
-
-                String insertSql = "INSERT INTO enrollments (student_reg_no, course_code) VALUES (?, ?)";
-                try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
-                    pstmt.setString(1, studentRegNo);
-                    pstmt.setString(2, courseCode.getCode());
-                    pstmt.executeUpdate();
-                }
-
-                // Record the grade for the new enrollment
-                recordGrade(studentRegNo, courseCode, grade, conn);
-
+                enrollStudentWithGrade(studentRegNo, courseCode, grade, conn);
                 conn.commit();
-
             } catch (SQLException | MaxCreditLimitExceededException | RecordNotFoundException | DuplicateEnrollmentException e) {
                 conn.rollback();
-                throw e; 
+                // Re-throw the specific, checked exceptions
+                if (e instanceof DuplicateEnrollmentException) throw (DuplicateEnrollmentException) e;
+                if (e instanceof MaxCreditLimitExceededException) throw (MaxCreditLimitExceededException) e;
+                if (e instanceof RecordNotFoundException) throw (RecordNotFoundException) e;
+                // Wrap SQLException in a RuntimeException for single-transaction operations
+                throw new RuntimeException("Database error during enrollment with grade: " + e.getMessage(), e);
             } finally {
                 conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Database error during enrollment with grade: " + e.getMessage(), e);
+            throw new RuntimeException("Database connection error during enrollment with grade: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Enrolls a student in a course and records their grade using a provided database connection.
+     * This is ideal for batch imports where the transaction is managed externally.
+     */
+    public void enrollStudentWithGrade(String studentRegNo, CourseCode courseCode, Grade grade, Connection conn)
+            throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException, SQLException {
+        if (isEnrolled(studentRegNo, courseCode, conn)) {
+            throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
+        }
+
+        int currentCredits = getCurrentCredits(studentRegNo, conn);
+        Course course = this.courseService.findCourseByCode(courseCode, conn);
+
+        if (currentCredits + course.getCredits() > MAX_CREDITS) {
+            throw new MaxCreditLimitExceededException("Enrolling in this course would exceed the maximum credit limit.");
+        }
+
+        String insertSql = "INSERT INTO enrollments (student_reg_no, course_code) VALUES (?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+            pstmt.setString(1, studentRegNo);
+            pstmt.setString(2, courseCode.getCode());
+            pstmt.executeUpdate();
+        }
+
+        // Record the grade for the new enrollment
+        recordGrade(studentRegNo, courseCode, grade, conn);
     }
 
 
@@ -176,7 +187,7 @@ public class EnrollmentService {
                     }
                     enrollments.add(enrollment);
 
-                } catch (RecordNotFoundException e) {
+                } catch (RecordNotFoundException | SQLException e) {
                      System.err.println("Skipping enrollment record due to missing data: " + e.getMessage());
                 }
             }
@@ -206,7 +217,7 @@ public class EnrollmentService {
                         }
                         enrollments.add(enrollment);
 
-                    } catch (RecordNotFoundException e) {
+                    } catch (RecordNotFoundException | SQLException e) {
                          System.err.println("Skipping enrollment record due to missing data: " + e.getMessage());
                     }
                 }
@@ -219,7 +230,7 @@ public class EnrollmentService {
     }
 
 
-    private boolean isEnrolled(String studentRegNo, CourseCode courseCode, Connection conn) {
+    private boolean isEnrolled(String studentRegNo, CourseCode courseCode, Connection conn) throws SQLException {
         String sql = "SELECT COUNT(*) FROM enrollments WHERE student_reg_no = ? AND course_code = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, studentRegNo);
@@ -229,13 +240,11 @@ public class EnrollmentService {
                     return rs.getInt(1) > 0;
                 }
             }
-        } catch (SQLException e) {
-             System.err.println("Error checking enrollment status: " + e.getMessage());
         }
         return false;
     }
 
-    private int getCurrentCredits(String studentRegNo, Connection conn) {
+    private int getCurrentCredits(String studentRegNo, Connection conn) throws SQLException {
         int totalCredits = 0;
         String sql = "SELECT SUM(c.credits) FROM courses c JOIN enrollments e ON c.code = e.course_code WHERE e.student_reg_no = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -245,8 +254,6 @@ public class EnrollmentService {
                     totalCredits = rs.getInt(1);
                 }
             }
-        } catch (SQLException e) {
-            System.err.println("Error calculating current credits: " + e.getMessage());
         }
         return totalCredits;
     }

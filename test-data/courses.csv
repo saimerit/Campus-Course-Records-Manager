@@ -1,5 +1,11 @@
-code,title,credits,department,instructor_id,semester
-CS101,Introduction to Programming,3,Computer Science,1,FALL
-SE201,Software Design Principles,4,Software Engineering,2,FALL
-DS301,Machine Learning,4,Data Science,3,SPRING
-CY401,Network Security,3,Cybersecurity,4,SPRING
+code,title,credits,department,instructorId,semester
+PHIL101,Introduction to Philosophy,3,Philosophy,111,FALL
+HIST201,World History,3,History,112,FALL
+SOC101,Introduction to Sociology,3,Sociology,113,FALL
+POLI201,American Government,3,Political Science,114,SPRING
+ECON101,Principles of Microeconomics,3,Economics,115,SPRING
+PSYC201,Introduction to Psychology,3,Psychology,116,SPRING
+ANTH101,Cultural Anthropology,3,Anthropology,117,FALL
+GEO201,World Geography,3,Geography,118,FALL
+LING301,Introduction to Linguistics,3,Linguistics,119,SPRING
+ART205,Painting I,2,Fine Arts,120,SPRING

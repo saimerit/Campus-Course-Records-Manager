@@ -256,21 +256,21 @@ public class Main {
 
         switch (choice) {
             case 1:
-                importExportService.importCourses();
+                importExportService.importCoursesFromTestData();
                 break;
             case 2:
-                importExportService.importStudents();
+                importExportService.importStudentsFromTestData();
                 break;
             case 3:
-                importExportService.importInstructors();
+                importExportService.importInstructorsFromTestData();
                 break;
             case 4:
-                importExportService.importEnrollments();
+                importExportService.importEnrollmentsFromTestData();
                 break;
             case 5:
-                importExportService.importInstructors();
-                importExportService.importStudents();
-                importExportService.importCourses();
+                importExportService.importInstructorsFromTestData();
+                importExportService.importStudentsFromTestData();
+                importExportService.importCoursesFromTestData();
                 System.out.println("Waiting for 5 seconds before importing enrollments to ensure data consistency...");
                 try {
                     Thread.sleep(5000); // 5-second delay
@@ -278,7 +278,7 @@ public class Main {
                     Thread.currentThread().interrupt();
                     System.err.println("Delay interrupted: " + e.getMessage());
                 }
-                importExportService.importEnrollments();
+                importExportService.importEnrollmentsFromTestData();
                 break;
             default:
                 System.out.println("Invalid choice.");
