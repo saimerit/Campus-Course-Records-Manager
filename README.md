@@ -29,7 +29,7 @@ To compile and run the CCRM application from the command line, you will need to 
 2. Compile the Application:  
    From the root directory of the project, run the following command. This compiles all source files and places the .class files in the bin directory, including the Oracle JDBC driver in the classpath.  
    ```bash
-   javac \-d bin \-cp "lib/ojdbc17.jar" src/edu/ccrm/cli/\*.java src/edu/ccrm/config/\*.java src/edu/ccrm/domain/\*.java src/edu/ccrm/exception/\*.java src/edu/ccrm/io/\*.java src/edu/ccrm/service/\*.java src/edu/ccrm/util/\*.java
+   javac -d bin -cp "lib/ojdbc17.jar" src/edu/ccrm/cli/*.java src/edu/ccrm/config/*.java src/edu/ccrm/domain/*.java src/edu/ccrm/exception/*.java src/edu/ccrm/io/*.java src/edu/ccrm/service/*.java src/edu/ccrm/util/*.java
     ```
 3. **Set up the Database**:  
    * Ensure your Oracle database is running.  
@@ -37,7 +37,7 @@ To compile and run the CCRM application from the command line, you will need to 
 4. Run the Application:  
    Once compiled, run the application with this command, ensuring the bin folder and the JDBC driver are on the classpath.  
    ```bash
-   java \-cp "bin;lib/ojdbc17.jar" edu.ccrm.cli.Main
+   java -cp "bin;lib/ojdbc17.jar" edu.ccrm.cli.Main
     ```
 The application will then start, and you will see the main menu displayed in the console.
 
@@ -116,7 +116,7 @@ While the application is designed to be run from the command line, you can also 
 
 To enable assertions when running from the command line, use the \-ea (or \-enableassertions) flag:
 ```bash
-java \-ea \-cp "bin;lib/ojdbc17.jar" edu.ccrm.cli.Main
+java -ea -cp "bin;lib/ojdbc17.jar" edu.ccrm.cli.Main
 ```
 In an IDE, add \-ea to the "VM arguments" in your run configuration.
 
