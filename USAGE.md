@@ -26,12 +26,14 @@ Select option 1 from the main menu to access the **Student Management** menu.
 2\. List All Students  
 3\. View Student Profile & Transcript  
 4\. Update Student Status  
-5\. Back to Main Menu
+5\. Update Student Details  
+6\. Back to Main Menu
 
 * **Add New Student**: Prompts you to enter the student's ID, registration number, first name, last name, and email.  
 * **List All Students**: Displays a table with the ID, registration number, name, email, and status of all students.  
-* **View Student Profile & Transcript**: Enter a student's ID to see their complete profile and academic transcript, including enrolled courses and grades.  
-* **Update Student Status**: Enter the student's ID and a new status (e.g., ACTIVE, INACTIVE, GRADUATED) to update their status.
+* **View Student Profile & Transcript**: Enter a student's registration number to see their complete profile and academic transcript.  
+* **Update Student Status**: Enter the student's registration number and a new status (e.g., ACTIVE, INACTIVE, GRADUATED).  
+* **Update Student Details**: Allows you to modify the name and email for an existing student.
 
 ## **3\. Instructor Management**
 
@@ -40,10 +42,12 @@ Select option 2 from the main menu to access the **Instructor Management** menu.
 \--- Instructor Management \---  
 1\. Add New Instructor  
 2\. List All Instructors  
-3\. Back to Main Menu
+3\. Update Instructor Details  
+4\. Back to Main Menu
 
-* **Add New Instructor**: Prompts for the instructor's ID, first name, last name, email, and department.  
-* **List All Instructors**: Displays all instructors with their ID, name, email, and department.
+* **Add New Instructor**: Prompts for the instructor's Faculty ID (FiD), first name, last name, email, and department.  
+* **List All Instructors**: Displays all instructors with their FiD, name, email, and department.  
+* **Update Instructor Details**: Allows modification of an instructor's details based on their FiD.
 
 ## **4\. Course Management**
 
@@ -57,9 +61,9 @@ Select option 3 from the main menu to access the **Course Management** menu.
 5\. Back to Main Menu
 
 * **Add New Course**: Prompts for the course code, title, credits, department, and semester.  
-* **List All Courses**: Displays all courses with their details.  
-* **Search & Filter Courses**: Provides options to filter courses by department, semester, or instructor ID.  
-* **Assign Instructor to Course**: Enter a course code and instructor ID to assign an instructor to a course.
+* **List All Courses**: Displays all available courses with their details.  
+* **Search & Filter Courses**: Provides options to filter courses by department, semester, or instructor FiD.  
+* **Assign Instructor to Course**: Enter a course code and instructor FiD to link an instructor to a course.
 
 ## **5\. Enrollment & Grades**
 
@@ -69,11 +73,13 @@ Select option 4 from the main menu to manage **Enrollments and Grades**.
 1\. Enroll Student in Course  
 2\. Unenroll Student from Course  
 3\. Record Student's Grade  
-4\. Back to Main Menu
+4\. View All Enrollments by Student  
+5\. Back to Main Menu
 
-* **Enroll a student in a course**: You will be asked for the student's ID and the course code. The system will check for prerequisites and credit limits before enrolling.  
-* **Unenroll a student from a course**: Enter the student's ID and the course code to remove them from a course.  
-* **Record a student's grade**: Enter the course code and then enter the grade for each enrolled student (e.g., A, B, C, D, F).
+* **Enroll a student in a course**: You will be asked for the student's registration number and the course code.  
+* **Unenroll a student from a course**: Enter the student's registration number and the course code to remove them.  
+* **Record a student's grade**: Enter a course code, and then enter a grade for each enrolled student (S, A, B, C, D, E, or F).  
+* **View All Enrollments by Student**: Iterates through all students and displays their currently enrolled courses.
 
 ## **6\. File Operations**
 
@@ -86,36 +92,31 @@ Select option 5 from the main menu to perform **File Operations**.
 4\. Show Backup Directory Size  
 5\. Back to Main Menu
 
-* **Import data from CSV files**: You can import courses, students, instructors, and enrollments from CSV files.  
-* **Export data to CSV files**: This will export the current state of all students, courses, instructors, and enrollments into CSV files in the app-data directory.  
-* **Create a system backup**: This creates a timestamped zip archive of the exported CSV files in the backups directory.  
+* **Import data from CSV files**: You can import data for courses, students, instructors, and enrollments from the CSV files located in the test-data directory.  
+* **Export data to CSV files**: Exports the current state of all records into CSV files in the app-data directory.  
+* **Create a system backup**: Creates a timestamped .zip archive of the app-data directory into the backups folder.  
 * **Show Backup Directory Size**: Displays the total size of the backups directory.
 
-## **7\. Test Data CSV Format**
+## **7\. Data CSV Format**
 
 The application uses CSV files for importing and exporting data. The expected format for each file is as follows:
 
 ### **students.csv**
-```csv
-id,regNo,firstName,lastName,email,status  
-1,2023001,John,Doe,john.doe@example.com,ACTIVE  
-2,2023002,Jane,Smith,jane.smith@example.com,ACTIVE
-```
-### **courses.csv**
-```csv
-code,title,credits,department,semester,instructorId  
-CS101,Introduction to Computer Science,3,Computer Science,FALL,101  
-MATH201,Calculus II,4,Mathematics,SPRING,102
-```
+
+id,reg\_no,first\_name,last\_name,email,status,registration\_date  
+1,S001,Alice,Smith,alice.smith@email.com,ACTIVE,2023-01-15
+
 ### **instructors.csv**
-```csv
-id,firstName,lastName,email,department  
-101,Alan,Turing,alan.turing@example.com,Computer Science  
-102,Ada,Lovelace,ada.lovelace@example.com,Mathematics
-```
+
+FiD,firstName,lastName,email,department  
+101,John,Smith,john.smith@university.edu,Computer Science
+
+### **courses.csv**
+
+code,title,credits,department,instructor\_id,semester  
+CS101,Introduction to Computer Science,3,Computer Science,101,FALL
+
 ### **enrollments.csv**
-```csv
-studentId,courseCode,grade  
-1,CS101,A  
-2,MATH201,B  
-```
+
+student\_reg\_no,course\_code,grade  
+S001,CS101,A  
