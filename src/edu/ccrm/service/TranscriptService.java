@@ -30,7 +30,6 @@ public class TranscriptService {
         if (enrollments.isEmpty()) {
             transcript.append("No courses enrolled.\n");
         } else {
-            // Table Header
             transcript.append(String.format("%-10s | %-40s | %-10s | %-10s\n", "Code", "Title", "Credits", "Grade"));
             transcript.append("-----------------------------------------------------------------------------\n");
 

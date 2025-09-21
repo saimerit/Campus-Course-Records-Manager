@@ -9,10 +9,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RecursiveUtil {
-    
     public static long calculateDirectorySize(Path path) throws IOException {
         final AtomicLong size = new AtomicLong(0);
-
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
@@ -26,7 +24,6 @@ public class RecursiveUtil {
                 return FileVisitResult.CONTINUE;
             }
         });
-
         return size.get();
     }
 }

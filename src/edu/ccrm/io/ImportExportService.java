@@ -55,7 +55,7 @@ public class ImportExportService {
     throws IOException {
     try (BufferedReader reader = Files.newBufferedReader(filePath)) {
       String line;
-      reader.readLine(); // Skip header
+      reader.readLine();
       while ((line = reader.readLine()) != null) {
         String[] parts = line.split(",");
         String status = parts[5].replaceAll("\"", "");
@@ -128,7 +128,7 @@ public class ImportExportService {
     throws IOException {
     try (BufferedReader reader = Files.newBufferedReader(filePath)) {
       String line;
-      reader.readLine(); // Skip header
+      reader.readLine();
       while ((line = reader.readLine()) != null) {
         String[] parts = line.split(",");
         CourseCode courseCode = new CourseCode(parts[0]);
@@ -172,7 +172,6 @@ public class ImportExportService {
         } catch (IOException | SQLException | RuntimeException e) {
             conn.rollback();
             System.err.println("An unexpected error occurred during data import: " + e.getMessage());
-            // Optionally, print the stack trace for more detailed debugging
             e.printStackTrace();
         } finally {
             conn.setAutoCommit(true);
@@ -260,7 +259,6 @@ public class ImportExportService {
         } catch (IOException | SQLException | RuntimeException e) {
             conn.rollback();
             System.err.println("An unexpected error occurred during data import: " + e.getMessage());
-            // Optionally, print the stack trace for more detailed debugging
             e.printStackTrace();
         } finally {
             conn.setAutoCommit(true);

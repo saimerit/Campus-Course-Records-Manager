@@ -23,7 +23,6 @@ import java.util.function.Predicate;
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
 
-    // --- Service Initialization ---
     private static final StudentService studentService = new StudentService();
     private static final InstructorService instructorService = new InstructorService();
     private static final CourseService courseService = new CourseService(instructorService);
@@ -273,7 +272,7 @@ public class Main {
                 importExportService.importCoursesFromTestData();
                 System.out.println("Waiting for 5 seconds before importing enrollments to ensure data consistency...");
                 try {
-                    Thread.sleep(5000); // 5-second delay
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     System.err.println("Delay interrupted: " + e.getMessage());
@@ -646,7 +645,6 @@ public class Main {
         for (Student student : students) {
             System.out.println("\n--- Enrollments for " + student.getFullName() + " (Reg No: " + student.getRegNo() + ") ---");
             try {
-                // Add a 2-second delay before fetching enrollments for each student
                 Thread.sleep(2000);
                 List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(student.getRegNo());
                 if (enrollments.isEmpty()) {
@@ -726,7 +724,6 @@ public class Main {
     }
 
     private static void printTable(String[] headers, List<String[]> rows) {
-        // Find the maximum width for each column
         int[] maxWidths = new int[headers.length];
         for (int i = 0; i < headers.length; i++) {
             maxWidths[i] = headers[i].length();
@@ -738,28 +735,19 @@ public class Main {
                 }
             }
         }
-
-        // Build the format string
         StringBuilder formatBuilder = new StringBuilder();
         for (int maxWidth : maxWidths) {
             formatBuilder.append("| %-").append(maxWidth).append("s ");
         }
         formatBuilder.append("|\n");
         String format = formatBuilder.toString();
-
-        // Print header
         System.out.printf(format, (Object[]) headers);
-
-        // Print separator
         for (int maxWidth : maxWidths) {
             for (int i = 0; i < maxWidth + 3; i++) {
                 System.out.print("-");
             }
         }
         System.out.println("-");
-
-
-        // Print rows
         for (String[] row : rows) {
             System.out.printf(format, (Object[]) row);
         }

@@ -53,16 +53,10 @@ public class EnrollmentService {
             pstmt.setString(2, courseCode.getCode());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            // Wrapping with RecordNotFoundException is misleading here.
-            // Let's throw a more appropriate runtime exception or a checked SQLException
             throw new SQLException("Failed to enroll student: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Enrolls a student in a course and records their grade. This method is suitable for single enrollments
-     * as it handles its own transaction.
-     */
     public void enrollStudentWithGrade(String studentRegNo, CourseCode courseCode, Grade grade)
             throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException {
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -86,10 +80,6 @@ public class EnrollmentService {
         }
     }
 
-    /**
-     * Enrolls a student in a course and records their grade using a provided database connection.
-     * This is ideal for batch imports where the transaction is managed externally.
-     */
     public void enrollStudentWithGrade(String studentRegNo, CourseCode courseCode, Grade grade, Connection conn)
             throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException, SQLException {
         if (isEnrolled(studentRegNo, courseCode, conn)) {
@@ -109,8 +99,6 @@ public class EnrollmentService {
             pstmt.setString(2, courseCode.getCode());
             pstmt.executeUpdate();
         }
-
-        // Record the grade for the new enrollment
         recordGrade(studentRegNo, courseCode, grade, conn);
     }
 

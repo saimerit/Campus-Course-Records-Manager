@@ -122,5 +122,5 @@ In an IDE, add \-ea to the "VM arguments" in your run configuration.
 
 ## **10\. Acknowledgements**
 
-* This project was created as part of the "Programming in Java" course on the VitYarthi portal.  
+* This project was created as part of the "Programming in Java" course on the Vityarthi portal.  
 * All code is original and written by Sai Ardhendu Kalivarapu.

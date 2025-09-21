@@ -1,7 +1,6 @@
 package edu.ccrm.util;
 
 public class Validator {
-    
     public static boolean isEmailValid(String email) {
         if (email == null) {
             return false;
