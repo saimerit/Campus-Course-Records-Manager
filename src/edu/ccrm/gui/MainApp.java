@@ -25,11 +25,19 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.beans.binding.Bindings;
+import javafx.geometry.Pos;
+
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class MainApp extends Application {
 
@@ -44,6 +52,8 @@ public class MainApp extends Application {
 
     private ProgressIndicator globalProgressIndicator;
     private Label globalStatusLabel;
+    private Region dimOverlay;
+    private ProgressIndicator centerSpinner;
 
     public static void main(String[] args) {
         launch(args);
@@ -58,9 +68,32 @@ public class MainApp extends Application {
         globalProgressIndicator.setPrefSize(20, 20);
         globalStatusLabel = new Label("Ready");
 
-        HBox statusBar = new HBox(10, globalProgressIndicator, globalStatusLabel);
+        dimOverlay = new Region();
+        dimOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
+        dimOverlay.setVisible(false);
+        
+        centerSpinner = new ProgressIndicator();
+        centerSpinner.setMaxSize(60, 60);
+        centerSpinner.setVisible(false);
+
+        ToggleButton themeToggle = new ToggleButton();
+        themeToggle.setGraphic(new FontIcon("fas-moon"));
+        themeToggle.setOnAction(e -> {
+            if (themeToggle.isSelected()) {
+                Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+                themeToggle.setGraphic(new FontIcon("fas-sun"));
+            } else {
+                Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+                themeToggle.setGraphic(new FontIcon("fas-moon"));
+            }
+        });
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox statusBar = new HBox(10, globalProgressIndicator, globalStatusLabel, spacer, themeToggle);
         statusBar.setPadding(new Insets(5));
-        statusBar.setStyle("-fx-background-color: #1e1e1e; -fx-text-fill: white;");
+        statusBar.setAlignment(Pos.CENTER_LEFT);
 
         TabPane tabPane = new TabPane();
         tabPane.getTabs().add(createStudentsTab());
@@ -74,9 +107,12 @@ public class MainApp extends Application {
         root.setCenter(tabPane);
         root.setBottom(statusBar);
 
-        root.setStyle("-fx-base: #263238; -fx-background: #263238; -fx-control-inner-background: #37474F; -fx-accent: #00B0FF; -fx-text-background-color: white;");
+        StackPane appRoot = new StackPane();
+        appRoot.getChildren().addAll(root, dimOverlay, centerSpinner);
+        
+        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
-        Scene scene = new Scene(root, 1100, 750);
+        Scene scene = new Scene(appRoot, 1100, 750);
         primaryStage.setScene(scene);
         primaryStage.show();
 
@@ -89,6 +125,8 @@ public class MainApp extends Application {
     private void runTaskWithProgress(String message, TaskAction action, Runnable onSuccess) {
         globalProgressIndicator.setVisible(true);
         globalStatusLabel.setText(message);
+        dimOverlay.setVisible(true);
+        centerSpinner.setVisible(true);
 
         Task<Void> task = new Task<>() {
             @Override
@@ -100,6 +138,8 @@ public class MainApp extends Application {
 
         task.setOnSucceeded(e -> {
             globalProgressIndicator.setVisible(false);
+            dimOverlay.setVisible(false);
+            centerSpinner.setVisible(false);
             globalStatusLabel.setText("Ready");
             if (onSuccess != null) {
                 onSuccess.run();
@@ -108,6 +148,8 @@ public class MainApp extends Application {
 
         task.setOnFailed(e -> {
             globalProgressIndicator.setVisible(false);
+            dimOverlay.setVisible(false);
+            centerSpinner.setVisible(false);
             globalStatusLabel.setText("Error occurred");
             Throwable ex = task.getException();
             showAlert(Alert.AlertType.ERROR, "Error: " + (ex != null ? ex.getMessage() : "Unknown error"));
@@ -149,13 +191,21 @@ public class MainApp extends Application {
         DatePicker dobPicker = new DatePicker();
         TextField phoneField = new TextField();
 
-        form.addRow(0, new Label("Student ID:"), idField, new Label("Reg No:"), regNoField);
-        form.addRow(1, new Label("First Name:"), firstNameField, new Label("Last Name:"), lastNameField);
-        form.addRow(2, new Label("Email:"), emailField, new Label("Phone:"), phoneField);
-        form.addRow(3, new Label("DOB:"), dobPicker);
+        form.addRow(0, new Label("Student ID:"), idField);
+        form.addRow(1, new Label("Reg No:"), regNoField);
+        form.addRow(2, new Label("First Name:"), firstNameField);
+        form.addRow(3, new Label("Last Name:"), lastNameField);
+        form.addRow(4, new Label("Email:"), emailField);
+        form.addRow(5, new Label("Phone:"), phoneField);
+        form.addRow(6, new Label("DOB:"), dobPicker);
 
-        Button btnAdd = new Button("Add Student");
-        form.add(btnAdd, 0, 4, 2, 1);
+        Button btnAdd = new Button("Add Student", new FontIcon("fas-user-plus"));
+        form.add(btnAdd, 0, 7, 2, 1);
+        
+        TitledPane formPane = new TitledPane("Add New Student", form);
+        formPane.setCollapsible(false);
+        VBox leftPane = new VBox(formPane);
+        leftPane.setPadding(new Insets(10));
 
         // Table
         TableView<Student> table = new TableView<>();
@@ -179,6 +229,30 @@ public class MainApp extends Application {
 
         TableColumn<Student, String> colStatus = new TableColumn<>("Status");
         colStatus.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getStatus().toString()));
+        colStatus.setCellFactory(column -> new TableCell<Student, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    Label badge = new Label(item);
+                    badge.setPadding(new Insets(2, 8, 2, 8));
+                    badge.setStyle("-fx-background-radius: 10; -fx-font-weight: bold;");
+                    if ("ACTIVE".equals(item)) {
+                        badge.setStyle(badge.getStyle() + "-fx-background-color: #d4edda; -fx-text-fill: #155724;");
+                    } else if ("PROBATION".equals(item)) {
+                        badge.setStyle(badge.getStyle() + "-fx-background-color: #fff3cd; -fx-text-fill: #856404;");
+                    } else {
+                        badge.setStyle(badge.getStyle() + "-fx-background-color: #f8d7da; -fx-text-fill: #721c24;");
+                    }
+                    setGraphic(badge);
+                    setText(null);
+                    setAlignment(Pos.CENTER);
+                }
+            }
+        });
 
         table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colStatus);
 
@@ -222,13 +296,10 @@ public class MainApp extends Application {
         });
 
         // Bottom Actions
-        HBox actions = new HBox(10);
-        actions.setPadding(new Insets(10, 0, 0, 0));
-        Button btnRefresh = new Button("Refresh");
+        Button btnRefresh = new Button("Refresh", new FontIcon("fas-sync"));
         btnRefresh.setOnAction(e -> refreshTable.run());
 
-        Button btnTranscript = new Button("View Transcript");
-        btnTranscript.setOnAction(e -> {
+        Runnable transcriptAction = () -> {
             Student selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) {
                 showAlert(Alert.AlertType.WARNING, "Select a student first.");
@@ -281,10 +352,9 @@ public class MainApp extends Application {
                     Platform.runLater(() -> showAlert(Alert.AlertType.ERROR, "Failed to load transcript: " + ex.getMessage()));
                 }
             }, null);
-        });
+        };
 
-        Button btnUpdateStatus = new Button("Update Status");
-        btnUpdateStatus.setOnAction(e -> {
+        Runnable updateStatusAction = () -> {
             Student selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) {
                 showAlert(Alert.AlertType.WARNING, "Select a student first.");
@@ -301,17 +371,50 @@ public class MainApp extends Application {
                     showAlert(Alert.AlertType.ERROR, "Failed to update status: " + ex.getMessage());
                 }
             });
+        };
+
+        table.setRowFactory(tv -> {
+            TableRow<Student> row = new TableRow<>();
+            ContextMenu contextMenu = new ContextMenu();
+            
+            MenuItem viewTranscript = new MenuItem("View Transcript");
+            viewTranscript.setGraphic(new FontIcon("fas-file-invoice"));
+            viewTranscript.setOnAction(e -> transcriptAction.run());
+            
+            MenuItem changeStatus = new MenuItem("Change Status");
+            changeStatus.setGraphic(new FontIcon("fas-edit"));
+            changeStatus.setOnAction(e -> updateStatusAction.run());
+            
+            contextMenu.getItems().addAll(viewTranscript, changeStatus);
+            row.contextMenuProperty().bind(
+                Bindings.when(row.emptyProperty())
+                .then((ContextMenu)null)
+                .otherwise(contextMenu)
+            );
+            return row;
         });
 
-        actions.getChildren().addAll(btnRefresh, btnTranscript, btnUpdateStatus);
+        HBox topBox = new HBox(10, new Label("Search:"), searchField, btnRefresh);
+        topBox.setAlignment(Pos.CENTER_LEFT);
+        topBox.setPadding(new Insets(0, 0, 10, 0));
+        
+        Button btnViewTranscript = new Button("View Transcript", new FontIcon("fas-file-invoice"));
+        btnViewTranscript.setOnAction(e -> transcriptAction.run());
+        
+        Button btnChangeStatus = new Button("Change Status", new FontIcon("fas-edit"));
+        btnChangeStatus.setOnAction(e -> updateStatusAction.run());
+        
+        HBox bottomBox = new HBox(10, btnViewTranscript, btnChangeStatus);
+        bottomBox.setPadding(new Insets(10, 0, 0, 0));
 
-        HBox searchBox = new HBox(10, new Label("Search:"), searchField);
-        searchBox.setPadding(new Insets(10, 0, 10, 0));
+        VBox rightPane = new VBox(topBox, table, bottomBox);
+        rightPane.setPadding(new Insets(10));
 
-        VBox topBox = new VBox(10, new Label("Add New Student"), form, searchBox);
-        layout.setTop(topBox);
-        layout.setCenter(table);
-        layout.setBottom(actions);
+        SplitPane splitPane = new SplitPane();
+        splitPane.getItems().addAll(leftPane, rightPane);
+        splitPane.setDividerPositions(0.33);
+
+        layout.setCenter(splitPane);
 
         tab.setContent(layout);
         // Refresh on load
@@ -342,13 +445,22 @@ public class MainApp extends Application {
         TextField phoneField = new TextField();
         TextField cabinField = new TextField();
 
-        form.addRow(0, new Label("Instructor FiD:"), fidField, new Label("Department:"), deptField);
-        form.addRow(1, new Label("First Name:"), firstNameField, new Label("Last Name:"), lastNameField);
-        form.addRow(2, new Label("Email:"), emailField, new Label("Phone:"), phoneField);
-        form.addRow(3, new Label("DOB:"), dobPicker, new Label("Cabin No:"), cabinField);
+        form.addRow(0, new Label("Instructor FiD:"), fidField);
+        form.addRow(1, new Label("Department:"), deptField);
+        form.addRow(2, new Label("First Name:"), firstNameField);
+        form.addRow(3, new Label("Last Name:"), lastNameField);
+        form.addRow(4, new Label("Email:"), emailField);
+        form.addRow(5, new Label("Phone:"), phoneField);
+        form.addRow(6, new Label("DOB:"), dobPicker);
+        form.addRow(7, new Label("Cabin No:"), cabinField);
 
-        Button btnAdd = new Button("Add Instructor");
-        form.add(btnAdd, 0, 4, 2, 1);
+        Button btnAdd = new Button("Add Instructor", new FontIcon("fas-user-plus"));
+        form.add(btnAdd, 0, 8, 2, 1);
+        
+        TitledPane formPane = new TitledPane("Add New Instructor", form);
+        formPane.setCollapsible(false);
+        VBox leftPane = new VBox(formPane);
+        leftPane.setPadding(new Insets(10));
 
         // Table
         TableView<Instructor> table = new TableView<>();
@@ -375,10 +487,29 @@ public class MainApp extends Application {
 
         table.getColumns().addAll(colFid, colName, colEmail, colDept, colDob, colPhone, colCabin);
 
+        ObservableList<Instructor> masterData = FXCollections.observableArrayList();
+        FilteredList<Instructor> filteredData = new FilteredList<>(masterData, p -> true);
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search by Name or Dept...");
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredData.setPredicate(inst -> {
+                if (newValue == null || newValue.isEmpty()) return true;
+                String lowerCaseFilter = newValue.toLowerCase();
+                if (inst.getFullName().toString().toLowerCase().contains(lowerCaseFilter)) return true;
+                if (inst.getDepartment().toLowerCase().contains(lowerCaseFilter)) return true;
+                return false;
+            });
+        });
+
+        SortedList<Instructor> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(table.comparatorProperty());
+        table.setItems(sortedData);
+
         Runnable refreshTable = () -> {
             runTaskWithProgress("Loading Instructors...", () -> {
                 List<Instructor> list = instructorService.getAllInstructorsSortedById();
-                Platform.runLater(() -> table.getItems().setAll(list));
+                Platform.runLater(() -> masterData.setAll(list));
             }, null);
         };
 
@@ -394,16 +525,21 @@ public class MainApp extends Application {
             }
         });
 
-        HBox actions = new HBox(10);
-        actions.setPadding(new Insets(10, 0, 0, 0));
-        Button btnRefresh = new Button("Refresh");
+        Button btnRefresh = new Button("Refresh", new FontIcon("fas-sync"));
         btnRefresh.setOnAction(e -> refreshTable.run());
-        actions.getChildren().addAll(btnRefresh);
 
-        VBox topBox = new VBox(10, new Label("Add New Instructor"), form);
-        layout.setTop(topBox);
-        layout.setCenter(table);
-        layout.setBottom(actions);
+        HBox topBox = new HBox(10, new Label("Search:"), searchField, btnRefresh);
+        topBox.setAlignment(Pos.CENTER_LEFT);
+        topBox.setPadding(new Insets(0, 0, 10, 0));
+
+        VBox rightPane = new VBox(topBox, table);
+        rightPane.setPadding(new Insets(10));
+
+        SplitPane splitPane = new SplitPane();
+        splitPane.getItems().addAll(leftPane, rightPane);
+        splitPane.setDividerPositions(0.35);
+
+        layout.setCenter(splitPane);
         
         tab.setContent(layout);
         tab.setOnSelectionChanged(e -> {
@@ -432,12 +568,20 @@ public class MainApp extends Application {
         semesterCombo.getItems().addAll(Semester.values());
         TextField classroomField = new TextField();
 
-        form.addRow(0, new Label("Code:"), codeField, new Label("Title:"), titleField);
-        form.addRow(1, new Label("Credits:"), creditsField, new Label("Department:"), deptField);
-        form.addRow(2, new Label("Semester:"), semesterCombo, new Label("Classroom:"), classroomField);
+        form.addRow(0, new Label("Code:"), codeField);
+        form.addRow(1, new Label("Title:"), titleField);
+        form.addRow(2, new Label("Credits:"), creditsField);
+        form.addRow(3, new Label("Department:"), deptField);
+        form.addRow(4, new Label("Semester:"), semesterCombo);
+        form.addRow(5, new Label("Classroom:"), classroomField);
 
-        Button btnAdd = new Button("Add Course");
-        form.add(btnAdd, 0, 3, 2, 1);
+        Button btnAdd = new Button("Add Course", new FontIcon("fas-plus"));
+        form.add(btnAdd, 0, 6, 2, 1);
+        
+        TitledPane formPane = new TitledPane("Add New Course", form);
+        formPane.setCollapsible(false);
+        VBox leftPane = new VBox(formPane);
+        leftPane.setPadding(new Insets(10));
 
         // Table
         TableView<Course> table = new TableView<>();
@@ -459,10 +603,29 @@ public class MainApp extends Application {
 
         table.getColumns().addAll(colCode, colTitle, colCredits, colDept, colSem, colInst, colClassroom);
 
+        ObservableList<Course> masterData = FXCollections.observableArrayList();
+        FilteredList<Course> filteredData = new FilteredList<>(masterData, p -> true);
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search by Code or Title...");
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredData.setPredicate(course -> {
+                if (newValue == null || newValue.isEmpty()) return true;
+                String lowerCaseFilter = newValue.toLowerCase();
+                if (course.getCourseCode().getCode().toLowerCase().contains(lowerCaseFilter)) return true;
+                if (course.getTitle().toLowerCase().contains(lowerCaseFilter)) return true;
+                return false;
+            });
+        });
+
+        SortedList<Course> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(table.comparatorProperty());
+        table.setItems(sortedData);
+
         Runnable refreshTable = () -> {
             runTaskWithProgress("Loading Courses...", () -> {
                 List<Course> list = courseService.getAllCoursesSortedByCode();
-                Platform.runLater(() -> table.getItems().setAll(list));
+                Platform.runLater(() -> masterData.setAll(list));
             }, null);
         };
 
@@ -484,13 +647,10 @@ public class MainApp extends Application {
             }
         });
 
-        HBox actions = new HBox(10);
-        actions.setPadding(new Insets(10, 0, 0, 0));
-        Button btnRefresh = new Button("Refresh");
+        Button btnRefresh = new Button("Refresh", new FontIcon("fas-sync"));
         btnRefresh.setOnAction(e -> refreshTable.run());
 
-        Button btnAssign = new Button("Assign Instructor");
-        btnAssign.setOnAction(e -> {
+        Runnable assignAction = () -> {
             Course selected = table.getSelectionModel().getSelectedItem();
             if(selected == null) {
                 showAlert(Alert.AlertType.WARNING, "Select a course first.");
@@ -508,14 +668,41 @@ public class MainApp extends Application {
                     showAlert(Alert.AlertType.ERROR, "Failed to assign: " + ex.getMessage());
                 }
             });
+        };
+
+        table.setRowFactory(tv -> {
+            TableRow<Course> row = new TableRow<>();
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem assignMenu = new MenuItem("Assign Instructor");
+            assignMenu.setGraphic(new FontIcon("fas-chalkboard-teacher"));
+            assignMenu.setOnAction(e -> assignAction.run());
+            contextMenu.getItems().add(assignMenu);
+            row.contextMenuProperty().bind(
+                Bindings.when(row.emptyProperty())
+                .then((ContextMenu)null)
+                .otherwise(contextMenu)
+            );
+            return row;
         });
 
-        actions.getChildren().addAll(btnRefresh, btnAssign);
+        HBox topBox = new HBox(10, new Label("Search:"), searchField, btnRefresh);
+        topBox.setAlignment(Pos.CENTER_LEFT);
+        topBox.setPadding(new Insets(0, 0, 10, 0));
+        
+        Button btnAssign = new Button("Assign Instructor", new FontIcon("fas-chalkboard-teacher"));
+        btnAssign.setOnAction(e -> assignAction.run());
+        
+        HBox bottomBox = new HBox(10, btnAssign);
+        bottomBox.setPadding(new Insets(10, 0, 0, 0));
 
-        VBox topBox = new VBox(10, new Label("Add New Course"), form);
-        layout.setTop(topBox);
-        layout.setCenter(table);
-        layout.setBottom(actions);
+        VBox rightPane = new VBox(topBox, table, bottomBox);
+        rightPane.setPadding(new Insets(10));
+
+        SplitPane splitPane = new SplitPane();
+        splitPane.getItems().addAll(leftPane, rightPane);
+        splitPane.setDividerPositions(0.33);
+
+        layout.setCenter(splitPane);
         
         tab.setContent(layout);
         tab.setOnSelectionChanged(e -> {
@@ -545,12 +732,18 @@ public class MainApp extends Application {
         form.addRow(1, new Label("Course Code:"), courseCodeField);
         form.addRow(2, new Label("Grade (for recording):"), gradeCombo);
 
-        Button btnEnroll = new Button("Enroll");
-        Button btnUnenroll = new Button("Unenroll");
-        Button btnRecordGrade = new Button("Record Grade");
+        Button btnEnroll = new Button("Enroll", new FontIcon("fas-user-check"));
+        Button btnUnenroll = new Button("Unenroll", new FontIcon("fas-user-minus"));
+        Button btnRecordGrade = new Button("Record Grade", new FontIcon("fas-pen"));
 
-        HBox formActions = new HBox(10, btnEnroll, btnUnenroll, btnRecordGrade);
+        javafx.scene.layout.FlowPane formActions = new javafx.scene.layout.FlowPane(10, 10);
+        formActions.getChildren().addAll(btnEnroll, btnUnenroll, btnRecordGrade);
         form.add(formActions, 0, 3, 2, 1);
+
+        TitledPane formPane = new TitledPane("Enrollment Actions", form);
+        formPane.setCollapsible(false);
+        VBox leftPane = new VBox(formPane);
+        leftPane.setPadding(new Insets(10));
 
         // Enrollments are somewhat complex because we can view them per student, but here we can just show a list of all enrollments
         TableView<Enrollment> table = new TableView<>();
@@ -594,24 +787,61 @@ public class MainApp extends Application {
             }
         });
 
-        VBox rightSide = new VBox(10);
         TextField searchRegNo = new TextField();
-        searchRegNo.setPromptText("Enter Reg No to View Enrollments");
-        Button btnView = new Button("View Enrollments");
+        searchRegNo.setPromptText("Enter Reg No...");
+        Button btnView = new Button("View Enrollments", new FontIcon("fas-search"));
         btnView.setOnAction(e -> {
+            if(searchRegNo.getText().trim().isEmpty()) {
+                showAlert(Alert.AlertType.WARNING, "Enter a Reg No first.");
+                return;
+            }
             runTaskWithProgress("Fetching Enrollments...", () -> {
-                // Thread.sleep(2000) simulation of heavy operation (kept from original requirement)
+                // Simulate heavy operation
                 Thread.sleep(2000); 
                 List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(searchRegNo.getText());
                 Platform.runLater(() -> table.getItems().setAll(enrollments));
             }, null);
         });
-        rightSide.getChildren().addAll(new Label("View Enrollments For Student"), searchRegNo, btnView, table);
-        rightSide.setPrefWidth(500);
+        
+        HBox topBox = new HBox(10, new Label("Search:"), searchRegNo, btnView);
+        topBox.setAlignment(Pos.CENTER_LEFT);
+        topBox.setPadding(new Insets(0, 0, 10, 0));
 
-        HBox split = new HBox(20, form, rightSide);
+        VBox rightPane = new VBox(topBox, table);
+        rightPane.setPadding(new Insets(10));
+        
+        SplitPane splitPane = new SplitPane();
+        splitPane.getItems().addAll(leftPane, rightPane);
+        splitPane.setDividerPositions(0.33);
 
-        layout.setCenter(split);
+        layout.setCenter(splitPane);
+        
+        List<String> studentDict = new ArrayList<>();
+        List<String> courseDict = new ArrayList<>();
+
+        tab.setOnSelectionChanged(e -> {
+            if (tab.isSelected()) {
+                runTaskWithProgress("Loading Dictionaries...", () -> {
+                    List<String> sList = studentService.getAllStudentsSortedById().stream()
+                        .map(s -> s.getRegNo() + " - " + s.getFullName())
+                        .collect(Collectors.toList());
+                    List<String> cList = courseService.getAllCoursesSortedByCode().stream()
+                        .map(c -> c.getCourseCode().getCode() + " - " + c.getTitle())
+                        .collect(Collectors.toList());
+                    Platform.runLater(() -> {
+                        studentDict.clear();
+                        studentDict.addAll(sList);
+                        courseDict.clear();
+                        courseDict.addAll(cList);
+                    });
+                }, null);
+            }
+        });
+
+        setupAutocomplete(regNoField, () -> studentDict);
+        setupAutocomplete(searchRegNo, () -> studentDict);
+        setupAutocomplete(courseCodeField, () -> courseDict);
+        
         tab.setContent(layout);
         return tab;
     }
@@ -673,8 +903,8 @@ public class MainApp extends Application {
             }
         });
         
-        Button btnDeleteDb = new Button("Delete Database (DANGER)");
-        btnDeleteDb.setStyle("-fx-background-color: #ffcccc; -fx-text-fill: #990000;");
+        Button btnDeleteDb = new Button("Delete Database (DANGER)", new FontIcon("fas-trash"));
+        btnDeleteDb.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold;");
         btnDeleteDb.setOnAction(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Delete Database");
@@ -700,5 +930,43 @@ public class MainApp extends Application {
 
         tab.setContent(layout);
         return tab;
+    }
+    
+    private void setupAutocomplete(TextField textField, java.util.function.Supplier<List<String>> dictionarySupplier) {
+        ContextMenu contextMenu = new ContextMenu();
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.trim().isEmpty()) {
+                contextMenu.hide();
+            } else {
+                contextMenu.getItems().clear();
+                String filter = newValue.toLowerCase();
+                List<String> dict = dictionarySupplier.get();
+                for (String item : dict) {
+                    if (item.toLowerCase().contains(filter)) {
+                        MenuItem menuItem = new MenuItem(item);
+                        menuItem.setOnAction(e -> {
+                            String[] parts = item.split(" - ");
+                            textField.setText(parts[0]);
+                            textField.positionCaret(parts[0].length());
+                        });
+                        contextMenu.getItems().add(menuItem);
+                        if (contextMenu.getItems().size() >= 10) break;
+                    }
+                }
+                if (contextMenu.getItems().isEmpty()) {
+                    contextMenu.hide();
+                } else {
+                    if (!contextMenu.isShowing() && textField.getScene() != null && textField.getScene().getWindow() != null) {
+                        contextMenu.show(textField, javafx.geometry.Side.BOTTOM, 0, 0);
+                    }
+                }
+            }
+        });
+
+        textField.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) {
+                contextMenu.hide();
+            }
+        });
     }
 }
