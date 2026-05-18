@@ -23,6 +23,12 @@ public class DatabaseInitializer {
     "ENROLLMENTS",
   };
 
+  private static boolean firstRun = false;
+
+  public static boolean isFirstRun() {
+    return firstRun;
+  }
+
   public static void initialize() {
     System.out.println("--- Database Initialization ---");
     try (Connection conn = DatabaseManager.getConnection()) {
@@ -35,6 +41,7 @@ public class DatabaseInitializer {
 
       if (verifySchema(conn)) {
         System.out.println("? Schema already exists. Skipping setup script.");
+        firstRun = false;
       } else {
         System.out.println("    - Schema not found. Running setup script...");
         runScriptFromFile(SCRIPT_FILE_PATH);
@@ -44,7 +51,7 @@ public class DatabaseInitializer {
           System.out.println(
             "? Schema verification successful. All tables are present."
           );
-          importInitialData();
+          firstRun = true; // Signal to UI that this is a fresh install
         } else {
           throw new RuntimeException(
             "Schema verification failed after running setup script. Check permissions and SQL script."
@@ -55,6 +62,32 @@ public class DatabaseInitializer {
       System.err.println("? CRITICAL FAILURE DURING DATABASE INITIALIZATION:");
       System.err.println("    " + e.getMessage());
       throw new RuntimeException("Could not initialize the database.", e);
+    }
+  }
+
+  public static void importSampleData() {
+    System.out.println("    - Importing sample data...");
+    try {
+      StudentService studentService = new StudentService();
+      InstructorService instructorService = new InstructorService();
+      CourseService courseService = new CourseService(instructorService);
+      EnrollmentService enrollmentService = new EnrollmentService(studentService, courseService);
+      ImportExportService importExportService = new ImportExportService(
+        studentService, instructorService, courseService, enrollmentService
+      );
+      importExportService.importStudents();
+      importExportService.importInstructors();
+      Thread.sleep(2000);
+      importExportService.importCourses();
+      Thread.sleep(2000);
+      importExportService.importEnrollments();
+      System.out.println("? Sample data imported successfully.");
+    } catch (InterruptedException e) {
+      System.err.println("Data import process was interrupted.");
+      Thread.currentThread().interrupt();
+    } catch (Exception e) {
+      System.err.println("An unexpected error occurred during sample data import: " + e.getMessage());
+      e.printStackTrace();
     }
   }
 
@@ -143,8 +176,8 @@ public class DatabaseInitializer {
         }
       }
     }
-    
-    // Check if new columns exist
+
+    // Check mandatory columns and trigger migration for any that are missing
     try (ResultSet rs = conn.getMetaData().getColumns(null, null, "STUDENTS", "DOB")) {
         if (!rs.next()) {
             System.err.println("    - VERIFICATION FAILED: Column 'DOB' missing in 'STUDENTS'. Rebuilding schema.");
@@ -157,6 +190,30 @@ public class DatabaseInitializer {
             return false;
         }
     }
+
+    // Live migrations — add new enrollment columns if not present
+    migrateEnrollmentColumns(conn);
     return true;
+  }
+
+  private static void migrateEnrollmentColumns(Connection conn) {
+    try (Statement stmt = conn.createStatement()) {
+        // Add enrollment_year if missing
+        try (ResultSet rs = conn.getMetaData().getColumns(null, null, "ENROLLMENTS", "ENROLLMENT_YEAR")) {
+            if (!rs.next()) {
+                stmt.executeUpdate("ALTER TABLE ENROLLMENTS ADD enrollment_year NUMBER(4)");
+                System.out.println("    - Migrated: Added ENROLLMENT_YEAR column to ENROLLMENTS.");
+            }
+        }
+        // Add enrollment_semester if missing
+        try (ResultSet rs = conn.getMetaData().getColumns(null, null, "ENROLLMENTS", "ENROLLMENT_SEMESTER")) {
+            if (!rs.next()) {
+                stmt.executeUpdate("ALTER TABLE ENROLLMENTS ADD enrollment_semester VARCHAR2(20)");
+                System.out.println("    - Migrated: Added ENROLLMENT_SEMESTER column to ENROLLMENTS.");
+            }
+        }
+    } catch (SQLException e) {
+        System.err.println("Warning: Schema migration encountered an issue: " + e.getMessage());
+    }
   }
 }

@@ -65,8 +65,8 @@ public class ImportExportService {
           new Name(parts[2], parts[3]),
           parts[4],
           Student.Status.valueOf(status),
-          LocalDate.parse(parts[6]),
-          parts.length > 7 && !parts[7].isEmpty() ? LocalDate.parse(parts[7]) : null,
+          parseDateRobust(parts[6]),
+          parts.length > 7 ? parseDateRobust(parts[7]) : null,
           parts.length > 8 ? parts[8] : null
         );
         try {
@@ -104,7 +104,7 @@ public class ImportExportService {
           new Name(parts[1], parts[2]),
           parts[3],
           parts[4],
-          parts.length > 5 && !parts[5].isEmpty() ? LocalDate.parse(parts[5]) : null,
+          parts.length > 5 ? parseDateRobust(parts[5]) : null,
           parts.length > 6 ? parts[6] : null,
           parts.length > 7 ? parts[7] : null
         );
@@ -189,27 +189,43 @@ public class ImportExportService {
 
   private void importEnrollments(Path filePath, Connection conn) throws IOException, SQLException {
       try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+          String headerLine = reader.readLine(); // Read header to find column positions
+          if (headerLine == null) return;
+          String[] headers = headerLine.split(",");
+          int idxStudent = -1, idxCourse = -1, idxGrade = -1, idxYear = -1;
+          for (int i = 0; i < headers.length; i++) {
+              switch (headers[i].trim().toLowerCase()) {
+                  case "studentregno": idxStudent = i; break;
+                  case "coursecode":   idxCourse = i; break;
+                  case "grade":        idxGrade = i; break;
+                  case "enrollmentyear": idxYear = i; break;
+              }
+          }
+          if (idxStudent < 0 || idxCourse < 0) return;
+
           String line;
-          reader.readLine(); // Skip header
           while ((line = reader.readLine()) != null) {
               String[] parts = line.split(",");
               if (parts.length < 2) continue;
 
-              String studentRegNo = parts[0].trim();
-              CourseCode courseCode = new CourseCode(parts[1].trim());
+              String studentRegNo = parts[idxStudent].trim();
+              CourseCode courseCode = new CourseCode(parts[idxCourse].trim());
+              int enrollYear = (idxYear >= 0 && idxYear < parts.length && !parts[idxYear].trim().isEmpty())
+                               ? Integer.parseInt(parts[idxYear].trim())
+                               : java.time.LocalDate.now().getYear();
 
               try {
-                  if (parts.length > 2 && parts[2] != null && !parts[2].trim().isEmpty()) {
-                      Grade grade = Grade.valueOf(parts[2].trim().toUpperCase());
-                      enrollmentService.enrollStudentWithGrade(studentRegNo, courseCode, grade, conn);
+                  if (idxGrade >= 0 && idxGrade < parts.length && !parts[idxGrade].trim().isEmpty()) {
+                      Grade grade = Grade.valueOf(parts[idxGrade].trim().toUpperCase());
+                      enrollmentService.enrollStudentWithGradeAndYear(studentRegNo, courseCode, grade, enrollYear, conn);
                   } else {
                       enrollmentService.enrollStudent(studentRegNo, courseCode, conn);
                   }
               } catch (DuplicateEnrollmentException e) {
                   System.out.println("Info: Student " + studentRegNo + " is already enrolled in " + courseCode.getCode() + ". Attempting to update grade.");
-                  if (parts.length > 2 && parts[2] != null && !parts[2].trim().isEmpty()) {
+                  if (idxGrade >= 0 && idxGrade < parts.length && !parts[idxGrade].trim().isEmpty()) {
                       try {
-                         Grade grade = Grade.valueOf(parts[2].trim().toUpperCase());
+                         Grade grade = Grade.valueOf(parts[idxGrade].trim().toUpperCase());
                          enrollmentService.recordGrade(studentRegNo, courseCode, grade);
                       }
                       catch (Exception gradeException){
@@ -363,5 +379,56 @@ public class ImportExportService {
       StandardOpenOption.CREATE,
       StandardOpenOption.TRUNCATE_EXISTING
     );
+  }
+
+  public void importStudentsFile(Path path) throws Exception {
+    try (Connection conn = DatabaseManager.getConnection()) {
+      importStudents(path, conn);
+    }
+  }
+
+  public void importInstructorsFile(Path path) throws Exception {
+    try (Connection conn = DatabaseManager.getConnection()) {
+      importInstructors(path, conn);
+    }
+  }
+
+  public void importCoursesFile(Path path) throws Exception {
+    try (Connection conn = DatabaseManager.getConnection()) {
+      importCourses(path, conn);
+    }
+  }
+
+  public void importEnrollmentsFile(Path path) throws Exception {
+    try (Connection conn = DatabaseManager.getConnection()) {
+        conn.setAutoCommit(false);
+        try {
+            importEnrollments(path, conn);
+            conn.commit();
+        } catch (Exception e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(true);
+        }
+    }
+  }
+
+  private LocalDate parseDateRobust(String dateStr) {
+      if (dateStr == null || dateStr.trim().isEmpty()) return null;
+      dateStr = dateStr.trim();
+      try {
+          return LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+      } catch (Exception e1) {
+          try {
+              return LocalDate.parse(dateStr);
+          } catch (Exception e2) {
+              try {
+                  return LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("MM/dd/yyyy"));
+              } catch (Exception e3) {
+                  return null;
+              }
+          }
+      }
   }
 }

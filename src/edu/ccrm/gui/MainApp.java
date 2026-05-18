@@ -19,6 +19,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.stage.FileChooser;
+import java.io.File;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -54,13 +56,19 @@ public class MainApp extends Application {
     private Label globalStatusLabel;
     private Region dimOverlay;
     private ProgressIndicator centerSpinner;
+    private ProgressBar centerProgressBar;
+    private Label progressTextLabel;
+    private VBox progressBox;
 
     public static void main(String[] args) {
         launch(args);
     }
 
+    private BorderPane mainLayout;
+
     @Override
     public void start(Stage primaryStage) {
+        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
         primaryStage.setTitle("Campus Course & Records Manager (CCRM)");
 
         globalProgressIndicator = new ProgressIndicator();
@@ -74,7 +82,18 @@ public class MainApp extends Application {
         
         centerSpinner = new ProgressIndicator();
         centerSpinner.setMaxSize(60, 60);
-        centerSpinner.setVisible(false);
+
+        centerProgressBar = new ProgressBar(0);
+        centerProgressBar.setPrefWidth(200);
+        
+        progressTextLabel = new Label();
+        progressTextLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+
+        progressBox = new VBox(15, centerSpinner, centerProgressBar, progressTextLabel);
+        progressBox.setAlignment(Pos.CENTER);
+        progressBox.setMaxSize(300, 150);
+        progressBox.setStyle("-fx-background-color: rgba(0,0,0,0.75); -fx-padding: 20; -fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: rgba(255,255,255,0.2); -fx-border-width: 1;");
+        progressBox.setVisible(false);
 
         ToggleButton themeToggle = new ToggleButton();
         themeToggle.setGraphic(new FontIcon("fas-moon"));
@@ -95,38 +114,158 @@ public class MainApp extends Application {
         statusBar.setPadding(new Insets(5));
         statusBar.setAlignment(Pos.CENTER_LEFT);
 
-        TabPane tabPane = new TabPane();
-        tabPane.getTabs().add(createStudentsTab());
-        tabPane.getTabs().add(createInstructorsTab());
-        tabPane.getTabs().add(createCoursesTab());
-        tabPane.getTabs().add(createEnrollmentsTab());
-        tabPane.getTabs().add(createFileOperationsTab());
-        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        mainLayout = new BorderPane();
+        mainLayout.setBottom(statusBar);
 
-        BorderPane root = new BorderPane();
-        root.setCenter(tabPane);
-        root.setBottom(statusBar);
+        // Sidebar
+        VBox sidebar = new VBox(15);
+        sidebar.setPadding(new Insets(20, 15, 20, 15));
+        sidebar.setPrefWidth(240);
+        sidebar.setStyle("-fx-background-color: -color-bg-subtle; -fx-border-color: -color-border-default; -fx-border-width: 0 1px 0 0;");
+
+        Label brandLabel = new Label("CCRM Console");
+        brandLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: -color-accent-fg;");
+        sidebar.getChildren().add(brandLabel);
+        
+        Button btnDashboard = createNavButton("Dashboard Overview", "fas-chart-pie");
+        Button btnStudents = createNavButton("Manage Students", "fas-user-graduate");
+        Button btnInstructors = createNavButton("Manage Faculty", "fas-chalkboard-teacher");
+        Button btnCourses = createNavButton("Course Registry", "fas-book");
+        Button btnEnrollments = createNavButton("Enrollments & Grades", "fas-id-card");
+        Button btnSystem = createNavButton("System & Backup Ops", "fas-database");
+
+        sidebar.getChildren().addAll(new Separator(), btnDashboard, btnStudents, btnInstructors, btnCourses, btnEnrollments, btnSystem);
+        mainLayout.setLeft(sidebar);
+
+        btnDashboard.setOnAction(e -> mainLayout.setCenter(createDashboardView()));
+        btnStudents.setOnAction(e -> mainLayout.setCenter(createStudentsView()));
+        btnInstructors.setOnAction(e -> mainLayout.setCenter(createInstructorsView()));
+        btnCourses.setOnAction(e -> mainLayout.setCenter(createCoursesView()));
+        btnEnrollments.setOnAction(e -> mainLayout.setCenter(createEnrollmentsView()));
+        btnSystem.setOnAction(e -> mainLayout.setCenter(createFileOperationsView()));
+
+        mainLayout.setCenter(createDashboardView());
 
         StackPane appRoot = new StackPane();
-        appRoot.getChildren().addAll(root, dimOverlay, centerSpinner);
-        
-        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+        appRoot.getChildren().addAll(mainLayout, dimOverlay, progressBox);
 
-        Scene scene = new Scene(appRoot, 1100, 750);
+        Scene scene = new Scene(appRoot, 1200, 800);
         primaryStage.setScene(scene);
         primaryStage.show();
 
         // Initialize Database in background
         runTaskWithProgress("Initializing Database...", () -> {
             DatabaseInitializer.initialize();
-        }, () -> showAlert(Alert.AlertType.INFORMATION, "Database initialized successfully."));
+        }, () -> {
+            // After init, check if this is a fresh install
+            if (DatabaseInitializer.isFirstRun()) {
+                Alert firstRunAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                firstRunAlert.setTitle("Fresh Database Detected");
+                firstRunAlert.setHeaderText("Welcome to CCRM!");
+                firstRunAlert.setContentText(
+                    "A new database has been created.\n\n" +
+                    "Would you like to load the bundled sample data to get started quickly?\n\n" +
+                    "Click OK to load sample data, or Cancel to start with an empty database and import your own files."
+                );
+                firstRunAlert.showAndWait().ifPresent(response -> {
+                    if (response == ButtonType.OK) {
+                        runTaskWithProgress("Loading sample data...",
+                            DatabaseInitializer::importSampleData,
+                            () -> showAlert(Alert.AlertType.INFORMATION, "Sample data loaded successfully!"));
+                    } else {
+                        showAlert(Alert.AlertType.INFORMATION,
+                            "Empty database ready. Use the 'System & Backup Ops' panel to import your own CSV files.");
+                    }
+                });
+            }
+        });
+    }
+
+    private Button createNavButton(String text, String iconCode) {
+        FontIcon icon = new FontIcon(iconCode);
+        icon.setIconSize(16);
+        Button button = new Button(text, icon);
+        button.setAlignment(Pos.BASELINE_LEFT);
+        button.setMaxWidth(Double.MAX_VALUE);
+        button.getStyleClass().add("flat");
+        return button;
+    }
+
+    private javafx.scene.Node createDashboardView() {
+        VBox layout = new VBox(20);
+        layout.setPadding(new Insets(20));
+        
+        Label title = new Label("Dashboard Overview");
+        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        
+        java.util.List<Student> allStudents = studentService.getAllStudentsSortedById();
+        int active = 0, prob = 0, susp = 0, graduated = 0;
+        for (Student s : allStudents) {
+            if (s.getStatus() == Student.Status.ACTIVE) active++;
+            else if (s.getStatus() == Student.Status.PROBATION) prob++;
+            else if (s.getStatus() == Student.Status.INACTIVE) susp++;
+            else if (s.getStatus() == Student.Status.GRADUATED) graduated++;
+        }
+
+        HBox cardsBox = new HBox(20);
+        cardsBox.getChildren().addAll(
+            createMetricCard("Total Students", String.valueOf(allStudents.size()), "fas-users"),
+            createMetricCard("Active Courses", String.valueOf(courseService.getAllCoursesSortedByCode().size()), "fas-book-open"),
+            createMetricCard("Total Faculty", String.valueOf(instructorService.getAllInstructorsSortedById().size()), "fas-chalkboard-teacher"),
+            createMetricCard("Graduated", String.valueOf(graduated), "fas-graduation-cap")
+        );
+        
+        javafx.scene.chart.CategoryAxis xAxis = new javafx.scene.chart.CategoryAxis();
+        javafx.scene.chart.NumberAxis yAxis = new javafx.scene.chart.NumberAxis();
+        javafx.scene.chart.BarChart<String,Number> bc = new javafx.scene.chart.BarChart<>(xAxis, yAxis);
+        bc.setTitle("Students by Status");
+        bc.setLegendVisible(false);
+        javafx.scene.chart.XYChart.Series<String,Number> series1 = new javafx.scene.chart.XYChart.Series<>();
+        
+        series1.getData().add(new javafx.scene.chart.XYChart.Data<>("ACTIVE", active));
+        series1.getData().add(new javafx.scene.chart.XYChart.Data<>("PROBATION", prob));
+        series1.getData().add(new javafx.scene.chart.XYChart.Data<>("INACTIVE", susp));
+        series1.getData().add(new javafx.scene.chart.XYChart.Data<>("GRADUATED", graduated));
+        bc.getData().add(series1);
+        
+        layout.getChildren().addAll(title, cardsBox, bc);
+        return layout;
+    }
+
+    private VBox createMetricCard(String title, String value, String iconCode) {
+        VBox card = new VBox(10);
+        card.setPadding(new Insets(15));
+        card.setPrefSize(200, 100);
+        card.setStyle("-fx-background-color: -color-bg-default; -fx-border-color: -color-border-default; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+        
+        Label lblTitle = new Label(title);
+        lblTitle.setStyle("-fx-text-fill: -color-fg-muted; -fx-font-size: 14px;");
+        
+        Label lblValue = new Label(value);
+        lblValue.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        
+        FontIcon icon = new FontIcon(iconCode);
+        icon.setIconSize(24);
+        icon.setStyle("-fx-text-fill: -color-accent-fg;");
+        
+        BorderPane inner = new BorderPane();
+        inner.setLeft(lblValue);
+        inner.setRight(icon);
+        
+        card.getChildren().addAll(lblTitle, inner);
+        return card;
     }
 
     private void runTaskWithProgress(String message, TaskAction action, Runnable onSuccess) {
         globalProgressIndicator.setVisible(true);
         globalStatusLabel.setText(message);
         dimOverlay.setVisible(true);
+        progressBox.setVisible(true);
         centerSpinner.setVisible(true);
+        centerProgressBar.setVisible(false);
+        progressTextLabel.setVisible(true);
+        progressTextLabel.textProperty().unbind();
+        progressTextLabel.setText(message);
 
         Task<Void> task = new Task<>() {
             @Override
@@ -139,7 +278,7 @@ public class MainApp extends Application {
         task.setOnSucceeded(e -> {
             globalProgressIndicator.setVisible(false);
             dimOverlay.setVisible(false);
-            centerSpinner.setVisible(false);
+            progressBox.setVisible(false);
             globalStatusLabel.setText("Ready");
             if (onSuccess != null) {
                 onSuccess.run();
@@ -149,13 +288,192 @@ public class MainApp extends Application {
         task.setOnFailed(e -> {
             globalProgressIndicator.setVisible(false);
             dimOverlay.setVisible(false);
-            centerSpinner.setVisible(false);
+            progressBox.setVisible(false);
             globalStatusLabel.setText("Error occurred");
             Throwable ex = task.getException();
             showAlert(Alert.AlertType.ERROR, "Error: " + (ex != null ? ex.getMessage() : "Unknown error"));
         });
 
         new Thread(task).start();
+    }
+    
+    private boolean verifyHeader(Path file, String[] requiredFields) {
+        try (java.io.BufferedReader reader = java.nio.file.Files.newBufferedReader(file)) {
+            String headerLine = reader.readLine();
+            if (headerLine == null || headerLine.trim().isEmpty()) {
+                return false;
+            }
+            String[] headers = headerLine.split(",");
+            java.util.Set<String> headerSet = new java.util.HashSet<>();
+            for (String h : headers) {
+                headerSet.add(h.trim().toLowerCase().replaceAll("\"", ""));
+            }
+            for (String req : requiredFields) {
+                if (!headerSet.contains(req.toLowerCase())) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    interface FileImportAction {
+        void execute(Path path) throws Exception;
+    }
+
+    private void handleSingleImport(String moduleName, String[] requiredFields, FileImportAction importAction) {
+        Alert prompt = new Alert(Alert.AlertType.INFORMATION);
+        prompt.setTitle("File Selection");
+        prompt.setHeaderText("Import " + moduleName);
+        prompt.setContentText("You will now be prompted to select the CSV file containing " + moduleName + " data.\n\nClick OK to proceed.");
+        prompt.showAndWait();
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select " + moduleName + " CSV File");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+        File file = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        if (file != null) {
+            if (!verifyHeader(file.toPath(), requiredFields)) {
+                showAlert(Alert.AlertType.ERROR, "Invalid CSV format for " + moduleName + ".\nExpected header fields (in any order):\n" + String.join(", ", requiredFields));
+                return;
+            }
+            runTaskWithProgress("Importing " + moduleName + "...", () -> {
+                importAction.execute(file.toPath());
+            }, () -> showAlert(Alert.AlertType.INFORMATION, moduleName + " imported successfully."));
+        }
+    }
+
+    private void runJavaFXTask(Task<?> task, String initialMessage, Runnable onSuccess) {
+        globalProgressIndicator.setVisible(true);
+        globalStatusLabel.setText(initialMessage);
+        dimOverlay.setVisible(true);
+        progressBox.setVisible(true);
+        centerSpinner.setVisible(false);
+        centerProgressBar.setVisible(true);
+        progressTextLabel.setVisible(true);
+        
+        centerProgressBar.progressProperty().bind(task.progressProperty());
+        progressTextLabel.textProperty().bind(task.messageProperty());
+
+        task.setOnSucceeded(e -> {
+            centerProgressBar.progressProperty().unbind();
+            progressTextLabel.textProperty().unbind();
+            globalProgressIndicator.setVisible(false);
+            dimOverlay.setVisible(false);
+            progressBox.setVisible(false);
+            globalStatusLabel.setText("Ready");
+            if (onSuccess != null) {
+                onSuccess.run();
+            }
+        });
+
+        task.setOnFailed(e -> {
+            centerProgressBar.progressProperty().unbind();
+            progressTextLabel.textProperty().unbind();
+            globalProgressIndicator.setVisible(false);
+            dimOverlay.setVisible(false);
+            progressBox.setVisible(false);
+            globalStatusLabel.setText("Error occurred");
+            Throwable ex = task.getException();
+            showAlert(Alert.AlertType.ERROR, "Error: " + (ex != null ? ex.getMessage() : "Unknown error"));
+        });
+
+        new Thread(task).start();
+    }
+    
+    private void handleImportAll() {
+        FileChooser chooser = new FileChooser();
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+        
+        Alert prompt = new Alert(Alert.AlertType.INFORMATION);
+        prompt.setTitle("Bulk Import Sequence");
+        prompt.setHeaderText("Bulk Import Started");
+        prompt.setContentText("You are about to bulk import all data. You will be prompted to select 4 files in the exact order needed by the database:\n\n1. Instructors\n2. Courses\n3. Students\n4. Enrollments\n\nClick OK to select the first file (Instructors).");
+        prompt.showAndWait();
+
+        String[] instReq = {"FiD", "firstName", "lastName", "email", "department", "dob", "phone", "cabinNo"};
+        String[] coursesReq = {"code", "title", "credits", "department", "instructorId", "semester", "classroomNo"};
+        String[] studentsReq = {"id", "regNo", "firstName", "lastName", "email", "status", "registrationDate", "dob", "phone"};
+        String[] enrollReq = {"studentRegNo", "courseCode", "grade"};
+
+        chooser.setTitle("1. Select Instructors CSV File");
+        File instFile = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        if (instFile == null) return;
+        if (!verifyHeader(instFile.toPath(), instReq)) {
+            showAlert(Alert.AlertType.ERROR, "Invalid CSV format for Instructors.\nExpected header fields:\n" + String.join(", ", instReq));
+            return;
+        }
+        
+        prompt.setHeaderText("Next: Courses");
+        prompt.setContentText("Instructors selected successfully.\n\nClick OK to select the second file (Courses).");
+        prompt.showAndWait();
+
+        chooser.setTitle("2. Select Courses CSV File");
+        File coursesFile = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        if (coursesFile == null) return;
+        if (!verifyHeader(coursesFile.toPath(), coursesReq)) {
+            showAlert(Alert.AlertType.ERROR, "Invalid CSV format for Courses.\nExpected header fields:\n" + String.join(", ", coursesReq));
+            return;
+        }
+        
+        prompt.setHeaderText("Next: Students");
+        prompt.setContentText("Courses selected successfully.\n\nClick OK to select the third file (Students).");
+        prompt.showAndWait();
+
+        chooser.setTitle("3. Select Students CSV File");
+        File studentsFile = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        if (studentsFile == null) return;
+        if (!verifyHeader(studentsFile.toPath(), studentsReq)) {
+            showAlert(Alert.AlertType.ERROR, "Invalid CSV format for Students.\nExpected header fields:\n" + String.join(", ", studentsReq));
+            return;
+        }
+        
+        prompt.setHeaderText("Next: Enrollments");
+        prompt.setContentText("Students selected successfully.\n\nClick OK to select the final file (Enrollments).");
+        prompt.showAndWait();
+
+        chooser.setTitle("4. Select Enrollments CSV File");
+        File enrollFile = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        if (enrollFile == null) return;
+        if (!verifyHeader(enrollFile.toPath(), enrollReq)) {
+            showAlert(Alert.AlertType.ERROR, "Invalid CSV format for Enrollments.\nExpected header fields:\n" + String.join(", ", enrollReq));
+            return;
+        }
+
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                updateProgress(0, 4);
+                
+                updateMessage("Importing Instructors (1/4)...");
+                importExportService.importInstructorsFile(instFile.toPath());
+                updateProgress(1, 4);
+                Thread.sleep(300); // UI visual buffer
+
+                updateMessage("Importing Courses (2/4)...");
+                importExportService.importCoursesFile(coursesFile.toPath());
+                updateProgress(2, 4);
+                Thread.sleep(300);
+
+                updateMessage("Importing Students (3/4)...");
+                importExportService.importStudentsFile(studentsFile.toPath());
+                updateProgress(3, 4);
+                Thread.sleep(300);
+
+                updateMessage("Importing Enrollments (4/4)...");
+                importExportService.importEnrollmentsFile(enrollFile.toPath());
+                updateProgress(4, 4);
+                Thread.sleep(300);
+                
+                return null;
+            }
+        };
+
+        runJavaFXTask(task, "Starting Bulk Import...", () -> {
+            showAlert(Alert.AlertType.INFORMATION, "All data imported successfully in the required sequence without corruption.");
+        });
     }
 
     interface TaskAction {
@@ -173,8 +491,8 @@ public class MainApp extends Application {
     // =========================================================================
     // STUDENTS TAB
     // =========================================================================
-    private Tab createStudentsTab() {
-        Tab tab = new Tab("Students");
+    private javafx.scene.Node createStudentsView() {
+
         BorderPane layout = new BorderPane();
         layout.setPadding(new Insets(10));
 
@@ -190,6 +508,7 @@ public class MainApp extends Application {
         TextField emailField = new TextField();
         DatePicker dobPicker = new DatePicker();
         TextField phoneField = new TextField();
+        DatePicker regDatePicker = new DatePicker();
 
         form.addRow(0, new Label("Student ID:"), idField);
         form.addRow(1, new Label("Reg No:"), regNoField);
@@ -198,9 +517,10 @@ public class MainApp extends Application {
         form.addRow(4, new Label("Email:"), emailField);
         form.addRow(5, new Label("Phone:"), phoneField);
         form.addRow(6, new Label("DOB:"), dobPicker);
+        form.addRow(7, new Label("Reg Date:"), regDatePicker);
 
         Button btnAdd = new Button("Add Student", new FontIcon("fas-user-plus"));
-        form.add(btnAdd, 0, 7, 2, 1);
+        form.add(btnAdd, 0, 8, 2, 1);
         
         TitledPane formPane = new TitledPane("Add New Student", form);
         formPane.setCollapsible(false);
@@ -227,6 +547,9 @@ public class MainApp extends Application {
         TableColumn<Student, String> colPhone = new TableColumn<>("Phone");
         colPhone.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getPhone()));
 
+        TableColumn<Student, String> colRegDate = new TableColumn<>("Reg Date");
+        colRegDate.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getRegistrationDate() != null ? c.getValue().getRegistrationDate().toString() : ""));
+
         TableColumn<Student, String> colStatus = new TableColumn<>("Status");
         colStatus.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getStatus().toString()));
         colStatus.setCellFactory(column -> new TableCell<Student, String>() {
@@ -241,11 +564,11 @@ public class MainApp extends Application {
                     badge.setPadding(new Insets(2, 8, 2, 8));
                     badge.setStyle("-fx-background-radius: 10; -fx-font-weight: bold;");
                     if ("ACTIVE".equals(item)) {
-                        badge.setStyle(badge.getStyle() + "-fx-background-color: #d4edda; -fx-text-fill: #155724;");
+                        badge.setStyle(badge.getStyle() + "-fx-text-fill: -color-success-fg; -fx-background-color: -color-success-muted;");
                     } else if ("PROBATION".equals(item)) {
-                        badge.setStyle(badge.getStyle() + "-fx-background-color: #fff3cd; -fx-text-fill: #856404;");
+                        badge.setStyle(badge.getStyle() + "-fx-text-fill: -color-warning-fg; -fx-background-color: -color-warning-muted;");
                     } else {
-                        badge.setStyle(badge.getStyle() + "-fx-background-color: #f8d7da; -fx-text-fill: #721c24;");
+                        badge.setStyle(badge.getStyle() + "-fx-text-fill: -color-danger-fg; -fx-background-color: -color-danger-muted;");
                     }
                     setGraphic(badge);
                     setText(null);
@@ -254,7 +577,7 @@ public class MainApp extends Application {
             }
         });
 
-        table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colStatus);
+        table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colRegDate, colStatus);
 
         ObservableList<Student> masterData = FXCollections.observableArrayList();
         FilteredList<Student> filteredData = new FilteredList<>(masterData, p -> true);
@@ -285,11 +608,12 @@ public class MainApp extends Application {
         btnAdd.setOnAction(e -> {
             try {
                 int id = Integer.parseInt(idField.getText());
-                Student s = new Student(id, regNoField.getText(), new Name(firstNameField.getText(), lastNameField.getText()), emailField.getText(), dobPicker.getValue(), phoneField.getText());
+                java.time.LocalDate regDate = regDatePicker.getValue() != null ? regDatePicker.getValue() : java.time.LocalDate.now();
+                Student s = new Student(id, regNoField.getText(), new Name(firstNameField.getText(), lastNameField.getText()), emailField.getText(), Student.Status.ACTIVE, regDate, dobPicker.getValue(), phoneField.getText());
                 studentService.addStudent(s);
                 showAlert(Alert.AlertType.INFORMATION, "Student added successfully.");
                 refreshTable.run();
-                idField.clear(); regNoField.clear(); firstNameField.clear(); lastNameField.clear(); emailField.clear(); phoneField.clear(); dobPicker.setValue(null);
+                idField.clear(); regNoField.clear(); firstNameField.clear(); lastNameField.clear(); emailField.clear(); phoneField.clear(); dobPicker.setValue(null); regDatePicker.setValue(null);
             } catch (Exception ex) {
                 showAlert(Alert.AlertType.ERROR, "Failed to add student: " + ex.getMessage());
             }
@@ -327,13 +651,18 @@ public class MainApp extends Application {
                         cTitle.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCourse().getTitle()));
                         TableColumn<Enrollment, Integer> cCredits = new TableColumn<>("Credits");
                         cCredits.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getCourse().getCredits()));
+                        TableColumn<Enrollment, String> cSemester = new TableColumn<>("Semester");
+                        cSemester.setCellValueFactory(c -> new ReadOnlyStringWrapper(
+                            c.getValue().getCourse().getSemester() != null ? c.getValue().getCourse().getSemester().name() : "N/A"));
+                        TableColumn<Enrollment, Integer> cYear = new TableColumn<>("Year");
+                        cYear.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getEnrollmentYear()));
                         TableColumn<Enrollment, String> cGrade = new TableColumn<>("Grade");
                         cGrade.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getGrade() != null ? c.getValue().getGrade().toString() : "N/A"));
                         
-                        coursesTable.getColumns().addAll(cCode, cTitle, cCredits, cGrade);
+                        coursesTable.getColumns().addAll(cCode, cTitle, cCredits, cSemester, cYear, cGrade);
                         coursesTable.getItems().setAll(enrollments);
                         coursesTable.setPrefHeight(400);
-                        coursesTable.setPrefWidth(550);
+                        coursesTable.setPrefWidth(750);
 
                         Label cgpaLabel = new Label(String.format("CGPA: %.2f", cgpa));
                         cgpaLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
@@ -405,24 +734,22 @@ public class MainApp extends Application {
         rightPane.setPadding(new Insets(10));
 
         SplitPane splitPane = new SplitPane();
-        splitPane.getItems().addAll(leftPane, rightPane);
-        splitPane.setDividerPositions(0.33);
+        splitPane.getItems().addAll(rightPane, leftPane);
+        splitPane.setDividerPositions(0.70);
 
         layout.setCenter(splitPane);
 
-        tab.setContent(layout);
+        
         // Refresh on load
-        tab.setOnSelectionChanged(e -> {
-            if(tab.isSelected()) refreshTable.run();
-        });
-        return tab;
+        refreshTable.run();
+        return layout;
     }
 
     // =========================================================================
     // INSTRUCTORS TAB
     // =========================================================================
-    private Tab createInstructorsTab() {
-        Tab tab = new Tab("Instructors");
+    private javafx.scene.Node createInstructorsView() {
+
         BorderPane layout = new BorderPane();
         layout.setPadding(new Insets(10));
 
@@ -530,23 +857,21 @@ public class MainApp extends Application {
         rightPane.setPadding(new Insets(10));
 
         SplitPane splitPane = new SplitPane();
-        splitPane.getItems().addAll(leftPane, rightPane);
+        splitPane.getItems().addAll(rightPane, leftPane);
         splitPane.setDividerPositions(0.35);
 
         layout.setCenter(splitPane);
         
-        tab.setContent(layout);
-        tab.setOnSelectionChanged(e -> {
-            if(tab.isSelected()) refreshTable.run();
-        });
-        return tab;
+        
+        refreshTable.run();
+        return layout;
     }
 
     // =========================================================================
     // COURSES TAB
     // =========================================================================
-    private Tab createCoursesTab() {
-        Tab tab = new Tab("Courses");
+    private javafx.scene.Node createCoursesView() {
+
         BorderPane layout = new BorderPane();
         layout.setPadding(new Insets(10));
 
@@ -689,23 +1014,21 @@ public class MainApp extends Application {
         rightPane.setPadding(new Insets(10));
 
         SplitPane splitPane = new SplitPane();
-        splitPane.getItems().addAll(leftPane, rightPane);
-        splitPane.setDividerPositions(0.33);
+        splitPane.getItems().addAll(rightPane, leftPane);
+        splitPane.setDividerPositions(0.70);
 
         layout.setCenter(splitPane);
         
-        tab.setContent(layout);
-        tab.setOnSelectionChanged(e -> {
-            if(tab.isSelected()) refreshTable.run();
-        });
-        return tab;
+        
+        refreshTable.run();
+        return layout;
     }
 
     // =========================================================================
     // ENROLLMENTS TAB
     // =========================================================================
-    private Tab createEnrollmentsTab() {
-        Tab tab = new Tab("Enrollments");
+    private javafx.scene.Node createEnrollmentsView() {
+
         BorderPane layout = new BorderPane();
         layout.setPadding(new Insets(10));
 
@@ -801,16 +1124,14 @@ public class MainApp extends Application {
         rightPane.setPadding(new Insets(10));
         
         SplitPane splitPane = new SplitPane();
-        splitPane.getItems().addAll(leftPane, rightPane);
-        splitPane.setDividerPositions(0.33);
+        splitPane.getItems().addAll(rightPane, leftPane);
+        splitPane.setDividerPositions(0.70);
 
         layout.setCenter(splitPane);
         
         List<String> studentDict = new ArrayList<>();
         List<String> courseDict = new ArrayList<>();
 
-        tab.setOnSelectionChanged(e -> {
-            if (tab.isSelected()) {
                 runTaskWithProgress("Loading Dictionaries...", () -> {
                     List<String> sList = studentService.getAllStudentsSortedById().stream()
                         .map(s -> s.getRegNo() + " - " + s.getFullName())
@@ -825,50 +1146,43 @@ public class MainApp extends Application {
                         courseDict.addAll(cList);
                     });
                 }, null);
-            }
-        });
+
 
         setupAutocomplete(regNoField, () -> studentDict);
         setupAutocomplete(searchRegNo, () -> studentDict);
         setupAutocomplete(courseCodeField, () -> courseDict);
         
-        tab.setContent(layout);
-        return tab;
+        
+        return layout;
     }
 
     // =========================================================================
     // FILE OPERATIONS TAB
     // =========================================================================
-    private Tab createFileOperationsTab() {
+    private javafx.scene.Node createFileOperationsView() {
         Tab tab = new Tab("File & System Ops");
         VBox layout = new VBox(15);
         layout.setPadding(new Insets(20));
 
+        String[] instReq = {"FiD", "firstName", "lastName", "email", "department", "dob", "phone", "cabinNo"};
+        String[] coursesReq = {"code", "title", "credits", "department", "instructorId", "semester", "classroomNo"};
+        String[] studentsReq = {"id", "regNo", "firstName", "lastName", "email", "status", "registrationDate", "dob", "phone"};
+        String[] enrollReq = {"studentRegNo", "courseCode", "grade"};
+
         Button btnImportCourses = new Button("Import Courses");
-        btnImportCourses.setOnAction(e -> runTaskWithProgress("Importing Courses...", 
-            importExportService::importCoursesFromTestData, () -> showAlert(Alert.AlertType.INFORMATION, "Courses imported.")));
+        btnImportCourses.setOnAction(e -> handleSingleImport("Courses", coursesReq, importExportService::importCoursesFile));
 
         Button btnImportStudents = new Button("Import Students");
-        btnImportStudents.setOnAction(e -> runTaskWithProgress("Importing Students...", 
-            importExportService::importStudentsFromTestData, () -> showAlert(Alert.AlertType.INFORMATION, "Students imported.")));
+        btnImportStudents.setOnAction(e -> handleSingleImport("Students", studentsReq, importExportService::importStudentsFile));
 
         Button btnImportInstructors = new Button("Import Instructors");
-        btnImportInstructors.setOnAction(e -> runTaskWithProgress("Importing Instructors...", 
-            importExportService::importInstructorsFromTestData, () -> showAlert(Alert.AlertType.INFORMATION, "Instructors imported.")));
+        btnImportInstructors.setOnAction(e -> handleSingleImport("Instructors", instReq, importExportService::importInstructorsFile));
 
         Button btnImportEnrollments = new Button("Import Enrollments");
-        btnImportEnrollments.setOnAction(e -> runTaskWithProgress("Importing Enrollments...", 
-            importExportService::importEnrollmentsFromTestData, () -> showAlert(Alert.AlertType.INFORMATION, "Enrollments imported.")));
+        btnImportEnrollments.setOnAction(e -> handleSingleImport("Enrollments", enrollReq, importExportService::importEnrollmentsFile));
 
         Button btnImportAll = new Button("Import All");
-        btnImportAll.setOnAction(e -> runTaskWithProgress("Importing All Data...", () -> {
-            importExportService.importInstructorsFromTestData();
-            importExportService.importStudentsFromTestData();
-            importExportService.importCoursesFromTestData();
-            Platform.runLater(() -> globalStatusLabel.setText("Waiting 5s for consistency..."));
-            Thread.sleep(5000);
-            importExportService.importEnrollmentsFromTestData();
-        }, () -> showAlert(Alert.AlertType.INFORMATION, "All data imported successfully.")));
+        btnImportAll.setOnAction(e -> handleImportAll());
 
         Button btnExport = new Button("Export Data");
         btnExport.setOnAction(e -> runTaskWithProgress("Exporting Data...", 
@@ -893,17 +1207,17 @@ public class MainApp extends Application {
             }
         });
         
-        Button btnDeleteDb = new Button("Delete Database (DANGER)", new FontIcon("fas-trash"));
+        Button btnDeleteDb = new Button("Clear All Data", new FontIcon("fas-trash"));
         btnDeleteDb.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold;");
         btnDeleteDb.setOnAction(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Database");
+            alert.setTitle("Clear All Data");
             alert.setHeaderText("ARE YOU SURE?");
-            alert.setContentText("This will drop all tables and cannot be undone. You will need to restart the application.");
+            alert.setContentText("This will permanently DELETE all records (students, instructors, courses, enrollments).\nThe database tables will remain intact — you can import new data immediately after.");
             alert.showAndWait().ifPresent(response -> {
                 if(response == ButtonType.OK) {
-                    runTaskWithProgress("Deleting database...", () -> dbAdminService.dropAllTables(), 
-                        () -> showAlert(Alert.AlertType.INFORMATION, "Database deleted. Please restart."));
+                    runTaskWithProgress("Clearing all data...", () -> dbAdminService.clearAllData(),
+                        () -> showAlert(Alert.AlertType.INFORMATION, "All data cleared successfully. The schema is intact — you can import new data now."));
                 }
             });
         });
@@ -918,8 +1232,8 @@ public class MainApp extends Application {
             new Label("System Actions"), row3
         );
 
-        tab.setContent(layout);
-        return tab;
+        
+        return layout;
     }
     
     private void setupAutocomplete(TextField textField, java.util.function.Supplier<List<String>> dictionarySupplier) {

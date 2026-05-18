@@ -15,7 +15,8 @@ import java.util.List;
 
 public class EnrollmentService {
 
-    private static final int MAX_CREDITS = 21;
+    private static final int MAX_TOTAL_CREDITS = 225;
+    private static final int MAX_SEMESTER_CREDITS = 60;
     private final StudentService studentService;
     private final CourseService courseService;
 
@@ -39,18 +40,29 @@ public class EnrollmentService {
             throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
         }
 
-        int currentCredits = getCurrentCredits(studentRegNo, conn);
+        int enrollYear = java.time.LocalDate.now().getYear();
+        int currentTotalCredits = getCurrentCredits(studentRegNo, conn);
         Course course = this.courseService.findCourseByCode(courseCode, conn);
+        String semester = course.getSemester() != null ? course.getSemester().name() : "";
+        int currentSemesterCredits = getCurrentSemesterYearCredits(studentRegNo, semester, enrollYear, conn);
 
-        if (currentCredits + course.getCredits() > MAX_CREDITS) {
+        if (currentTotalCredits + course.getCredits() > MAX_TOTAL_CREDITS) {
             throw new MaxCreditLimitExceededException(
-                    "Enrolling in this course would exceed the maximum credit limit of " + MAX_CREDITS);
+                    "Enrolling in this course would exceed the maximum total credit limit of " + MAX_TOTAL_CREDITS);
         }
 
-        String sql = "INSERT INTO enrollments (student_reg_no, course_code) VALUES (?, ?)";
+        if (currentSemesterCredits + course.getCredits() > MAX_SEMESTER_CREDITS) {
+            throw new MaxCreditLimitExceededException(
+                    "Enrolling in this course would exceed the per-semester credit limit of " + MAX_SEMESTER_CREDITS
+                    + " for " + semester + " " + enrollYear);
+        }
+
+        String sql = "INSERT INTO enrollments (student_reg_no, course_code, enrollment_year, enrollment_semester) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, studentRegNo);
             pstmt.setString(2, courseCode.getCode());
+            pstmt.setInt(3, enrollYear);
+            pstmt.setString(4, semester);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new SQLException("Failed to enroll student: " + e.getMessage(), e);
@@ -86,17 +98,29 @@ public class EnrollmentService {
             throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
         }
 
-        int currentCredits = getCurrentCredits(studentRegNo, conn);
+        int enrollYear = java.time.LocalDate.now().getYear();
+        int currentTotalCredits = getCurrentCredits(studentRegNo, conn);
         Course course = this.courseService.findCourseByCode(courseCode, conn);
+        String semester = course.getSemester() != null ? course.getSemester().name() : "";
+        int currentSemesterCredits = getCurrentSemesterYearCredits(studentRegNo, semester, enrollYear, conn);
 
-        if (currentCredits + course.getCredits() > MAX_CREDITS) {
-            throw new MaxCreditLimitExceededException("Enrolling in this course would exceed the maximum credit limit.");
+        if (currentTotalCredits + course.getCredits() > MAX_TOTAL_CREDITS) {
+            throw new MaxCreditLimitExceededException(
+                    "Enrolling in this course would exceed the maximum total credit limit of " + MAX_TOTAL_CREDITS);
         }
 
-        String insertSql = "INSERT INTO enrollments (student_reg_no, course_code) VALUES (?, ?)";
+        if (currentSemesterCredits + course.getCredits() > MAX_SEMESTER_CREDITS) {
+            throw new MaxCreditLimitExceededException(
+                    "Enrolling in this course would exceed the per-semester credit limit of " + MAX_SEMESTER_CREDITS
+                    + " for " + semester + " " + enrollYear);
+        }
+
+        String insertSql = "INSERT INTO enrollments (student_reg_no, course_code, enrollment_year, enrollment_semester) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
             pstmt.setString(1, studentRegNo);
             pstmt.setString(2, courseCode.getCode());
+            pstmt.setInt(3, enrollYear);
+            pstmt.setString(4, semester);
             pstmt.executeUpdate();
         }
         recordGrade(studentRegNo, courseCode, grade, conn);
@@ -158,7 +182,7 @@ public class EnrollmentService {
 
     public List<Enrollment> getAllEnrollments() {
         List<Enrollment> enrollments = new ArrayList<>();
-        String sql = "SELECT student_reg_no, course_code, grade FROM enrollments";
+        String sql = "SELECT student_reg_no, course_code, grade, enrollment_year, enrollment_semester FROM enrollments";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
@@ -167,12 +191,11 @@ public class EnrollmentService {
                 try {
                     Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"));
                     Course course = this.courseService.findCourseByCode(new CourseCode(rs.getString("course_code")), conn);
-                    
-                    Enrollment enrollment = new Enrollment(student, course);
                     String gradeStr = rs.getString("grade");
-                    if (gradeStr != null) {
-                        enrollment.setGrade(Grade.valueOf(gradeStr));
-                    }
+                    Grade grade = (gradeStr != null && !gradeStr.isEmpty()) ? Grade.valueOf(gradeStr) : Grade.NA;
+                    int year = rs.getInt("enrollment_year");
+                    String sem = rs.getString("enrollment_semester");
+                    Enrollment enrollment = new Enrollment(student, course, grade, year, sem);
                     enrollments.add(enrollment);
 
                 } catch (RecordNotFoundException | SQLException e) {
@@ -187,26 +210,25 @@ public class EnrollmentService {
     
     public List<Enrollment> getEnrollmentsForStudent(String studentRegNo) {
         List<Enrollment> enrollments = new ArrayList<>();
-        String sql = "SELECT student_reg_no, course_code, grade FROM enrollments WHERE student_reg_no = ?";
+        String sql = "SELECT student_reg_no, course_code, grade, enrollment_year, enrollment_semester FROM enrollments WHERE student_reg_no = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setString(1, studentRegNo);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                     try {
+                    try {
                         Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"));
                         Course course = this.courseService.findCourseByCode(new CourseCode(rs.getString("course_code")), conn);
-                        
-                        Enrollment enrollment = new Enrollment(student, course);
                         String gradeStr = rs.getString("grade");
-                        if (gradeStr != null) {
-                            enrollment.setGrade(Grade.valueOf(gradeStr));
-                        }
+                        Grade grade = (gradeStr != null && !gradeStr.isEmpty()) ? Grade.valueOf(gradeStr) : Grade.NA;
+                        int year = rs.getInt("enrollment_year");
+                        String sem = rs.getString("enrollment_semester");
+                        Enrollment enrollment = new Enrollment(student, course, grade, year, sem);
                         enrollments.add(enrollment);
 
                     } catch (RecordNotFoundException | SQLException e) {
-                         System.err.println("Skipping enrollment record due to missing data: " + e.getMessage());
+                        System.err.println("Skipping enrollment record due to missing data: " + e.getMessage());
                     }
                 }
             }
@@ -244,5 +266,53 @@ public class EnrollmentService {
             }
         }
         return totalCredits;
+    }
+
+    private int getCurrentSemesterYearCredits(String studentRegNo, String semester, int year, Connection conn) throws SQLException {
+        int semesterCredits = 0;
+        // Query uses enrollment_semester and enrollment_year stored IN the enrollment row
+        String sql = "SELECT SUM(c.credits) FROM courses c JOIN enrollments e ON c.code = e.course_code "
+                   + "WHERE e.student_reg_no = ? AND e.enrollment_semester = ? AND e.enrollment_year = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, studentRegNo);
+            pstmt.setString(2, semester);
+            pstmt.setInt(3, year);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    semesterCredits = rs.getInt(1);
+                }
+            }
+        }
+        return semesterCredits;
+    }
+
+    public void enrollStudentWithGradeAndYear(String studentRegNo, CourseCode courseCode, Grade grade, int enrollmentYear, Connection conn)
+            throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException, SQLException {
+        if (isEnrolled(studentRegNo, courseCode, conn)) {
+            throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
+        }
+        int currentTotalCredits = getCurrentCredits(studentRegNo, conn);
+        Course course = this.courseService.findCourseByCode(courseCode, conn);
+        String semester = course.getSemester() != null ? course.getSemester().name() : "";
+        int currentSemesterCredits = getCurrentSemesterYearCredits(studentRegNo, semester, enrollmentYear, conn);
+
+        if (currentTotalCredits + course.getCredits() > MAX_TOTAL_CREDITS) {
+            throw new MaxCreditLimitExceededException(
+                    "Enrolling in this course would exceed the maximum total credit limit of " + MAX_TOTAL_CREDITS);
+        }
+        if (currentSemesterCredits + course.getCredits() > MAX_SEMESTER_CREDITS) {
+            throw new MaxCreditLimitExceededException(
+                    "Enrolling in this course would exceed the per-semester credit limit of " + MAX_SEMESTER_CREDITS
+                    + " for " + semester + " " + enrollmentYear);
+        }
+        String insertSql = "INSERT INTO enrollments (student_reg_no, course_code, enrollment_year, enrollment_semester) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+            pstmt.setString(1, studentRegNo);
+            pstmt.setString(2, courseCode.getCode());
+            pstmt.setInt(3, enrollmentYear);
+            pstmt.setString(4, semester);
+            pstmt.executeUpdate();
+        }
+        recordGrade(studentRegNo, courseCode, grade, conn);
     }
 }
