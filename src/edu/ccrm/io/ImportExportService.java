@@ -41,6 +41,20 @@ public class ImportExportService {
     this.enrollmentService = enrollmentService;
   }
 
+  // Progress callback for record-level reporting
+  public interface ImportProgressCallback {
+      void onProgress(int processed, int total);
+  }
+
+  private long countDataLines(Path filePath) throws IOException {
+      try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+          long count = 0;
+          reader.readLine(); // skip header
+          while (reader.readLine() != null) count++;
+          return count;
+      }
+  }
+
   public void importStudents() {
     System.out.println("     - Importing students.csv...");
     try (Connection conn = DatabaseManager.getConnection()) {
@@ -188,6 +202,10 @@ public class ImportExportService {
   }
 
   private void importEnrollments(Path filePath, Connection conn) throws IOException, SQLException {
+      importEnrollments(filePath, conn, null, new int[]{0}, 0);
+  }
+
+  private void importEnrollments(Path filePath, Connection conn, ImportProgressCallback callback, int[] processed, int total) throws IOException, SQLException {
       try (BufferedReader reader = Files.newBufferedReader(filePath)) {
           String headerLine = reader.readLine(); // Read header to find column positions
           if (headerLine == null) return;
@@ -226,7 +244,7 @@ public class ImportExportService {
                   if (idxGrade >= 0 && idxGrade < parts.length && !parts[idxGrade].trim().isEmpty()) {
                       try {
                          Grade grade = Grade.valueOf(parts[idxGrade].trim().toUpperCase());
-                         enrollmentService.recordGrade(studentRegNo, courseCode, grade);
+                         enrollmentService.recordGrade(studentRegNo, courseCode, grade, conn);
                       }
                       catch (Exception gradeException){
                           System.err.println("Could not record grade for already enrolled student.");
@@ -235,6 +253,8 @@ public class ImportExportService {
               } catch (MaxCreditLimitExceededException | RecordNotFoundException | IllegalArgumentException e) {
                   System.err.println("Warning: Could not process enrollment for " + studentRegNo + " in " + courseCode.getCode() + ". Reason: " + e.getMessage());
               }
+              processed[0]++;
+              if (callback != null) callback.onProgress(processed[0], total);
           }
       }
   }
@@ -382,28 +402,123 @@ public class ImportExportService {
   }
 
   public void importStudentsFile(Path path) throws Exception {
+      importStudentsFile(path, null);
+  }
+
+  public void importStudentsFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
     try (Connection conn = DatabaseManager.getConnection()) {
-      importStudents(path, conn);
+      try (BufferedReader reader = Files.newBufferedReader(path)) {
+        String line;
+        reader.readLine(); // skip header
+        while ((line = reader.readLine()) != null) {
+          String[] parts = line.split(",");
+          String status = parts[5].replaceAll("\"", "");
+          Student student = new Student(
+            Integer.parseInt(parts[0]),
+            parts[1],
+            new Name(parts[2], parts[3]),
+            parts[4],
+            Student.Status.valueOf(status),
+            parseDateRobust(parts[6]),
+            parts.length > 7 ? parseDateRobust(parts[7]) : null,
+            parts.length > 8 ? parts[8] : null
+          );
+          try {
+            studentService.addStudent(student, conn);
+          } catch (DataIntegrityException e) {
+            System.err.println("Student with registration number " + student.getRegNo() + " already exists.");
+          }
+          processed[0]++;
+          if (callback != null) callback.onProgress(processed[0], total);
+        }
+      }
     }
   }
 
   public void importInstructorsFile(Path path) throws Exception {
+      importInstructorsFile(path, null);
+  }
+
+  public void importInstructorsFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
     try (Connection conn = DatabaseManager.getConnection()) {
-      importInstructors(path, conn);
+      try (BufferedReader reader = Files.newBufferedReader(path)) {
+        String line;
+        reader.readLine();
+        while ((line = reader.readLine()) != null) {
+          String[] parts = line.split(",");
+          Instructor instructor = new Instructor(
+            parts[0],
+            new Name(parts[1], parts[2]),
+            parts[3],
+            parts[4],
+            parts.length > 5 ? parseDateRobust(parts[5]) : null,
+            parts.length > 6 ? parts[6] : null,
+            parts.length > 7 ? parts[7] : null
+          );
+          try {
+            instructorService.addInstructor(instructor, conn);
+          } catch (DataIntegrityException e) {
+            System.err.println("Instructor with FiD " + instructor.getFiD() + " already exists.");
+          }
+          processed[0]++;
+          if (callback != null) callback.onProgress(processed[0], total);
+        }
+      }
     }
   }
 
   public void importCoursesFile(Path path) throws Exception {
+      importCoursesFile(path, null);
+  }
+
+  public void importCoursesFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
     try (Connection conn = DatabaseManager.getConnection()) {
-      importCourses(path, conn);
+      try (BufferedReader reader = Files.newBufferedReader(path)) {
+        String line;
+        reader.readLine();
+        while ((line = reader.readLine()) != null) {
+          String[] parts = line.split(",");
+          CourseCode courseCode = new CourseCode(parts[0]);
+          try {
+            Instructor instructor = instructorService.findInstructorByFiD(parts[4], conn);
+            Course course = new Course.Builder(courseCode)
+              .withTitle(parts[1])
+              .withCredits(Integer.parseInt(parts[2]))
+              .withDepartment(parts[3])
+              .withInstructor(instructor)
+              .withSemester(Semester.valueOf(parts[5]))
+              .withClassroomNo(parts.length > 6 ? parts[6] : null)
+              .build();
+            courseService.addCourse(course, conn);
+          } catch (RecordNotFoundException e) {
+            System.err.println("Skipping course " + courseCode + " because instructor was not found: " + e.getMessage());
+          } catch (DataIntegrityException e) {
+            System.err.println("Course with code " + courseCode.getCode() + " already exists.");
+          }
+          processed[0]++;
+          if (callback != null) callback.onProgress(processed[0], total);
+        }
+      }
     }
   }
 
   public void importEnrollmentsFile(Path path) throws Exception {
+      importEnrollmentsFile(path, null);
+  }
+
+  public void importEnrollmentsFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
     try (Connection conn = DatabaseManager.getConnection()) {
         conn.setAutoCommit(false);
         try {
-            importEnrollments(path, conn);
+            importEnrollments(path, conn, callback, processed, total);
             conn.commit();
         } catch (Exception e) {
             conn.rollback();

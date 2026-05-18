@@ -58,6 +58,8 @@ public class MainApp extends Application {
     private ProgressIndicator centerSpinner;
     private ProgressBar centerProgressBar;
     private Label progressTextLabel;
+    private ProgressBar recordProgressBar;
+    private Label recordProgressLabel;
     private VBox progressBox;
 
     public static void main(String[] args) {
@@ -89,10 +91,21 @@ public class MainApp extends Application {
         progressTextLabel = new Label();
         progressTextLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
 
-        progressBox = new VBox(15, centerSpinner, centerProgressBar, progressTextLabel);
+        recordProgressBar = new ProgressBar(0);
+        recordProgressBar.setPrefWidth(200);
+        recordProgressBar.setVisible(false);
+
+        recordProgressLabel = new Label();
+        recordProgressLabel.setStyle("-fx-text-fill: #aaaaaa; -fx-font-size: 12px;");
+        recordProgressLabel.setVisible(false);
+
+        Label progressHeading = new Label("Progress");
+        progressHeading.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+
+        progressBox = new VBox(10, progressHeading, centerSpinner, centerProgressBar, progressTextLabel, recordProgressBar, recordProgressLabel);
         progressBox.setAlignment(Pos.CENTER);
-        progressBox.setMaxSize(300, 150);
-        progressBox.setStyle("-fx-background-color: rgba(0,0,0,0.75); -fx-padding: 20; -fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: rgba(255,255,255,0.2); -fx-border-width: 1;");
+        progressBox.setMaxSize(400, 230);
+        progressBox.setStyle("-fx-background-color: rgba(0,0,0,0.85); -fx-padding: 25; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: rgba(255,255,255,0.2); -fx-border-width: 1;");
         progressBox.setVisible(false);
 
         ToggleButton themeToggle = new ToggleButton();
@@ -320,7 +333,7 @@ public class MainApp extends Application {
     }
 
     interface FileImportAction {
-        void execute(Path path) throws Exception;
+        void execute(Path path, ImportExportService.ImportProgressCallback callback) throws Exception;
     }
 
     private void handleSingleImport(String moduleName, String[] requiredFields, FileImportAction importAction) {
@@ -339,9 +352,20 @@ public class MainApp extends Application {
                 showAlert(Alert.AlertType.ERROR, "Invalid CSV format for " + moduleName + ".\nExpected header fields (in any order):\n" + String.join(", ", requiredFields));
                 return;
             }
-            runTaskWithProgress("Importing " + moduleName + "...", () -> {
-                importAction.execute(file.toPath());
-            }, () -> showAlert(Alert.AlertType.INFORMATION, moduleName + " imported successfully."));
+            Task<Void> task = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    updateMessage("Importing " + moduleName + "...");
+                    updateProgress(0, 1);
+                    importAction.execute(file.toPath(), (processed, total) -> {
+                        updateProgress(processed, total);
+                        int pct = total > 0 ? (int)((processed * 100L) / total) : 0;
+                        updateMessage(String.format("Importing %s: Record %d / %d (%d%%)", moduleName, processed, total, pct));
+                    });
+                    return null;
+                }
+            };
+            runJavaFXTask(task, "Importing " + moduleName + "...", () -> showAlert(Alert.AlertType.INFORMATION, moduleName + " imported successfully."));
         }
     }
 
@@ -353,6 +377,9 @@ public class MainApp extends Application {
         centerSpinner.setVisible(false);
         centerProgressBar.setVisible(true);
         progressTextLabel.setVisible(true);
+        // Hide record-level bar by default; handleImportAll shows it explicitly
+        recordProgressBar.setVisible(false);
+        recordProgressLabel.setVisible(false);
         
         centerProgressBar.progressProperty().bind(task.progressProperty());
         progressTextLabel.textProperty().bind(task.messageProperty());
@@ -360,6 +387,8 @@ public class MainApp extends Application {
         task.setOnSucceeded(e -> {
             centerProgressBar.progressProperty().unbind();
             progressTextLabel.textProperty().unbind();
+            recordProgressBar.setVisible(false);
+            recordProgressLabel.setVisible(false);
             globalProgressIndicator.setVisible(false);
             dimOverlay.setVisible(false);
             progressBox.setVisible(false);
@@ -372,6 +401,8 @@ public class MainApp extends Application {
         task.setOnFailed(e -> {
             centerProgressBar.progressProperty().unbind();
             progressTextLabel.textProperty().unbind();
+            recordProgressBar.setVisible(false);
+            recordProgressLabel.setVisible(false);
             globalProgressIndicator.setVisible(false);
             dimOverlay.setVisible(false);
             progressBox.setVisible(false);
@@ -447,23 +478,60 @@ public class MainApp extends Application {
             protected Void call() throws Exception {
                 updateProgress(0, 4);
                 
+                Platform.runLater(() -> {
+                    recordProgressBar.setVisible(true);
+                    recordProgressLabel.setVisible(true);
+                });
+
                 updateMessage("Importing Instructors (1/4)...");
-                importExportService.importInstructorsFile(instFile.toPath());
+                Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
+                importExportService.importInstructorsFile(instFile.toPath(), (p, t) -> {
+                    double frac = t > 0 ? (double) p / t : 0;
+                    int pct = t > 0 ? (int)((p * 100L) / t) : 0;
+                    Platform.runLater(() -> {
+                        recordProgressBar.setProgress(frac);
+                        recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
+                    });
+                });
                 updateProgress(1, 4);
-                Thread.sleep(300); // UI visual buffer
+                Thread.sleep(300);
 
                 updateMessage("Importing Courses (2/4)...");
-                importExportService.importCoursesFile(coursesFile.toPath());
+                Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
+                importExportService.importCoursesFile(coursesFile.toPath(), (p, t) -> {
+                    double frac = t > 0 ? (double) p / t : 0;
+                    int pct = t > 0 ? (int)((p * 100L) / t) : 0;
+                    Platform.runLater(() -> {
+                        recordProgressBar.setProgress(frac);
+                        recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
+                    });
+                });
                 updateProgress(2, 4);
                 Thread.sleep(300);
 
                 updateMessage("Importing Students (3/4)...");
-                importExportService.importStudentsFile(studentsFile.toPath());
+                Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
+                importExportService.importStudentsFile(studentsFile.toPath(), (p, t) -> {
+                    double frac = t > 0 ? (double) p / t : 0;
+                    int pct = t > 0 ? (int)((p * 100L) / t) : 0;
+                    Platform.runLater(() -> {
+                        recordProgressBar.setProgress(frac);
+                        recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
+                    });
+                });
                 updateProgress(3, 4);
                 Thread.sleep(300);
 
                 updateMessage("Importing Enrollments (4/4)...");
-                importExportService.importEnrollmentsFile(enrollFile.toPath());
+                Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
+                importExportService.importEnrollmentsFile(enrollFile.toPath(), (p, t) -> {
+                    double frac = t > 0 ? (double) p / t : 0;
+                    int pct = t > 0 ? (int)((p * 100L) / t) : 0;
+                    Platform.runLater(() -> {
+                        recordProgressBar.setProgress(frac);
+                        recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
+                    });
+                });
                 updateProgress(4, 4);
                 Thread.sleep(300);
                 
@@ -578,6 +646,7 @@ public class MainApp extends Application {
         });
 
         table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colRegDate, colStatus);
+        table.setPrefHeight(650);
 
         ObservableList<Student> masterData = FXCollections.observableArrayList();
         FilteredList<Student> filteredData = new FilteredList<>(masterData, p -> true);
@@ -653,24 +722,36 @@ public class MainApp extends Application {
                         cCredits.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getCourse().getCredits()));
                         TableColumn<Enrollment, String> cSemester = new TableColumn<>("Semester");
                         cSemester.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                            c.getValue().getCourse().getSemester() != null ? c.getValue().getCourse().getSemester().name() : "N/A"));
-                        TableColumn<Enrollment, Integer> cYear = new TableColumn<>("Year");
-                        cYear.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getEnrollmentYear()));
+                            c.getValue().getEnrollmentSemester() != null && !c.getValue().getEnrollmentSemester().isEmpty()
+                                ? c.getValue().getEnrollmentSemester()
+                                : (c.getValue().getCourse().getSemester() != null ? c.getValue().getCourse().getSemester().name() : "N/A")));
+                        TableColumn<Enrollment, String> cYear = new TableColumn<>("Year");
+                        cYear.setCellValueFactory(c -> new ReadOnlyStringWrapper(
+                            c.getValue().getEnrollmentYear() > 0
+                                ? String.valueOf(c.getValue().getEnrollmentYear())
+                                : "N/A"));
                         TableColumn<Enrollment, String> cGrade = new TableColumn<>("Grade");
                         cGrade.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getGrade() != null ? c.getValue().getGrade().toString() : "N/A"));
                         
                         coursesTable.getColumns().addAll(cCode, cTitle, cCredits, cSemester, cYear, cGrade);
                         coursesTable.getItems().setAll(enrollments);
-                        coursesTable.setPrefHeight(400);
-                        coursesTable.setPrefWidth(750);
+                        coursesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+                        VBox.setVgrow(coursesTable, Priority.ALWAYS);
 
                         Label cgpaLabel = new Label(String.format("CGPA: %.2f", cgpa));
                         cgpaLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
                         cgpaLabel.setStyle("-fx-text-fill: white;");
 
                         content.getChildren().addAll(headerInfo, coursesTable, cgpaLabel);
+                        VBox.setVgrow(coursesTable, Priority.ALWAYS);
+
+                        content.prefWidthProperty().bind(dialog.getDialogPane().widthProperty().subtract(40));
+                        content.prefHeightProperty().bind(dialog.getDialogPane().heightProperty().subtract(140));
+
                         dialog.getDialogPane().setContent(content);
                         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+                        dialog.setResizable(true);
+                        dialog.getDialogPane().setPrefSize(950, 650);
                         dialog.showAndWait();
                     });
                 } catch (Exception ex) {
@@ -732,6 +813,7 @@ public class MainApp extends Application {
         
         VBox rightPane = new VBox(topBox, table);
         rightPane.setPadding(new Insets(10));
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(rightPane, leftPane);
@@ -807,6 +889,7 @@ public class MainApp extends Application {
         colCabin.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCabinNo()));
 
         table.getColumns().addAll(colFid, colName, colEmail, colDept, colDob, colPhone, colCabin);
+        table.setPrefHeight(650);
 
         ObservableList<Instructor> masterData = FXCollections.observableArrayList();
         FilteredList<Instructor> filteredData = new FilteredList<>(masterData, p -> true);
@@ -855,10 +938,11 @@ public class MainApp extends Application {
 
         VBox rightPane = new VBox(topBox, table);
         rightPane.setPadding(new Insets(10));
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(rightPane, leftPane);
-        splitPane.setDividerPositions(0.35);
+        splitPane.setDividerPositions(0.70);
 
         layout.setCenter(splitPane);
         
@@ -921,6 +1005,7 @@ public class MainApp extends Application {
         colClassroom.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getClassroomNo() != null ? c.getValue().getClassroomNo() : ""));
 
         table.getColumns().addAll(colCode, colTitle, colCredits, colDept, colSem, colInst, colClassroom);
+        table.setPrefHeight(650);
 
         ObservableList<Course> masterData = FXCollections.observableArrayList();
         FilteredList<Course> filteredData = new FilteredList<>(masterData, p -> true);
@@ -1012,6 +1097,7 @@ public class MainApp extends Application {
 
         VBox rightPane = new VBox(topBox, table);
         rightPane.setPadding(new Insets(10));
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(rightPane, leftPane);
@@ -1071,6 +1157,7 @@ public class MainApp extends Application {
         colGrade.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getGrade() != null ? c.getValue().getGrade().toString() : "Not Graded"));
 
         table.getColumns().addAll(colCourse, colTitle, colGrade);
+        table.setPrefHeight(650);
 
         btnEnroll.setOnAction(e -> {
             try {
@@ -1122,7 +1209,8 @@ public class MainApp extends Application {
 
         VBox rightPane = new VBox(topBox, table);
         rightPane.setPadding(new Insets(10));
-        
+        VBox.setVgrow(table, Priority.ALWAYS);
+
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(rightPane, leftPane);
         splitPane.setDividerPositions(0.70);

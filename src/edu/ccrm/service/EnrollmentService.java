@@ -150,7 +150,7 @@ public class EnrollmentService {
         }
     }
 
-    private void recordGrade(String studentRegNo, CourseCode courseCode, Grade grade, Connection conn) throws RecordNotFoundException, SQLException {
+    public void recordGrade(String studentRegNo, CourseCode courseCode, Grade grade, Connection conn) throws RecordNotFoundException, SQLException {
         String sql = "UPDATE enrollments SET grade = ? WHERE student_reg_no = ? AND course_code = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, grade.name());
@@ -189,7 +189,7 @@ public class EnrollmentService {
 
             while (rs.next()) {
                 try {
-                    Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"));
+                    Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"), conn);
                     Course course = this.courseService.findCourseByCode(new CourseCode(rs.getString("course_code")), conn);
                     String gradeStr = rs.getString("grade");
                     Grade grade = (gradeStr != null && !gradeStr.isEmpty()) ? Grade.valueOf(gradeStr) : Grade.NA;
@@ -210,7 +210,7 @@ public class EnrollmentService {
     
     public List<Enrollment> getEnrollmentsForStudent(String studentRegNo) {
         List<Enrollment> enrollments = new ArrayList<>();
-        String sql = "SELECT student_reg_no, course_code, grade, enrollment_year, enrollment_semester FROM enrollments WHERE student_reg_no = ?";
+        String sql = "SELECT e.student_reg_no, e.course_code, e.grade, e.enrollment_year, e.enrollment_semester FROM enrollments e INNER JOIN courses c ON e.course_code = c.code WHERE e.student_reg_no = ? ORDER BY e.enrollment_year ASC, e.enrollment_semester ASC";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -218,7 +218,7 @@ public class EnrollmentService {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     try {
-                        Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"));
+                        Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"), conn);
                         Course course = this.courseService.findCourseByCode(new CourseCode(rs.getString("course_code")), conn);
                         String gradeStr = rs.getString("grade");
                         Grade grade = (gradeStr != null && !gradeStr.isEmpty()) ? Grade.valueOf(gradeStr) : Grade.NA;

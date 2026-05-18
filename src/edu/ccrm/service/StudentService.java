@@ -61,10 +61,16 @@ public class StudentService {
     }
 
     public Student findStudentByRegNo(String regNo) throws RecordNotFoundException {
-        String sql = "SELECT * FROM students WHERE reg_no = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            return findStudentByRegNo(regNo, conn);
+        } catch (SQLException e) {
+            throw new RecordNotFoundException("Database error finding student by Reg No.: " + e.getMessage());
+        }
+    }
 
+    public Student findStudentByRegNo(String regNo, Connection conn) throws RecordNotFoundException {
+        String sql = "SELECT * FROM students WHERE reg_no = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, regNo);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -74,7 +80,6 @@ public class StudentService {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Database error finding student by Reg No.: " + e.getMessage());
             throw new RecordNotFoundException("Database error finding student by Reg No.: " + e.getMessage());
         }
     }
