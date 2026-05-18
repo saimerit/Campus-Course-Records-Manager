@@ -1,11 +1,11 @@
-code,title,credits,department,instructorId,semester
-PHIL101,Introduction to Philosophy,3,Philosophy,111,FALL
-HIST201,World History,3,History,112,FALL
-SOC101,Introduction to Sociology,3,Sociology,113,FALL
-POLI201,American Government,3,Political Science,114,SPRING
-ECON101,Principles of Microeconomics,3,Economics,115,SPRING
-PSYC201,Introduction to Psychology,3,Psychology,116,SPRING
-ANTH101,Cultural Anthropology,3,Anthropology,117,FALL
-GEO201,World Geography,3,Geography,118,FALL
-LING301,Introduction to Linguistics,3,Linguistics,119,SPRING
-ART205,Painting I,2,Fine Arts,120,SPRING
+code,title,credits,department,instructorId,semester,classroomNo
+PHIL101,Introduction to Philosophy,3,Philosophy,111,FALL,CR001
+HIST201,World History,3,History,112,FALL,CR002
+SOC101,Introduction to Sociology,3,Sociology,113,FALL,CR003
+POLI201,American Government,3,Political Science,114,SPRING,CR004
+ECON101,Principles of Microeconomics,3,Economics,115,SPRING,AC001
+PSYC201,Introduction to Psychology,3,Psychology,116,SPRING,LR001
+ANTH101,Cultural Anthropology,3,Anthropology,117,FALL,LR002
+GEO201,World Geography,3,Geography,118,FALL,LR003
+LING301,Introduction to Linguistics,3,Linguistics,119,SPRING,CR005
+ART205,Painting I,2,Fine Arts,120,SPRING,LR004

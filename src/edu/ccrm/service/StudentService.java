@@ -24,7 +24,7 @@ public class StudentService {
     }
 
     public void addStudent(Student student, Connection conn) throws DataIntegrityException {
-        String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date, dob, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, student.getId());
             pstmt.setString(2, student.getRegNo());
@@ -33,6 +33,8 @@ public class StudentService {
             pstmt.setString(5, student.getEmail());
             pstmt.setString(6, student.getStatus().name());
             pstmt.setDate(7, Date.valueOf(student.getRegistrationDate()));
+            pstmt.setDate(8, student.getDob() != null ? Date.valueOf(student.getDob()) : null);
+            pstmt.setString(9, student.getPhone());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             if ("23505".equals(e.getSQLState())) {
@@ -94,13 +96,15 @@ public class StudentService {
     }
 
     public void updateStudent(Student student) throws RecordNotFoundException, DataIntegrityException {
-        String sql = "UPDATE students SET first_name = ?, last_name = ?, email = ? WHERE reg_no = ?";
+        String sql = "UPDATE students SET first_name = ?, last_name = ?, email = ?, dob = ?, phone = ? WHERE reg_no = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, student.getFullName().getFirstName());
             pstmt.setString(2, student.getFullName().getLastName());
             pstmt.setString(3, student.getEmail());
-            pstmt.setString(4, student.getRegNo());
+            pstmt.setDate(4, student.getDob() != null ? Date.valueOf(student.getDob()) : null);
+            pstmt.setString(5, student.getPhone());
+            pstmt.setString(6, student.getRegNo());
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
                 throw new RecordNotFoundException("Student with Reg No. " + student.getRegNo() + " not found.");
@@ -118,6 +122,8 @@ public class StudentService {
         String email = rs.getString("email");
         Student.Status status = Student.Status.valueOf(rs.getString("status"));
         LocalDate registrationDate = rs.getDate("registration_date").toLocalDate();
-        return new Student(id, regNo, name, email, status, registrationDate);
+        LocalDate dob = rs.getDate("dob") != null ? rs.getDate("dob").toLocalDate() : null;
+        String phone = rs.getString("phone");
+        return new Student(id, regNo, name, email, status, registrationDate, dob, phone);
     }
 }

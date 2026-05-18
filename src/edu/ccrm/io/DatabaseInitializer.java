@@ -143,6 +143,20 @@ public class DatabaseInitializer {
         }
       }
     }
+    
+    // Check if new columns exist
+    try (ResultSet rs = conn.getMetaData().getColumns(null, null, "STUDENTS", "DOB")) {
+        if (!rs.next()) {
+            System.err.println("    - VERIFICATION FAILED: Column 'DOB' missing in 'STUDENTS'. Rebuilding schema.");
+            return false;
+        }
+    }
+    try (ResultSet rs = conn.getMetaData().getColumns(null, null, "COURSES", "CLASSROOM_NO")) {
+        if (!rs.next()) {
+            System.err.println("    - VERIFICATION FAILED: Column 'CLASSROOM_NO' missing in 'COURSES'. Rebuilding schema.");
+            return false;
+        }
+    }
     return true;
   }
 }

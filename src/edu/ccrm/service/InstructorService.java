@@ -23,13 +23,16 @@ public class InstructorService {
     }
 
     public void addInstructor(Instructor instructor, Connection conn) throws DataIntegrityException {
-        String sql = "INSERT INTO instructors (FiD, first_name, last_name, email, department) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO instructors (FiD, first_name, last_name, email, department, dob, phone, cabin_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, instructor.getFiD());
             pstmt.setString(2, instructor.getFullName().getFirstName());
             pstmt.setString(3, instructor.getFullName().getLastName());
             pstmt.setString(4, instructor.getEmail());
             pstmt.setString(5, instructor.getDepartment());
+            pstmt.setDate(6, instructor.getDob() != null ? Date.valueOf(instructor.getDob()) : null);
+            pstmt.setString(7, instructor.getPhone());
+            pstmt.setString(8, instructor.getCabinNo());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             if ("23505".equals(e.getSQLState())) {
@@ -79,14 +82,17 @@ public class InstructorService {
     }
     
     public void updateInstructor(Instructor instructor) throws RecordNotFoundException, DataIntegrityException {
-        String sql = "UPDATE instructors SET first_name = ?, last_name = ?, email = ?, department = ? WHERE FiD = ?";
+        String sql = "UPDATE instructors SET first_name = ?, last_name = ?, email = ?, department = ?, dob = ?, phone = ?, cabin_no = ? WHERE FiD = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, instructor.getFullName().getFirstName());
             pstmt.setString(2, instructor.getFullName().getLastName());
             pstmt.setString(3, instructor.getEmail());
             pstmt.setString(4, instructor.getDepartment());
-            pstmt.setString(5, instructor.getFiD());
+            pstmt.setDate(5, instructor.getDob() != null ? Date.valueOf(instructor.getDob()) : null);
+            pstmt.setString(6, instructor.getPhone());
+            pstmt.setString(7, instructor.getCabinNo());
+            pstmt.setString(8, instructor.getFiD());
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
                 throw new RecordNotFoundException("Instructor with FiD " + instructor.getFiD() + " not found.");
@@ -101,7 +107,10 @@ public class InstructorService {
                 rs.getString("FiD"),
                 new Name(rs.getString("first_name"), rs.getString("last_name")),
                 rs.getString("email"),
-                rs.getString("department")
+                rs.getString("department"),
+                rs.getDate("dob") != null ? rs.getDate("dob").toLocalDate() : null,
+                rs.getString("phone"),
+                rs.getString("cabin_no")
         );
     }
 }

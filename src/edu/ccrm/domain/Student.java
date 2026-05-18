@@ -15,15 +15,15 @@ public class Student extends Person {
     private Status status;
     private final LocalDate registrationDate;
 
-    public Student(int id, String regNo, Name fullName, String email) {
-        super(id, fullName, email);
+    public Student(int id, String regNo, Name fullName, String email, LocalDate dob, String phone) {
+        super(id, fullName, email, dob, phone);
         this.regNo = regNo;
         this.status = Status.ACTIVE;
         this.registrationDate = LocalDate.now();
     }
     
-    public Student(int id, String regNo, Name fullName, String email, Status status, LocalDate registrationDate) {
-        super(id, fullName, email);
+    public Student(int id, String regNo, Name fullName, String email, Status status, LocalDate registrationDate, LocalDate dob, String phone) {
+        super(id, fullName, email, dob, phone);
         this.regNo = regNo;
         this.status = status;
         this.registrationDate = registrationDate;
@@ -47,8 +47,8 @@ public class Student extends Person {
 
     @Override
     public String getProfile() {
-        return String.format("Student | ID: %d, RegNo: %s, Name: %s, Email: %s, Status: %s, Registered On: %s",
-                getId(), regNo, getFullName(), getEmail(), status, registrationDate);
+        return String.format("Student | ID: %d, RegNo: %s, Name: %s, Email: %s, DOB: %s, Phone: %s, Status: %s, Registered On: %s",
+                getId(), regNo, getFullName(), getEmail(), getDob(), getPhone(), status, registrationDate);
     }
     
     @Override
@@ -60,7 +60,9 @@ public class Student extends Person {
                 getFullName().getLastName(),
                 getEmail(),
                 getStatus().name(),
-                getRegistrationDate().toString()
+                getRegistrationDate().toString(),
+                getDob() != null ? getDob().toString() : "",
+                getPhone() != null ? getPhone() : ""
         );
     }
 }

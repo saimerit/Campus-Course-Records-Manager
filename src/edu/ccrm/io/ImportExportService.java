@@ -65,7 +65,9 @@ public class ImportExportService {
           new Name(parts[2], parts[3]),
           parts[4],
           Student.Status.valueOf(status),
-          LocalDate.parse(parts[6])
+          LocalDate.parse(parts[6]),
+          parts.length > 7 && !parts[7].isEmpty() ? LocalDate.parse(parts[7]) : null,
+          parts.length > 8 ? parts[8] : null
         );
         try {
           studentService.addStudent(student, conn);
@@ -101,7 +103,10 @@ public class ImportExportService {
           parts[0],
           new Name(parts[1], parts[2]),
           parts[3],
-          parts[4]
+          parts[4],
+          parts.length > 5 && !parts[5].isEmpty() ? LocalDate.parse(parts[5]) : null,
+          parts.length > 6 ? parts[6] : null,
+          parts.length > 7 ? parts[7] : null
         );
         try {
           instructorService.addInstructor(instructor, conn);
@@ -143,6 +148,7 @@ public class ImportExportService {
             .withDepartment(parts[3])
             .withInstructor(instructor)
             .withSemester(Semester.valueOf(parts[5]))
+            .withClassroomNo(parts.length > 6 ? parts[6] : null)
             .build();
           courseService.addCourse(course, conn);
         } catch (RecordNotFoundException e) {
@@ -285,7 +291,7 @@ public class ImportExportService {
       .stream()
       .map(Student::toCsvString)
       .collect(Collectors.toList());
-    lines.add(0, "id,regNo,firstName,lastName,email,status,registrationDate");
+    lines.add(0, "id,regNo,firstName,lastName,email,status,registrationDate,dob,phone");
     Files.write(
       path,
       lines,
@@ -300,7 +306,7 @@ public class ImportExportService {
       .stream()
       .map(Instructor::toCsvString)
       .collect(Collectors.toList());
-    lines.add(0, "FiD,firstName,lastName,email,department");
+    lines.add(0, "FiD,firstName,lastName,email,department,dob,phone,cabinNo");
     Files.write(
       path,
       lines,
@@ -323,11 +329,12 @@ public class ImportExportService {
           (c.getInstructor() != null)
             ? c.getInstructor().getFiD()
             : "",
-          c.getSemester().name()
+          c.getSemester().name(),
+          c.getClassroomNo() != null ? c.getClassroomNo() : ""
         )
       )
       .collect(Collectors.toList());
-    lines.add(0, "code,title,credits,department,instructorId,semester");
+    lines.add(0, "code,title,credits,department,instructorId,semester,classroomNo");
     Files.write(
       path,
       lines,

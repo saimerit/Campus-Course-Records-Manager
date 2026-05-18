@@ -8,6 +8,7 @@ public class Course {
     private Semester semester;
     private String department;
     private boolean active;
+    private String classroomNo;
 
     private Course(Builder builder) {
         this.courseCode = builder.courseCode;
@@ -16,6 +17,7 @@ public class Course {
         this.instructor = builder.instructor;
         this.semester = builder.semester;
         this.department = builder.department;
+        this.classroomNo = builder.classroomNo;
         this.active = true;
     }
 
@@ -63,6 +65,14 @@ public class Course {
         this.department = department;
     }
     
+    public String getClassroomNo() {
+        return classroomNo;
+    }
+
+    public void setClassroomNo(String classroomNo) {
+        this.classroomNo = classroomNo;
+    }
+    
     public boolean isActive() {
         return active;
     }
@@ -74,8 +84,8 @@ public class Course {
     @Override
     public String toString() {
         String instructorName = (instructor != null) ? instructor.getFullName().toString() : "Not Assigned";
-        return String.format("Course | Code: %s, Title: %s, Credits: %d, Dept: %s, Semester: %s, Instructor: %s, Status: %s",
-                courseCode, title, credits, department, semester, instructorName, active ? "Active" : "Inactive");
+        return String.format("Course | Code: %s, Title: %s, Credits: %d, Dept: %s, Semester: %s, Instructor: %s, Status: %s, Classroom: %s",
+                courseCode, title, credits, department, semester, instructorName, active ? "Active" : "Inactive", classroomNo);
     }
 
     public static class Builder {
@@ -85,6 +95,7 @@ public class Course {
         private Instructor instructor;
         private Semester semester;
         private String department;
+        private String classroomNo;
 
         public Builder(CourseCode courseCode) {
             if (courseCode == null) {
@@ -115,6 +126,11 @@ public class Course {
 
         public Builder withDepartment(String department) {
             this.department = department;
+            return this;
+        }
+
+        public Builder withClassroomNo(String classroomNo) {
+            this.classroomNo = classroomNo;
             return this;
         }
 

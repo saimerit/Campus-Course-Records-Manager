@@ -48,7 +48,7 @@ public class TranscriptService {
         return transcript.toString();
     }
 
-    private double calculateCGPA(List<Enrollment> enrollments) {
+    public double calculateCGPA(List<Enrollment> enrollments) {
         double totalPoints = 0;
         int totalCredits = 0;
         for (Enrollment enrollment : enrollments) {

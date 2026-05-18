@@ -1,11 +1,11 @@
-FiD,firstName,lastName,email,department
-111,Daniel,Scott,daniel.s@example.com,Philosophy
-112,Mia,Green,mia.g@example.com,History
-113,Alexander,Adams,alex.a@example.com,Sociology
-114,Charlotte,Baker,charlotte.b@example.com,Political Science
-115,Benjamin,Nelson,ben.n@example.com,Economics
-116,Amelia,Carter,amelia.c@example.com,Psychology
-117,Lucas,Mitchell,lucas.m@example.com,Anthropology
-118,Harper,Perez,harper.p@example.com,Geography
-119,Elijah,Roberts,elijah.r@example.com,Linguistics
-120,Evelyn,Turner,evelyn.t@example.com,Fine Arts
+FiD,firstName,lastName,email,department,dob,phone,cabinNo
+111,Daniel,Scott,daniel.s@example.com,Philosophy,1980-05-15,555-0201,FC001
+112,Mia,Green,mia.g@example.com,History,1982-08-22,555-0202,FC002
+113,Alexander,Adams,alex.a@example.com,Sociology,1975-11-10,555-0203,FC003
+114,Charlotte,Baker,charlotte.b@example.com,Political Science,1988-02-28,555-0204,FC004
+115,Benjamin,Nelson,ben.n@example.com,Economics,1979-09-05,555-0205,FC005
+116,Amelia,Carter,amelia.c@example.com,Psychology,1985-06-12,555-0206,FC006
+117,Lucas,Mitchell,lucas.m@example.com,Anthropology,1981-12-30,555-0207,FC007
+118,Harper,Perez,harper.p@example.com,Geography,1990-04-18,555-0208,FC008
+119,Elijah,Roberts,elijah.r@example.com,Linguistics,1977-07-25,555-0209,FC009
+120,Evelyn,Turner,evelyn.t@example.com,Fine Arts,1983-01-08,555-0210,FC010

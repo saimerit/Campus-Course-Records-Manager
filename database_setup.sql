@@ -8,7 +8,10 @@ CREATE TABLE INSTRUCTORS (
     first_name VARCHAR2(50),
     last_name VARCHAR2(50),
     email VARCHAR2(100),
-    department VARCHAR2(100)
+    department VARCHAR2(100),
+    dob DATE,
+    phone VARCHAR2(20),
+    cabin_no VARCHAR2(20)
 );
 
 CREATE TABLE STUDENTS (
@@ -18,7 +21,9 @@ CREATE TABLE STUDENTS (
     last_name VARCHAR2(50),
     email VARCHAR2(100),
     status VARCHAR2(20),
-    registration_date DATE
+    registration_date DATE,
+    dob DATE,
+    phone VARCHAR2(20)
 );
 
 CREATE TABLE COURSES (
@@ -28,6 +33,7 @@ CREATE TABLE COURSES (
     department VARCHAR2(100),
     instructor_id VARCHAR2(20),
     semester VARCHAR2(20),
+    classroom_no VARCHAR2(20),
     CONSTRAINT fk_instructor FOREIGN KEY (instructor_id) REFERENCES INSTRUCTORS(FiD)
 );
 

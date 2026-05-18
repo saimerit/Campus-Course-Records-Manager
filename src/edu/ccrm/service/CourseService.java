@@ -36,7 +36,7 @@ public class CourseService {
   public void addCourse(Course course, Connection conn)
     throws DataIntegrityException {
     String sql =
-      "INSERT INTO courses (code, title, credits, department, instructor_id, semester) VALUES (?, ?, ?, ?, ?, ?)";
+      "INSERT INTO courses (code, title, credits, department, instructor_id, semester, classroom_no) VALUES (?, ?, ?, ?, ?, ?, ?)";
     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
       pstmt.setString(1, course.getCourseCode().getCode());
       pstmt.setString(2, course.getTitle());
@@ -48,6 +48,7 @@ public class CourseService {
         pstmt.setNull(5, Types.VARCHAR);
       }
       pstmt.setString(6, course.getSemester().name());
+      pstmt.setString(7, course.getClassroomNo());
       pstmt.executeUpdate();
     } catch (SQLException e) {
       if ("23505".equals(e.getSQLState())) {
@@ -167,12 +168,14 @@ public class CourseService {
     String department = rs.getString("department");
     Semester semester = Semester.valueOf(rs.getString("semester"));
     String instructorId = rs.getString("instructor_id");
+    String classroomNo = rs.getString("classroom_no");
 
     Course.Builder builder = new Course.Builder(code)
       .withTitle(title)
       .withCredits(credits)
       .withDepartment(department)
-      .withSemester(semester);
+      .withSemester(semester)
+      .withClassroomNo(classroomNo);
 
     if (instructorId != null && !rs.wasNull()) {
       try {
