@@ -299,12 +299,7 @@ public class MainApp extends Application {
         Button btnRefresh = new Button("Refresh", new FontIcon("fas-sync"));
         btnRefresh.setOnAction(e -> refreshTable.run());
 
-        Runnable transcriptAction = () -> {
-            Student selected = table.getSelectionModel().getSelectedItem();
-            if (selected == null) {
-                showAlert(Alert.AlertType.WARNING, "Select a student first.");
-                return;
-            }
+        java.util.function.Consumer<Student> transcriptAction = selected -> {
             runTaskWithProgress("Generating Transcript...", () -> {
                 try {
                     List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(selected.getRegNo());
@@ -337,7 +332,8 @@ public class MainApp extends Application {
                         
                         coursesTable.getColumns().addAll(cCode, cTitle, cCredits, cGrade);
                         coursesTable.getItems().setAll(enrollments);
-                        coursesTable.setPrefHeight(200);
+                        coursesTable.setPrefHeight(400);
+                        coursesTable.setPrefWidth(550);
 
                         Label cgpaLabel = new Label(String.format("CGPA: %.2f", cgpa));
                         cgpaLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
@@ -354,12 +350,7 @@ public class MainApp extends Application {
             }, null);
         };
 
-        Runnable updateStatusAction = () -> {
-            Student selected = table.getSelectionModel().getSelectedItem();
-            if (selected == null) {
-                showAlert(Alert.AlertType.WARNING, "Select a student first.");
-                return;
-            }
+        java.util.function.Consumer<Student> updateStatusAction = selected -> {
             ChoiceDialog<Student.Status> dialog = new ChoiceDialog<>(selected.getStatus(), Student.Status.values());
             dialog.setTitle("Update Status");
             dialog.setHeaderText("Select new status for " + selected.getRegNo());
@@ -379,18 +370,30 @@ public class MainApp extends Application {
             
             MenuItem viewTranscript = new MenuItem("View Transcript");
             viewTranscript.setGraphic(new FontIcon("fas-file-invoice"));
-            viewTranscript.setOnAction(e -> transcriptAction.run());
+            viewTranscript.setOnAction(e -> {
+                Student selected = row.getItem();
+                if (selected != null) {
+                    transcriptAction.accept(selected);
+                }
+            });
             
             MenuItem changeStatus = new MenuItem("Change Status");
             changeStatus.setGraphic(new FontIcon("fas-edit"));
-            changeStatus.setOnAction(e -> updateStatusAction.run());
+            changeStatus.setOnAction(e -> {
+                Student selected = row.getItem();
+                if (selected != null) {
+                    updateStatusAction.accept(selected);
+                }
+            });
             
             contextMenu.getItems().addAll(viewTranscript, changeStatus);
-            row.contextMenuProperty().bind(
-                Bindings.when(row.emptyProperty())
-                .then((ContextMenu)null)
-                .otherwise(contextMenu)
-            );
+            row.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
+                if (isEmpty) {
+                    row.setContextMenu(null);
+                } else {
+                    row.setContextMenu(contextMenu);
+                }
+            });
             return row;
         });
 
@@ -398,16 +401,7 @@ public class MainApp extends Application {
         topBox.setAlignment(Pos.CENTER_LEFT);
         topBox.setPadding(new Insets(0, 0, 10, 0));
         
-        Button btnViewTranscript = new Button("View Transcript", new FontIcon("fas-file-invoice"));
-        btnViewTranscript.setOnAction(e -> transcriptAction.run());
-        
-        Button btnChangeStatus = new Button("Change Status", new FontIcon("fas-edit"));
-        btnChangeStatus.setOnAction(e -> updateStatusAction.run());
-        
-        HBox bottomBox = new HBox(10, btnViewTranscript, btnChangeStatus);
-        bottomBox.setPadding(new Insets(10, 0, 0, 0));
-
-        VBox rightPane = new VBox(topBox, table, bottomBox);
+        VBox rightPane = new VBox(topBox, table);
         rightPane.setPadding(new Insets(10));
 
         SplitPane splitPane = new SplitPane();
@@ -650,12 +644,7 @@ public class MainApp extends Application {
         Button btnRefresh = new Button("Refresh", new FontIcon("fas-sync"));
         btnRefresh.setOnAction(e -> refreshTable.run());
 
-        Runnable assignAction = () -> {
-            Course selected = table.getSelectionModel().getSelectedItem();
-            if(selected == null) {
-                showAlert(Alert.AlertType.WARNING, "Select a course first.");
-                return;
-            }
+        java.util.function.Consumer<Course> assignAction = selected -> {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Assign Instructor");
             dialog.setHeaderText("Assign to " + selected.getCourseCode().getCode());
@@ -675,27 +664,28 @@ public class MainApp extends Application {
             ContextMenu contextMenu = new ContextMenu();
             MenuItem assignMenu = new MenuItem("Assign Instructor");
             assignMenu.setGraphic(new FontIcon("fas-chalkboard-teacher"));
-            assignMenu.setOnAction(e -> assignAction.run());
+            assignMenu.setOnAction(e -> {
+                Course selected = row.getItem();
+                if (selected != null) {
+                    assignAction.accept(selected);
+                }
+            });
             contextMenu.getItems().add(assignMenu);
-            row.contextMenuProperty().bind(
-                Bindings.when(row.emptyProperty())
-                .then((ContextMenu)null)
-                .otherwise(contextMenu)
-            );
+            row.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
+                if (isEmpty) {
+                    row.setContextMenu(null);
+                } else {
+                    row.setContextMenu(contextMenu);
+                }
+            });
             return row;
         });
 
         HBox topBox = new HBox(10, new Label("Search:"), searchField, btnRefresh);
         topBox.setAlignment(Pos.CENTER_LEFT);
         topBox.setPadding(new Insets(0, 0, 10, 0));
-        
-        Button btnAssign = new Button("Assign Instructor", new FontIcon("fas-chalkboard-teacher"));
-        btnAssign.setOnAction(e -> assignAction.run());
-        
-        HBox bottomBox = new HBox(10, btnAssign);
-        bottomBox.setPadding(new Insets(10, 0, 0, 0));
 
-        VBox rightPane = new VBox(topBox, table, bottomBox);
+        VBox rightPane = new VBox(topBox, table);
         rightPane.setPadding(new Insets(10));
 
         SplitPane splitPane = new SplitPane();
