@@ -37,6 +37,10 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -51,6 +55,7 @@ public class MainApp extends Application {
     private final ImportExportService importExportService = new ImportExportService(studentService, instructorService, courseService, enrollmentService);
     private final BackupService backupService = new BackupService();
     private final DatabaseAdminService dbAdminService = new DatabaseAdminService();
+    private final AnalyticsService analyticsService = new AnalyticsService();
 
     private ProgressIndicator globalProgressIndicator;
     private Label globalStatusLabel;
@@ -145,9 +150,10 @@ public class MainApp extends Application {
         Button btnInstructors = createNavButton("Manage Faculty", "fas-chalkboard-teacher");
         Button btnCourses = createNavButton("Course Registry", "fas-book");
         Button btnEnrollments = createNavButton("Enrollments & Grades", "fas-id-card");
+        Button btnInsights = createNavButton("Performance Insights", "fas-chart-bar");
         Button btnSystem = createNavButton("System & Backup Ops", "fas-database");
 
-        sidebar.getChildren().addAll(new Separator(), btnDashboard, btnStudents, btnInstructors, btnCourses, btnEnrollments, btnSystem);
+        sidebar.getChildren().addAll(new Separator(), btnDashboard, btnStudents, btnInstructors, btnCourses, btnEnrollments, btnInsights, btnSystem);
         mainLayout.setLeft(sidebar);
 
         btnDashboard.setOnAction(e -> mainLayout.setCenter(createDashboardView()));
@@ -155,6 +161,7 @@ public class MainApp extends Application {
         btnInstructors.setOnAction(e -> mainLayout.setCenter(createInstructorsView()));
         btnCourses.setOnAction(e -> mainLayout.setCenter(createCoursesView()));
         btnEnrollments.setOnAction(e -> mainLayout.setCenter(createEnrollmentsView()));
+        btnInsights.setOnAction(e -> mainLayout.setCenter(createPerformanceInsightsView()));
         btnSystem.setOnAction(e -> mainLayout.setCenter(createFileOperationsView()));
 
         mainLayout.setCenter(createDashboardView());
@@ -1709,5 +1716,186 @@ public class MainApp extends Application {
                 contextMenu.hide();
             }
         });
+    }
+
+    private javafx.scene.Node createPerformanceInsightsView() {
+        BorderPane layout = new BorderPane();
+        layout.setPadding(new Insets(10));
+
+        TabPane tabPane = new TabPane();
+        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+
+        // TAB 1: GRADE DISTRIBUTIONS
+        Tab tabGrades = new Tab("Grade Distributions", new FontIcon("fas-chart-bar"));
+        VBox gradesBox = new VBox(15);
+        gradesBox.setPadding(new Insets(15));
+
+        HBox filterBox = new HBox(12);
+        filterBox.setAlignment(Pos.CENTER_LEFT);
+
+        ComboBox<String> typeCombo = new ComboBox<>();
+        typeCombo.getItems().addAll("Course", "Department");
+        typeCombo.setValue("Course");
+
+        ComboBox<String> selectCombo = new ComboBox<>();
+        selectCombo.setPrefWidth(250);
+
+        Runnable updateSelectCombo = () -> {
+            selectCombo.getItems().clear();
+            if ("Course".equals(typeCombo.getValue())) {
+                runTaskWithProgress("Loading Courses...", () -> {
+                    List<Course> courses = courseService.getAllCoursesSortedByCode();
+                    List<String> codes = courses.stream().map(c -> c.getCourseCode().getCode()).collect(Collectors.toList());
+                    Platform.runLater(() -> selectCombo.getItems().setAll(codes));
+                }, null);
+            } else {
+                runTaskWithProgress("Loading Departments...", () -> {
+                    List<String> depts = analyticsService.getAllDepartments();
+                    Platform.runLater(() -> selectCombo.getItems().setAll(depts));
+                }, null);
+            }
+        };
+
+        typeCombo.valueProperty().addListener((obs, oldV, newV) -> updateSelectCombo.run());
+        updateSelectCombo.run(); // initial load
+
+        Button btnDraw = new Button("Draw Curve", new FontIcon("fas-paint-brush"));
+        filterBox.getChildren().addAll(new Label("Filter Type:"), typeCombo, new Label("Select:"), selectCombo, btnDraw);
+
+        CategoryAxis xAxis = new CategoryAxis();
+        xAxis.setLabel("Letter Grade");
+        NumberAxis yAxis = new NumberAxis();
+        yAxis.setLabel("Count of Students");
+
+        BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
+        barChart.setTitle("Grade Distribution Curve");
+        barChart.setLegendVisible(false);
+        barChart.setAnimated(true);
+
+        btnDraw.setOnAction(e -> {
+            String selected = selectCombo.getValue();
+            if (selected == null || selected.trim().isEmpty()) {
+                showAlert(Alert.AlertType.WARNING, "Please make a selection first.");
+                return;
+            }
+
+            runTaskWithProgress("Plotting Grade Distribution...", () -> {
+                java.util.Map<String, Integer> dist;
+                if ("Course".equals(typeCombo.getValue())) {
+                    dist = analyticsService.getGradeDistributionForCourse(new CourseCode(selected));
+                } else {
+                    dist = analyticsService.getGradeDistributionForDepartment(selected);
+                }
+
+                Platform.runLater(() -> {
+                    barChart.getData().clear();
+                    XYChart.Series<String, Number> series = new XYChart.Series<>();
+                    series.setName(selected);
+                    for (java.util.Map.Entry<String, Integer> entry : dist.entrySet()) {
+                        series.getData().add(new XYChart.Data<>(entry.getKey(), entry.getValue()));
+                    }
+                    barChart.getData().add(series);
+                    barChart.setTitle("Grade Distribution for: " + selected);
+                });
+            }, null);
+        });
+
+        gradesBox.getChildren().addAll(filterBox, barChart);
+        VBox.setVgrow(barChart, Priority.ALWAYS);
+        tabGrades.setContent(gradesBox);
+
+        // TAB 2: INSTRUCTOR PERFORMANCE
+        Tab tabFaculty = new Tab("Faculty Performance", new FontIcon("fas-chalkboard-teacher"));
+        VBox facultyBox = new VBox(15);
+        facultyBox.setPadding(new Insets(15));
+
+        Label facultyDesc = new Label("Instructor Performance Insights: Shows average GPA scored by students in their classes.");
+        facultyDesc.setStyle("-fx-font-size: 13px; -fx-text-fill: -color-fg-muted;");
+
+        TableView<AnalyticsService.InstructorAnalytics> facultyTable = new TableView<>();
+
+        TableColumn<AnalyticsService.InstructorAnalytics, String> colFid = new TableColumn<>("FiD");
+        colFid.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getFid()));
+
+        TableColumn<AnalyticsService.InstructorAnalytics, String> colName = new TableColumn<>("Instructor Name");
+        colName.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getName()));
+
+        TableColumn<AnalyticsService.InstructorAnalytics, String> colDept = new TableColumn<>("Department");
+        colDept.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getDepartment()));
+
+        TableColumn<AnalyticsService.InstructorAnalytics, String> colAvgGpa = new TableColumn<>("Avg Student GPA");
+        colAvgGpa.setCellValueFactory(c -> new ReadOnlyStringWrapper(String.format("%.2f", c.getValue().getAverageGrade())));
+
+        TableColumn<AnalyticsService.InstructorAnalytics, Integer> colGraded = new TableColumn<>("Graded Students");
+        colGraded.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getGradedStudents()));
+
+        facultyTable.getColumns().addAll(colFid, colName, colDept, colAvgGpa, colGraded);
+        facultyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        Button btnRefreshFaculty = new Button("Refresh Faculty Insights", new FontIcon("fas-sync"));
+        Runnable loadFaculty = () -> {
+            runTaskWithProgress("Loading Faculty Performance...", () -> {
+                List<AnalyticsService.InstructorAnalytics> metrics = analyticsService.getInstructorAnalytics();
+                Platform.runLater(() -> facultyTable.getItems().setAll(metrics));
+            }, null);
+        };
+        btnRefreshFaculty.setOnAction(e -> loadFaculty.run());
+
+        facultyBox.getChildren().addAll(facultyDesc, facultyTable, btnRefreshFaculty);
+        VBox.setVgrow(facultyTable, Priority.ALWAYS);
+        tabFaculty.setContent(facultyBox);
+
+        // TAB 3: COURSE POPULARITY & DROPS
+        Tab tabPopularity = new Tab("Course Popularity & Drops", new FontIcon("fas-chart-line"));
+        VBox popBox = new VBox(15);
+        popBox.setPadding(new Insets(15));
+
+        Label popDesc = new Label("Course Demand & Retention: Shows active enrollments vs dropout rates.");
+        popDesc.setStyle("-fx-font-size: 13px; -fx-text-fill: -color-fg-muted;");
+
+        TableView<AnalyticsService.CoursePopularityAnalytics> popTable = new TableView<>();
+
+        TableColumn<AnalyticsService.CoursePopularityAnalytics, String> colCode = new TableColumn<>("Course Code");
+        colCode.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCourseCode()));
+
+        TableColumn<AnalyticsService.CoursePopularityAnalytics, String> colTitle = new TableColumn<>("Title");
+        colTitle.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getTitle()));
+
+        TableColumn<AnalyticsService.CoursePopularityAnalytics, String> colPopDept = new TableColumn<>("Department");
+        colPopDept.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getDepartment()));
+
+        TableColumn<AnalyticsService.CoursePopularityAnalytics, Integer> colActive = new TableColumn<>("Active Enrollments");
+        colActive.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getActiveCount()));
+
+        TableColumn<AnalyticsService.CoursePopularityAnalytics, Integer> colDropped = new TableColumn<>("Dropped Enrollments");
+        colDropped.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getDroppedCount()));
+
+        TableColumn<AnalyticsService.CoursePopularityAnalytics, String> colDropRate = new TableColumn<>("Dropout Rate (%)");
+        colDropRate.setCellValueFactory(c -> new ReadOnlyStringWrapper(String.format("%.1f%%", c.getValue().getDropoutRate())));
+
+        popTable.getColumns().addAll(colCode, colTitle, colPopDept, colActive, colDropped, colDropRate);
+        popTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        Button btnRefreshPop = new Button("Refresh Course Popularity", new FontIcon("fas-sync"));
+        Runnable loadPop = () -> {
+            runTaskWithProgress("Loading Course Popularity...", () -> {
+                List<AnalyticsService.CoursePopularityAnalytics> popularityList = analyticsService.getCoursePopularity();
+                Platform.runLater(() -> popTable.getItems().setAll(popularityList));
+            }, null);
+        };
+        btnRefreshPop.setOnAction(e -> loadPop.run());
+
+        popBox.getChildren().addAll(popDesc, popTable, btnRefreshPop);
+        VBox.setVgrow(popTable, Priority.ALWAYS);
+        tabPopularity.setContent(popBox);
+
+        tabPane.getTabs().addAll(tabGrades, tabFaculty, tabPopularity);
+        layout.setCenter(tabPane);
+
+        // Preload analytics lists
+        loadFaculty.run();
+        loadPop.run();
+
+        return layout;
     }
 }

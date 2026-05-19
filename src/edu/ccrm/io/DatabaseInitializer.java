@@ -219,6 +219,18 @@ public class DatabaseInitializer {
                 System.out.println("    - Migrated: Added CGPA column to STUDENTS.");
             }
         }
+        
+        // Create DROPPED_ENROLLMENTS table if missing
+        boolean droppedTableExists = false;
+        try (ResultSet rs = conn.getMetaData().getTables(null, null, "DROPPED_ENROLLMENTS", null)) {
+            if (rs.next()) {
+                droppedTableExists = true;
+            }
+        }
+        if (!droppedTableExists) {
+            stmt.executeUpdate("CREATE TABLE DROPPED_ENROLLMENTS (student_reg_no VARCHAR2(20), course_code VARCHAR2(10), drop_date DATE)");
+            System.out.println("    - Migrated: Created DROPPED_ENROLLMENTS table.");
+        }
     } catch (SQLException e) {
         System.err.println("Warning: Schema migration encountered an issue: " + e.getMessage());
     }

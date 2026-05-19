@@ -171,14 +171,32 @@ public class EnrollmentService {
 
 
     public void unenrollStudent(String studentRegNo, CourseCode courseCode) throws RecordNotFoundException {
-        String sql = "DELETE FROM enrollments WHERE student_reg_no = ? AND course_code = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, studentRegNo);
-            pstmt.setString(2, courseCode.getCode());
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows == 0) {
-                throw new RecordNotFoundException("Enrollment record not found for student " + studentRegNo + " in course " + courseCode);
+        String insertSql = "INSERT INTO DROPPED_ENROLLMENTS (student_reg_no, course_code, drop_date) VALUES (?, ?, ?)";
+        String deleteSql = "DELETE FROM enrollments WHERE student_reg_no = ? AND course_code = ?";
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+                    pstmt.setString(1, studentRegNo);
+                    pstmt.setString(2, courseCode.getCode());
+                    pstmt.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now()));
+                    pstmt.executeUpdate();
+                }
+                int affectedRows;
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
+                    pstmt.setString(1, studentRegNo);
+                    pstmt.setString(2, courseCode.getCode());
+                    affectedRows = pstmt.executeUpdate();
+                }
+                if (affectedRows == 0) {
+                    throw new RecordNotFoundException("Enrollment record not found for student " + studentRegNo + " in course " + courseCode);
+                }
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
         } catch (SQLException e) {
              throw new RecordNotFoundException("Error during unenrollment: " + e.getMessage(), e);
