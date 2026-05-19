@@ -1,13 +1,9 @@
 package edu.ccrm.io;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class DatabaseManager {
 
@@ -15,57 +11,46 @@ public class DatabaseManager {
     private static final String DB_USER = "ccrm_user";
     private static final String DB_PASSWORD = "ccrm_pass";
 
-    private static final int MAX_POOL_SIZE = 15;
-    private static final BlockingQueue<Connection> pool = new LinkedBlockingQueue<>(MAX_POOL_SIZE);
+    private static final HikariDataSource dataSource;
 
+    static {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(DB_URL);
+        config.setUsername(DB_USER);
+        config.setPassword(DB_PASSWORD);
+        config.setDriverClassName("oracle.jdbc.OracleDriver");
+
+        // Enterprise Connection Pool Sizing & Resiliency
+        config.setMaximumPoolSize(15);
+        config.setMinimumIdle(5);
+        config.setIdleTimeout(300000);        // 5 minutes idle
+        config.setConnectionTimeout(20000);   // 20 seconds connection timeout
+        config.setValidationTimeout(3000);     // 3 seconds validation timeout
+        config.setMaxLifetime(1800000);       // 30 minutes max lifetime
+        config.setLeakDetectionThreshold(10000); // 10 seconds leak detection
+
+        // Oracle-Specific Performance Tunings
+        config.addDataSourceProperty("implicitCachingEnabled", "true");
+        config.addDataSourceProperty("statementCacheSize", "50");
+
+        dataSource = new HikariDataSource(config);
+    }
+
+    /**
+     * Retrieves a pooled, resilient database connection.
+     * @return Connection from HikariCP Pool
+     * @throws SQLException if a database error occurs
+     */
     public static Connection getConnection() throws SQLException {
-        Connection conn = pool.poll();
-        if (conn != null) {
-            try {
-                if (conn.isClosed() || !conn.isValid(2)) {
-                    try { conn.close(); } catch (SQLException ignored) {}
-                    conn = null;
-                }
-            } catch (SQLException e) {
-                conn = null;
-            }
-        }
-        if (conn == null) {
-            conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-        }
+        return dataSource.getConnection();
+    }
 
-        final Connection rawConnection = conn;
-        return (Connection) Proxy.newProxyInstance(
-            DatabaseManager.class.getClassLoader(),
-            new Class<?>[]{Connection.class},
-            new InvocationHandler() {
-                @Override
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    if ("close".equals(method.getName())) {
-                        try {
-                            if (!rawConnection.isClosed() && rawConnection.isValid(2)) {
-                                // Reset auto-commit state before returning to pool
-                                if (!rawConnection.getAutoCommit()) {
-                                    rawConnection.setAutoCommit(true);
-                                }
-                                if (!pool.offer(rawConnection)) {
-                                    rawConnection.close();
-                                }
-                            } else {
-                                rawConnection.close();
-                            }
-                        } catch (SQLException e) {
-                            try { rawConnection.close(); } catch (SQLException ignored) {}
-                        }
-                        return null;
-                    }
-                    try {
-                        return method.invoke(rawConnection, args);
-                    } catch (java.lang.reflect.InvocationTargetException e) {
-                        throw e.getCause();
-                    }
-                }
-            }
-        );
+    /**
+     * Shuts down the connection pool and releases all database connections.
+     */
+    public static void shutdown() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
     }
 }

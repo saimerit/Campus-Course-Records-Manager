@@ -228,20 +228,124 @@ public class MainApp extends Application {
             createMetricCard("Graduated", String.valueOf(graduated), "fas-graduation-cap")
         );
         
+        HBox contentRow = new HBox(25);
+        contentRow.setAlignment(Pos.TOP_LEFT);
+        VBox.setVgrow(contentRow, Priority.ALWAYS);
+
+        // Chart (taking left half)
         javafx.scene.chart.CategoryAxis xAxis = new javafx.scene.chart.CategoryAxis();
         javafx.scene.chart.NumberAxis yAxis = new javafx.scene.chart.NumberAxis();
         javafx.scene.chart.BarChart<String,Number> bc = new javafx.scene.chart.BarChart<>(xAxis, yAxis);
         bc.setTitle("Students by Status");
         bc.setLegendVisible(false);
+        bc.setMinWidth(400);
+        HBox.setHgrow(bc, Priority.ALWAYS);
+
         javafx.scene.chart.XYChart.Series<String,Number> series1 = new javafx.scene.chart.XYChart.Series<>();
-        
         series1.getData().add(new javafx.scene.chart.XYChart.Data<>("ACTIVE", active));
         series1.getData().add(new javafx.scene.chart.XYChart.Data<>("PROBATION", prob));
         series1.getData().add(new javafx.scene.chart.XYChart.Data<>("INACTIVE", susp));
         series1.getData().add(new javafx.scene.chart.XYChart.Data<>("GRADUATED", graduated));
         bc.getData().add(series1);
+
+        // Toppers list (taking right half)
+        VBox toppersCard = new VBox(15);
+        toppersCard.setPadding(new Insets(20));
+        toppersCard.setStyle("-fx-background-color: -color-bg-default; -fx-border-color: -color-border-default; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+        toppersCard.setPrefWidth(500);
+        toppersCard.setMinWidth(400);
+        HBox.setHgrow(toppersCard, Priority.ALWAYS);
+
+        Label toppersTitle = new Label("Academic Toppers (Top 15 Active)", new FontIcon("fas-trophy"));
+        toppersTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -color-accent-fg;");
         
-        layout.getChildren().addAll(title, cardsBox, bc);
+        VBox toppersListContainer = new VBox(10);
+        toppersListContainer.setAlignment(Pos.TOP_LEFT);
+
+        javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(toppersListContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-padding: 0;");
+        scrollPane.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        java.util.List<Student> toppers = allStudents.stream()
+                .filter(s -> s.getStatus() == Student.Status.ACTIVE)
+                .filter(s -> s.getCgpa() != null && s.getCgpa() > 0.0)
+                .sorted((s1, s2) -> Double.compare(s2.getCgpa(), s1.getCgpa()))
+                .limit(15)
+                .collect(Collectors.toList());
+
+        if (toppers.isEmpty()) {
+            Label placeholder = new Label("No CGPA data computed yet.\nClick 'Calculate CGPAs' below to process records.");
+            placeholder.setStyle("-fx-text-fill: -color-fg-muted; -fx-alignment: center; -fx-text-alignment: center; -fx-font-style: italic;");
+            placeholder.setPadding(new Insets(30, 0, 30, 0));
+            placeholder.setMaxWidth(Double.MAX_VALUE);
+            toppersListContainer.getChildren().add(placeholder);
+        } else {
+            int rank = 1;
+            for (Student s : toppers) {
+                HBox row = new HBox(15);
+                row.setPadding(new Insets(8, 12, 8, 12));
+                row.setAlignment(Pos.CENTER_LEFT);
+                row.setStyle("-fx-background-color: -color-bg-subtle; -fx-background-radius: 6px; -fx-border-color: -color-border-muted; -fx-border-width: 1px;");
+                
+                Label rankLbl = new Label("#" + rank);
+                rankLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: -color-warning-fg; -fx-font-size: 14px;");
+                
+                VBox nameBox = new VBox(2);
+                Label nameLbl = new Label(s.getFullName().toString());
+                nameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+                Label regLbl = new Label(s.getRegNo() + " | " + s.getStatus());
+                regLbl.setStyle("-fx-text-fill: -color-fg-muted; -fx-font-size: 11px;");
+                nameBox.getChildren().addAll(nameLbl, regLbl);
+                
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+                
+                Label gpaLbl = new Label(String.format("%.2f", s.getCgpa()));
+                gpaLbl.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -color-success-fg;");
+                
+                row.getChildren().addAll(rankLbl, nameBox, spacer, gpaLbl);
+                toppersListContainer.getChildren().add(row);
+                rank++;
+            }
+        }
+
+        Button btnCalc = new Button("Calculate & Save CGPAs", new FontIcon("fas-calculator"));
+        btnCalc.setStyle("-fx-background-color: -color-accent-emphasis; -fx-text-fill: -color-fg-emphasis; -fx-font-weight: bold;");
+        btnCalc.setMaxWidth(Double.MAX_VALUE);
+        
+        btnCalc.setOnAction(e -> {
+            Task<Void> calcTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    java.util.List<Student> students = studentService.getAllStudentsSortedById();
+                    int total = students.size();
+                    for (int i = 0; i < total; i++) {
+                        Student s = students.get(i);
+                        updateMessage("Processing student " + s.getFullName() + " (" + (i + 1) + "/" + total + ")...");
+                        updateProgress(i + 1, total);
+                        
+                        java.util.List<edu.ccrm.domain.Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(s.getRegNo());
+                        double cgpa = transcriptService.calculateCGPA(enrollments);
+                        
+                        studentService.updateStudentCgpa(s.getRegNo(), cgpa);
+                    }
+                    return null;
+                }
+            };
+            
+            runJavaFXTask(calcTask, "Calculating Student CGPAs...", () -> {
+                showAlert(Alert.AlertType.INFORMATION, "CGPAs computed and saved successfully for all students!");
+                mainLayout.setCenter(createDashboardView());
+            });
+        });
+
+        toppersCard.getChildren().addAll(toppersTitle, scrollPane, btnCalc);
+        contentRow.getChildren().addAll(bc, toppersCard);
+
+        layout.getChildren().addAll(title, cardsBox, contentRow);
         return layout;
     }
 
@@ -336,22 +440,150 @@ public class MainApp extends Application {
         void execute(Path path, ImportExportService.ImportProgressCallback callback) throws Exception;
     }
 
-    private void handleSingleImport(String moduleName, String[] requiredFields, FileImportAction importAction) {
-        Alert prompt = new Alert(Alert.AlertType.INFORMATION);
-        prompt.setTitle("File Selection");
-        prompt.setHeaderText("Import " + moduleName);
-        prompt.setContentText("You will now be prompted to select the CSV file containing " + moduleName + " data.\n\nClick OK to proceed.");
-        prompt.showAndWait();
+    private List<String[]> parseCsv(Path path) throws IOException {
+        List<String[]> rows = new ArrayList<>();
+        try (java.io.BufferedReader br = java.nio.file.Files.newBufferedReader(path)) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                List<String> values = new ArrayList<>();
+                boolean inQuotes = false;
+                StringBuilder curVal = new StringBuilder();
+                for (int i = 0; i < line.length(); i++) {
+                    char c = line.charAt(i);
+                    if (c == '\"') {
+                        inQuotes = !inQuotes;
+                    } else if (c == ',' && !inQuotes) {
+                        values.add(curVal.toString().trim());
+                        curVal.setLength(0);
+                    } else {
+                        curVal.append(c);
+                    }
+                }
+                values.add(curVal.toString().trim());
+                rows.add(values.toArray(new String[0]));
+            }
+        }
+        return rows;
+    }
 
+    private boolean showCsvPreview(Path path, String moduleName) {
+        try {
+            List<String[]> rows = parseCsv(path);
+            if (rows.isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "The selected CSV file is empty.");
+                return false;
+            }
+            String[] headers = rows.get(0);
+            int totalRecords = Math.max(0, rows.size() - 1);
+            
+            Stage dialog = new Stage();
+            dialog.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            dialog.initOwner(mainLayout.getScene().getWindow());
+            dialog.setTitle("CSV File Preview - " + path.getFileName());
+            
+            VBox root = new VBox(15);
+            root.setPadding(new Insets(20));
+            root.setStyle("-fx-background-color: -color-bg-default;");
+            
+            Label titleLabel = new Label("CSV Data Preview: " + moduleName);
+            titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: -color-accent-fg;");
+            
+            Label infoLabel = new Label(String.format("File: %s\nTotal Records Detected: %d\nBelow is a preview of the first 10 rows.", path.getFileName(), totalRecords));
+            infoLabel.setStyle("-fx-font-size: 13px;");
+            
+            TableView<String[]> previewTable = new TableView<>();
+            previewTable.setMinHeight(250);
+            previewTable.setMaxHeight(Double.MAX_VALUE);
+            VBox.setVgrow(previewTable, Priority.ALWAYS);
+            previewTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+            
+            for (int i = 0; i < headers.length; i++) {
+                final int colIndex = i;
+                TableColumn<String[], String> column = new TableColumn<>(headers[i]);
+                column.setCellValueFactory(cd -> {
+                    String[] rowData = cd.getValue();
+                    String val = (rowData != null && colIndex < rowData.length) ? rowData[colIndex] : "";
+                    return new javafx.beans.property.SimpleStringProperty(val);
+                });
+                previewTable.getColumns().add(column);
+            }
+            
+            ObservableList<String[]> previewData = FXCollections.observableArrayList();
+            for (int i = 1; i <= Math.min(10, totalRecords); i++) {
+                previewData.add(rows.get(i));
+            }
+            previewTable.setItems(previewData);
+            
+            Button btnProceed = new Button("Proceed with Import", new FontIcon("fas-check-circle"));
+            btnProceed.setStyle("-fx-background-color: -color-success-emphasis; -fx-text-fill: -color-fg-emphasis; -fx-font-weight: bold;");
+            
+            Button btnCancel = new Button("Cancel / Reupload", new FontIcon("fas-times-circle"));
+            btnCancel.getStyleClass().add("flat");
+            
+            final boolean[] approved = new boolean[1];
+            
+            btnProceed.setOnAction(e -> {
+                approved[0] = true;
+                dialog.close();
+            });
+            
+            btnCancel.setOnAction(e -> {
+                approved[0] = false;
+                dialog.close();
+            });
+            
+            HBox buttons = new HBox(15, btnProceed, btnCancel);
+            buttons.setAlignment(Pos.CENTER_RIGHT);
+            
+            root.getChildren().addAll(titleLabel, infoLabel, previewTable, buttons);
+            
+            Scene scene = new Scene(root, 850, 500);
+            dialog.setScene(scene);
+            dialog.showAndWait();
+            
+            return approved[0];
+        } catch (Exception ex) {
+            showAlert(Alert.AlertType.ERROR, "Failed to parse CSV file for preview: " + ex.getMessage());
+            return false;
+        }
+    }
+
+    private File promptAndPreviewFile(FileChooser chooser, String stepName, String[] requiredFields) {
+        while (true) {
+            File file = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+            if (file == null) {
+                return null;
+            }
+            if (!verifyHeader(file.toPath(), requiredFields)) {
+                showAlert(Alert.AlertType.ERROR, "Invalid CSV format for " + stepName + ".\nExpected header fields:\n" + String.join(", ", requiredFields));
+                continue;
+            }
+            if (!showCsvPreview(file.toPath(), stepName)) {
+                continue;
+            }
+            return file;
+        }
+    }
+
+    private void handleSingleImport(String moduleName, String[] requiredFields, FileImportAction importAction) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Select " + moduleName + " CSV File");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
-        File file = chooser.showOpenDialog(mainLayout.getScene().getWindow());
-        if (file != null) {
-            if (!verifyHeader(file.toPath(), requiredFields)) {
-                showAlert(Alert.AlertType.ERROR, "Invalid CSV format for " + moduleName + ".\nExpected header fields (in any order):\n" + String.join(", ", requiredFields));
+        
+        while (true) {
+            File file = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+            if (file == null) {
                 return;
             }
+            if (!verifyHeader(file.toPath(), requiredFields)) {
+                showAlert(Alert.AlertType.ERROR, "Invalid CSV format for " + moduleName + ".\nExpected header fields (in any order):\n" + String.join(", ", requiredFields));
+                continue;
+            }
+            if (!showCsvPreview(file.toPath(), moduleName)) {
+                continue;
+            }
+            
             Task<Void> task = new Task<>() {
                 @Override
                 protected Void call() throws Exception {
@@ -366,6 +598,7 @@ public class MainApp extends Application {
                 }
             };
             runJavaFXTask(task, "Importing " + moduleName + "...", () -> showAlert(Alert.AlertType.INFORMATION, moduleName + " imported successfully."));
+            break;
         }
     }
 
@@ -421,7 +654,7 @@ public class MainApp extends Application {
         Alert prompt = new Alert(Alert.AlertType.INFORMATION);
         prompt.setTitle("Bulk Import Sequence");
         prompt.setHeaderText("Bulk Import Started");
-        prompt.setContentText("You are about to bulk import all data. You will be prompted to select 4 files in the exact order needed by the database:\n\n1. Instructors\n2. Courses\n3. Students\n4. Enrollments\n\nClick OK to select the first file (Instructors).");
+        prompt.setContentText("You are about to bulk import all data. You will be prompted to select and preview 4 files in the exact order needed by the database:\n\n1. Instructors\n2. Courses\n3. Students\n4. Enrollments\n\nClick OK to select the first file (Instructors).");
         prompt.showAndWait();
 
         String[] instReq = {"FiD", "firstName", "lastName", "email", "department", "dob", "phone", "cabinNo"};
@@ -430,48 +663,32 @@ public class MainApp extends Application {
         String[] enrollReq = {"studentRegNo", "courseCode", "grade"};
 
         chooser.setTitle("1. Select Instructors CSV File");
-        File instFile = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        File instFile = promptAndPreviewFile(chooser, "Instructors", instReq);
         if (instFile == null) return;
-        if (!verifyHeader(instFile.toPath(), instReq)) {
-            showAlert(Alert.AlertType.ERROR, "Invalid CSV format for Instructors.\nExpected header fields:\n" + String.join(", ", instReq));
-            return;
-        }
         
         prompt.setHeaderText("Next: Courses");
         prompt.setContentText("Instructors selected successfully.\n\nClick OK to select the second file (Courses).");
         prompt.showAndWait();
 
         chooser.setTitle("2. Select Courses CSV File");
-        File coursesFile = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        File coursesFile = promptAndPreviewFile(chooser, "Courses", coursesReq);
         if (coursesFile == null) return;
-        if (!verifyHeader(coursesFile.toPath(), coursesReq)) {
-            showAlert(Alert.AlertType.ERROR, "Invalid CSV format for Courses.\nExpected header fields:\n" + String.join(", ", coursesReq));
-            return;
-        }
         
         prompt.setHeaderText("Next: Students");
         prompt.setContentText("Courses selected successfully.\n\nClick OK to select the third file (Students).");
         prompt.showAndWait();
 
         chooser.setTitle("3. Select Students CSV File");
-        File studentsFile = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        File studentsFile = promptAndPreviewFile(chooser, "Students", studentsReq);
         if (studentsFile == null) return;
-        if (!verifyHeader(studentsFile.toPath(), studentsReq)) {
-            showAlert(Alert.AlertType.ERROR, "Invalid CSV format for Students.\nExpected header fields:\n" + String.join(", ", studentsReq));
-            return;
-        }
         
         prompt.setHeaderText("Next: Enrollments");
         prompt.setContentText("Students selected successfully.\n\nClick OK to select the final file (Enrollments).");
         prompt.showAndWait();
 
         chooser.setTitle("4. Select Enrollments CSV File");
-        File enrollFile = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+        File enrollFile = promptAndPreviewFile(chooser, "Enrollments", enrollReq);
         if (enrollFile == null) return;
-        if (!verifyHeader(enrollFile.toPath(), enrollReq)) {
-            showAlert(Alert.AlertType.ERROR, "Invalid CSV format for Enrollments.\nExpected header fields:\n" + String.join(", ", enrollReq));
-            return;
-        }
 
         Task<Void> task = new Task<>() {
             @Override
@@ -645,8 +862,31 @@ public class MainApp extends Application {
             }
         });
 
-        table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colRegDate, colStatus);
-        table.setPrefHeight(650);
+        TableColumn<Student, String> colCgpa = new TableColumn<>("CGPA");
+        colCgpa.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCgpa() != null ? String.format("%.2f", c.getValue().getCgpa()) : "N/A"));
+        colCgpa.setCellFactory(column -> new TableCell<Student, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    setText(item);
+                    if (!"N/A".equals(item)) {
+                        setStyle("-fx-font-weight: bold; -fx-text-fill: -color-success-fg;");
+                    } else {
+                        setStyle("-fx-text-fill: -color-fg-muted;");
+                    }
+                    setAlignment(Pos.CENTER);
+                }
+            }
+        });
+
+        table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colRegDate, colStatus, colCgpa);
+        table.setMinHeight(300);
+        table.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         ObservableList<Student> masterData = FXCollections.observableArrayList();
         FilteredList<Student> filteredData = new FilteredList<>(masterData, p -> true);
@@ -736,6 +976,7 @@ public class MainApp extends Application {
                         coursesTable.getColumns().addAll(cCode, cTitle, cCredits, cSemester, cYear, cGrade);
                         coursesTable.getItems().setAll(enrollments);
                         coursesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+                        coursesTable.setMaxHeight(Double.MAX_VALUE);
                         VBox.setVgrow(coursesTable, Priority.ALWAYS);
 
                         Label cgpaLabel = new Label(String.format("CGPA: %.2f", cgpa));
@@ -745,13 +986,10 @@ public class MainApp extends Application {
                         content.getChildren().addAll(headerInfo, coursesTable, cgpaLabel);
                         VBox.setVgrow(coursesTable, Priority.ALWAYS);
 
-                        content.prefWidthProperty().bind(dialog.getDialogPane().widthProperty().subtract(40));
-                        content.prefHeightProperty().bind(dialog.getDialogPane().heightProperty().subtract(140));
-
                         dialog.getDialogPane().setContent(content);
                         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
                         dialog.setResizable(true);
-                        dialog.getDialogPane().setPrefSize(950, 650);
+                        dialog.getDialogPane().setPrefSize(1100, 750);
                         dialog.showAndWait();
                     });
                 } catch (Exception ex) {
@@ -795,8 +1033,33 @@ public class MainApp extends Application {
                     updateStatusAction.accept(selected);
                 }
             });
+
+            MenuItem calcCgpa = new MenuItem("Calculate CGPA");
+            calcCgpa.setGraphic(new FontIcon("fas-calculator"));
+            calcCgpa.setOnAction(e -> {
+                Student selected = row.getItem();
+                if (selected != null) {
+                    Task<Void> calcSingleTask = new Task<>() {
+                        @Override
+                        protected Void call() throws Exception {
+                            updateMessage("Fetching enrollments...");
+                            java.util.List<edu.ccrm.domain.Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(selected.getRegNo());
+                            updateMessage("Computing CGPA...");
+                            double cgpa = transcriptService.calculateCGPA(enrollments);
+                            updateMessage("Saving to database...");
+                            studentService.updateStudentCgpa(selected.getRegNo(), cgpa);
+                            return null;
+                        }
+                    };
+                    
+                    runJavaFXTask(calcSingleTask, "Calculating CGPA for " + selected.getFullName() + "...", () -> {
+                        showAlert(Alert.AlertType.INFORMATION, "CGPA calculated and saved successfully for " + selected.getFullName() + "!");
+                        refreshTable.run();
+                    });
+                }
+            });
             
-            contextMenu.getItems().addAll(viewTranscript, changeStatus);
+            contextMenu.getItems().addAll(viewTranscript, changeStatus, calcCgpa);
             row.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
                 if (isEmpty) {
                     row.setContextMenu(null);
@@ -889,7 +1152,9 @@ public class MainApp extends Application {
         colCabin.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCabinNo()));
 
         table.getColumns().addAll(colFid, colName, colEmail, colDept, colDob, colPhone, colCabin);
-        table.setPrefHeight(650);
+        table.setMinHeight(300);
+        table.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         ObservableList<Instructor> masterData = FXCollections.observableArrayList();
         FilteredList<Instructor> filteredData = new FilteredList<>(masterData, p -> true);
@@ -1005,7 +1270,9 @@ public class MainApp extends Application {
         colClassroom.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getClassroomNo() != null ? c.getValue().getClassroomNo() : ""));
 
         table.getColumns().addAll(colCode, colTitle, colCredits, colDept, colSem, colInst, colClassroom);
-        table.setPrefHeight(650);
+        table.setMinHeight(300);
+        table.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         ObservableList<Course> masterData = FXCollections.observableArrayList();
         FilteredList<Course> filteredData = new FilteredList<>(masterData, p -> true);
@@ -1124,12 +1391,15 @@ public class MainApp extends Application {
         
         TextField regNoField = new TextField();
         TextField courseCodeField = new TextField();
+        javafx.scene.control.Spinner<Integer> yearSpinner = new javafx.scene.control.Spinner<>(2000, 2100, java.time.LocalDate.now().getYear());
+        yearSpinner.setEditable(true);
         ComboBox<Grade> gradeCombo = new ComboBox<>();
         gradeCombo.getItems().addAll(Grade.values());
 
         form.addRow(0, new Label("Student Reg No:"), regNoField);
         form.addRow(1, new Label("Course Code:"), courseCodeField);
-        form.addRow(2, new Label("Grade (for recording):"), gradeCombo);
+        form.addRow(2, new Label("Year of Enrollment:"), yearSpinner);
+        form.addRow(3, new Label("Grade (for recording):"), gradeCombo);
 
         Button btnEnroll = new Button("Enroll", new FontIcon("fas-user-check"));
         Button btnUnenroll = new Button("Unenroll", new FontIcon("fas-user-minus"));
@@ -1137,7 +1407,7 @@ public class MainApp extends Application {
 
         javafx.scene.layout.FlowPane formActions = new javafx.scene.layout.FlowPane(10, 10);
         formActions.getChildren().addAll(btnEnroll, btnUnenroll, btnRecordGrade);
-        form.add(formActions, 0, 3, 2, 1);
+        form.add(formActions, 0, 4, 2, 1);
 
         TitledPane formPane = new TitledPane("Enrollment Actions", form);
         formPane.setCollapsible(false);
@@ -1153,16 +1423,44 @@ public class MainApp extends Application {
         colCourse.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCourse().getCourseCode().getCode()));
         TableColumn<Enrollment, String> colTitle = new TableColumn<>("Course Title");
         colTitle.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCourse().getTitle()));
+        TableColumn<Enrollment, String> colYear = new TableColumn<>("Year");
+        colYear.setCellValueFactory(c -> new ReadOnlyStringWrapper(String.valueOf(c.getValue().getEnrollmentYear())));
+        TableColumn<Enrollment, String> colSemester = new TableColumn<>("Semester");
+        colSemester.setCellValueFactory(c -> new ReadOnlyStringWrapper(
+            c.getValue().getEnrollmentSemester() != null && !c.getValue().getEnrollmentSemester().isEmpty()
+            ? c.getValue().getEnrollmentSemester() : "N/A"
+        ));
         TableColumn<Enrollment, String> colGrade = new TableColumn<>("Grade");
         colGrade.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getGrade() != null ? c.getValue().getGrade().toString() : "Not Graded"));
 
-        table.getColumns().addAll(colCourse, colTitle, colGrade);
-        table.setPrefHeight(650);
+        table.getColumns().addAll(colCourse, colTitle, colYear, colSemester, colGrade);
+        table.setMinHeight(300);
+        table.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        TextField searchRegNo = new TextField();
+        searchRegNo.setPromptText("Enter Reg No...");
+
+        Runnable refreshEnrollments = () -> {
+            String regNo = searchRegNo.getText().trim();
+            if (regNo.isEmpty()) {
+                showAlert(Alert.AlertType.WARNING, "Enter a Reg No first.");
+                return;
+            }
+            runTaskWithProgress("Fetching Enrollments...", () -> {
+                List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(regNo);
+                Platform.runLater(() -> table.getItems().setAll(enrollments));
+            }, null);
+        };
 
         btnEnroll.setOnAction(e -> {
             try {
-                enrollmentService.enrollStudent(regNoField.getText(), new CourseCode(courseCodeField.getText()));
+                int enrollmentYear = yearSpinner.getValue();
+                enrollmentService.enrollStudent(regNoField.getText(), new CourseCode(courseCodeField.getText()), enrollmentYear);
                 showAlert(Alert.AlertType.INFORMATION, "Enrolled successfully.");
+                if (regNoField.getText().trim().equalsIgnoreCase(searchRegNo.getText().trim())) {
+                    refreshEnrollments.run();
+                }
             } catch (Exception ex) {
                 showAlert(Alert.AlertType.ERROR, "Enrollment failed: " + ex.getMessage());
             }
@@ -1172,6 +1470,9 @@ public class MainApp extends Application {
             try {
                 enrollmentService.unenrollStudent(regNoField.getText(), new CourseCode(courseCodeField.getText()));
                 showAlert(Alert.AlertType.INFORMATION, "Unenrolled successfully.");
+                if (regNoField.getText().trim().equalsIgnoreCase(searchRegNo.getText().trim())) {
+                    refreshEnrollments.run();
+                }
             } catch (Exception ex) {
                 showAlert(Alert.AlertType.ERROR, "Unenrollment failed: " + ex.getMessage());
             }
@@ -1182,26 +1483,74 @@ public class MainApp extends Application {
                 if (gradeCombo.getValue() == null) throw new IllegalArgumentException("Select a grade first.");
                 enrollmentService.recordGrade(regNoField.getText(), new CourseCode(courseCodeField.getText()), gradeCombo.getValue());
                 showAlert(Alert.AlertType.INFORMATION, "Grade recorded successfully.");
+                if (regNoField.getText().trim().equalsIgnoreCase(searchRegNo.getText().trim())) {
+                    refreshEnrollments.run();
+                }
             } catch (Exception ex) {
                 showAlert(Alert.AlertType.ERROR, "Failed to record grade: " + ex.getMessage());
             }
         });
 
-        TextField searchRegNo = new TextField();
-        searchRegNo.setPromptText("Enter Reg No...");
-        Button btnView = new Button("View Enrollments", new FontIcon("fas-search"));
-        btnView.setOnAction(e -> {
-            if(searchRegNo.getText().trim().isEmpty()) {
-                showAlert(Alert.AlertType.WARNING, "Enter a Reg No first.");
-                return;
-            }
-            runTaskWithProgress("Fetching Enrollments...", () -> {
-                // Simulate heavy operation
-                Thread.sleep(2000); 
-                List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(searchRegNo.getText());
-                Platform.runLater(() -> table.getItems().setAll(enrollments));
-            }, null);
+        table.setRowFactory(tv -> {
+            TableRow<Enrollment> row = new TableRow<>();
+            ContextMenu contextMenu = new ContextMenu();
+
+            MenuItem updateGradeItem = new MenuItem("Update Grade");
+            updateGradeItem.setGraphic(new FontIcon("fas-pen"));
+            updateGradeItem.setOnAction(evt -> {
+                Enrollment selected = row.getItem();
+                if (selected != null) {
+                    ChoiceDialog<Grade> dialog = new ChoiceDialog<>(selected.getGrade(), Grade.values());
+                    dialog.setTitle("Update Grade");
+                    dialog.setHeaderText("Select new grade for student " + selected.getStudent().getRegNo() + " in " + selected.getCourse().getCourseCode().getCode());
+                    dialog.showAndWait().ifPresent(newGrade -> {
+                        try {
+                            enrollmentService.recordGrade(selected.getStudent().getRegNo(), selected.getCourse().getCourseCode(), newGrade);
+                            showAlert(Alert.AlertType.INFORMATION, "Grade updated successfully.");
+                            refreshEnrollments.run();
+                        } catch (Exception ex) {
+                            showAlert(Alert.AlertType.ERROR, "Failed to update grade: " + ex.getMessage());
+                        }
+                    });
+                }
+            });
+
+            MenuItem updateYearItem = new MenuItem("Update Year of Enrollment");
+            updateYearItem.setGraphic(new FontIcon("fas-calendar-alt"));
+            updateYearItem.setOnAction(evt -> {
+                Enrollment selected = row.getItem();
+                if (selected != null) {
+                    TextInputDialog dialog = new TextInputDialog(String.valueOf(selected.getEnrollmentYear()));
+                    dialog.setTitle("Update Year of Enrollment");
+                    dialog.setHeaderText("Enter new enrollment year for student " + selected.getStudent().getRegNo() + " in " + selected.getCourse().getCourseCode().getCode());
+                    dialog.showAndWait().ifPresent(yearStr -> {
+                        try {
+                            int newYear = Integer.parseInt(yearStr.trim());
+                            enrollmentService.updateEnrollmentYear(selected.getStudent().getRegNo(), selected.getCourse().getCourseCode(), newYear);
+                            showAlert(Alert.AlertType.INFORMATION, "Enrollment year updated successfully.");
+                            refreshEnrollments.run();
+                        } catch (NumberFormatException nfe) {
+                            showAlert(Alert.AlertType.ERROR, "Invalid year format.");
+                        } catch (Exception ex) {
+                            showAlert(Alert.AlertType.ERROR, "Failed to update enrollment year: " + ex.getMessage());
+                        }
+                    });
+                }
+            });
+
+            contextMenu.getItems().addAll(updateGradeItem, updateYearItem);
+            row.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
+                if (isEmpty) {
+                    row.setContextMenu(null);
+                } else {
+                    row.setContextMenu(contextMenu);
+                }
+            });
+            return row;
         });
+
+        Button btnView = new Button("View Enrollments", new FontIcon("fas-search"));
+        btnView.setOnAction(e -> refreshEnrollments.run());
         
         HBox topBox = new HBox(10, new Label("Search:"), searchRegNo, btnView);
         topBox.setAlignment(Pos.CENTER_LEFT);

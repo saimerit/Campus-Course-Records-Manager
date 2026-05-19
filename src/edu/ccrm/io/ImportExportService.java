@@ -16,7 +16,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,132 +58,327 @@ public class ImportExportService {
       }
   }
 
+  // =========================================================================
+  // STUDENTS IMPORT (BATCH & TRANSACTIONAL)
+  // =========================================================================
   public void importStudents() {
     System.out.println("     - Importing students.csv...");
     try (Connection conn = DatabaseManager.getConnection()) {
-      importStudents(Path.of("import-data/students.csv"), conn);
-      System.out.println("? Successfully imported students.csv");
-    } catch (IOException | SQLException e) {
-      System.err.println("Error during student import: " + e.getMessage());
+      conn.setAutoCommit(false);
+      try {
+        importStudents(Path.of("import-data/students.csv"), conn);
+        conn.commit();
+        System.out.println("✔ Successfully imported students.csv");
+      } catch (IOException | SQLException | RuntimeException e) {
+        conn.rollback();
+        System.err.println("Error during student import: " + e.getMessage());
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      System.err.println("Database connection error: " + e.getMessage());
     }
   }
 
-  private void importStudents(Path filePath, Connection conn)
-    throws IOException {
-    try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+  public void importStudentsFromTestData() {
+    System.out.println("     - Importing students.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importStudents(Path.of("test-data/students.csv"), conn);
+        conn.commit();
+        System.out.println("✔ Successfully imported students.csv");
+      } catch (IOException | SQLException | RuntimeException e) {
+        conn.rollback();
+        System.err.println("Error during student import: " + e.getMessage());
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      System.err.println("Database connection error: " + e.getMessage());
+    }
+  }
+
+  private void importStudents(Path filePath, Connection conn) throws IOException, SQLException {
+      importStudents(filePath, conn, null, new int[]{0}, 0);
+  }
+
+  private void importStudents(Path filePath, Connection conn, ImportProgressCallback callback, int[] processed, int total)
+    throws IOException, SQLException {
+    String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date, dob, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    try (PreparedStatement pstmt = conn.prepareStatement(sql);
+         BufferedReader reader = Files.newBufferedReader(filePath)) {
       String line;
-      reader.readLine();
+      reader.readLine(); // skip header
+      int count = 0;
       while ((line = reader.readLine()) != null) {
         String[] parts = line.split(",");
+        if (parts.length < 7) continue;
         String status = parts[5].replaceAll("\"", "");
-        Student student = new Student(
-          Integer.parseInt(parts[0]),
-          parts[1],
-          new Name(parts[2], parts[3]),
-          parts[4],
-          Student.Status.valueOf(status),
-          parseDateRobust(parts[6]),
-          parts.length > 7 ? parseDateRobust(parts[7]) : null,
-          parts.length > 8 ? parts[8] : null
-        );
-        try {
-          studentService.addStudent(student, conn);
-        } catch (DataIntegrityException e) {
-          System.err.println(
-            "Student with registration number " +
-            student.getRegNo() +
-            " already exists."
-          );
+        pstmt.setInt(1, Integer.parseInt(parts[0]));
+        pstmt.setString(2, parts[1]);
+        pstmt.setString(3, parts[2]);
+        pstmt.setString(4, parts[3]);
+        pstmt.setString(5, parts[4]);
+        pstmt.setString(6, Student.Status.valueOf(status).name());
+        pstmt.setDate(7, java.sql.Date.valueOf(parseDateRobust(parts[6])));
+        pstmt.setDate(8, parts.length > 7 ? (parseDateRobust(parts[7]) != null ? java.sql.Date.valueOf(parseDateRobust(parts[7])) : null) : null);
+        pstmt.setString(9, parts.length > 8 ? parts[8] : null);
+
+        pstmt.addBatch();
+        count++;
+        processed[0]++;
+        if (count % 1000 == 0) {
+          pstmt.executeBatch();
         }
+        if (callback != null) callback.onProgress(processed[0], total);
+      }
+      if (count % 1000 != 0) {
+        pstmt.executeBatch();
       }
     }
   }
 
+  public void importStudentsFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importStudents(path, conn, callback, processed, total);
+        conn.commit();
+      } catch (Exception e) {
+        conn.rollback();
+        throw e;
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    }
+  }
+
+  public void importStudentsFile(Path path) throws Exception {
+      importStudentsFile(path, null);
+  }
+
+  // =========================================================================
+  // INSTRUCTORS IMPORT (BATCH & TRANSACTIONAL)
+  // =========================================================================
   public void importInstructors() {
     System.out.println("     - Importing instructors.csv...");
     try (Connection conn = DatabaseManager.getConnection()) {
-      importInstructors(Path.of("import-data/instructors.csv"), conn);
-      System.out.println("? Successfully imported instructors.csv");
-    } catch (IOException | SQLException e) {
-      System.err.println("Error during instructor import: " + e.getMessage());
+      conn.setAutoCommit(false);
+      try {
+        importInstructors(Path.of("import-data/instructors.csv"), conn);
+        conn.commit();
+        System.out.println("✔ Successfully imported instructors.csv");
+      } catch (IOException | SQLException | RuntimeException e) {
+        conn.rollback();
+        System.err.println("Error during instructor import: " + e.getMessage());
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      System.err.println("Database connection error: " + e.getMessage());
     }
   }
 
-  private void importInstructors(Path filePath, Connection conn)
-    throws IOException {
-    try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+  public void importInstructorsFromTestData() {
+    System.out.println("     - Importing instructors.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importInstructors(Path.of("test-data/instructors.csv"), conn);
+        conn.commit();
+        System.out.println("✔ Successfully imported instructors.csv");
+      } catch (IOException | SQLException | RuntimeException e) {
+        conn.rollback();
+        System.err.println("Error during instructor import: " + e.getMessage());
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      System.err.println("Database connection error: " + e.getMessage());
+    }
+  }
+
+  private void importInstructors(Path filePath, Connection conn) throws IOException, SQLException {
+      importInstructors(filePath, conn, null, new int[]{0}, 0);
+  }
+
+  private void importInstructors(Path filePath, Connection conn, ImportProgressCallback callback, int[] processed, int total)
+    throws IOException, SQLException {
+    String sql = "INSERT INTO instructors (FiD, first_name, last_name, email, department, dob, phone, cabin_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    try (PreparedStatement pstmt = conn.prepareStatement(sql);
+         BufferedReader reader = Files.newBufferedReader(filePath)) {
       String line;
       reader.readLine(); // Skip header
+      int count = 0;
       while ((line = reader.readLine()) != null) {
         String[] parts = line.split(",");
-        Instructor instructor = new Instructor(
-          parts[0],
-          new Name(parts[1], parts[2]),
-          parts[3],
-          parts[4],
-          parts.length > 5 ? parseDateRobust(parts[5]) : null,
-          parts.length > 6 ? parts[6] : null,
-          parts.length > 7 ? parts[7] : null
-        );
-        try {
-          instructorService.addInstructor(instructor, conn);
-        } catch (DataIntegrityException e) {
-          System.err.println(
-            "Instructor with FiD " + instructor.getFiD() + " already exists."
-          );
+        if (parts.length < 5) continue;
+        pstmt.setString(1, parts[0]);
+        pstmt.setString(2, parts[1]);
+        pstmt.setString(3, parts[2]);
+        pstmt.setString(4, parts[3]);
+        pstmt.setString(5, parts[4]);
+        pstmt.setDate(6, parts.length > 5 ? (parseDateRobust(parts[5]) != null ? java.sql.Date.valueOf(parseDateRobust(parts[5])) : null) : null);
+        pstmt.setString(7, parts.length > 6 ? parts[6] : null);
+        pstmt.setString(8, parts.length > 7 ? parts[7] : null);
+
+        pstmt.addBatch();
+        count++;
+        processed[0]++;
+        if (count % 1000 == 0) {
+          pstmt.executeBatch();
         }
+        if (callback != null) callback.onProgress(processed[0], total);
+      }
+      if (count % 1000 != 0) {
+        pstmt.executeBatch();
       }
     }
   }
 
+  public void importInstructorsFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importInstructors(path, conn, callback, processed, total);
+        conn.commit();
+      } catch (Exception e) {
+        conn.rollback();
+        throw e;
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    }
+  }
+
+  public void importInstructorsFile(Path path) throws Exception {
+      importInstructorsFile(path, null);
+  }
+
+  // =========================================================================
+  // COURSES IMPORT (BATCH & TRANSACTIONAL)
+  // =========================================================================
   public void importCourses() {
     System.out.println("     - Importing courses.csv...");
     try (Connection conn = DatabaseManager.getConnection()) {
-      importCourses(Path.of("import-data/courses.csv"), conn);
-      System.out.println("? Successfully imported courses.csv");
-    } catch (IOException | SQLException e) {
-      System.err.println("Error during course import: " + e.getMessage());
+      conn.setAutoCommit(false);
+      try {
+        importCourses(Path.of("import-data/courses.csv"), conn);
+        conn.commit();
+        System.out.println("✔ Successfully imported courses.csv");
+      } catch (IOException | SQLException | RuntimeException e) {
+        conn.rollback();
+        System.err.println("Error during course import: " + e.getMessage());
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      System.err.println("Database connection error: " + e.getMessage());
     }
   }
 
-  private void importCourses(Path filePath, Connection conn)
-    throws IOException {
-    try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+  public void importCoursesFromTestData() {
+    System.out.println("     - Importing courses.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importCourses(Path.of("test-data/courses.csv"), conn);
+        conn.commit();
+        System.out.println("✔ Successfully imported courses.csv");
+      } catch (IOException | SQLException | RuntimeException e) {
+        conn.rollback();
+        System.err.println("Error during course import: " + e.getMessage());
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      System.err.println("Database connection error: " + e.getMessage());
+    }
+  }
+
+  private void importCourses(Path filePath, Connection conn) throws IOException, SQLException {
+      importCourses(filePath, conn, null, new int[]{0}, 0);
+  }
+
+  private void importCourses(Path filePath, Connection conn, ImportProgressCallback callback, int[] processed, int total)
+    throws IOException, SQLException {
+    String sql = "INSERT INTO courses (code, title, credits, department, instructor_id, semester, classroom_no) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    try (PreparedStatement pstmt = conn.prepareStatement(sql);
+         BufferedReader reader = Files.newBufferedReader(filePath)) {
       String line;
-      reader.readLine();
+      reader.readLine(); // skip header
+      int count = 0;
       while ((line = reader.readLine()) != null) {
         String[] parts = line.split(",");
+        if (parts.length < 6) continue;
         CourseCode courseCode = new CourseCode(parts[0]);
+
+        // Instructor validation & lookup
+        Instructor instructor = null;
         try {
-          Instructor instructor = instructorService.findInstructorByFiD(
-            parts[4],
-            conn
-          );
-          Course course = new Course.Builder(courseCode)
-            .withTitle(parts[1])
-            .withCredits(Integer.parseInt(parts[2]))
-            .withDepartment(parts[3])
-            .withInstructor(instructor)
-            .withSemester(Semester.valueOf(parts[5]))
-            .withClassroomNo(parts.length > 6 ? parts[6] : null)
-            .build();
-          courseService.addCourse(course, conn);
+          instructor = instructorService.findInstructorByFiD(parts[4], conn);
         } catch (RecordNotFoundException e) {
-          System.err.println(
-            "Skipping course " +
-            courseCode +
-            " because instructor was not found: " +
-            e.getMessage()
-          );
-        } catch (DataIntegrityException e) {
-          System.err.println(
-            "Course with code " + courseCode.getCode() + " already exists."
-          );
+          System.err.println("Warning: Skipping course " + courseCode + " because instructor was not found: " + e.getMessage());
+          processed[0]++;
+          if (callback != null) callback.onProgress(processed[0], total);
+          continue;
         }
+
+        pstmt.setString(1, courseCode.getCode());
+        pstmt.setString(2, parts[1]);
+        pstmt.setInt(3, Integer.parseInt(parts[2]));
+        pstmt.setString(4, parts[3]);
+        if (instructor != null) {
+          pstmt.setString(5, instructor.getFiD());
+        } else {
+          pstmt.setNull(5, Types.VARCHAR);
+        }
+        pstmt.setString(6, Semester.valueOf(parts[5]).name());
+        pstmt.setString(7, parts.length > 6 ? parts[6] : null);
+
+        pstmt.addBatch();
+        count++;
+        processed[0]++;
+        if (count % 1000 == 0) {
+          pstmt.executeBatch();
+        }
+        if (callback != null) callback.onProgress(processed[0], total);
+      }
+      if (count % 1000 != 0) {
+        pstmt.executeBatch();
       }
     }
   }
 
+  public void importCoursesFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importCourses(path, conn, callback, processed, total);
+        conn.commit();
+      } catch (Exception e) {
+        conn.rollback();
+        throw e;
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    }
+  }
+
+  public void importCoursesFile(Path path) throws Exception {
+      importCoursesFile(path, null);
+  }
+
+  // =========================================================================
+  // ENROLLMENTS IMPORT (ORACLE BATCHED MERGE & TRANSACTIONAL)
+  // =========================================================================
   public void importEnrollments() {
     System.out.println("     - Importing enrollments.csv...");
     try (Connection conn = DatabaseManager.getConnection()) {
@@ -188,7 +386,27 @@ public class ImportExportService {
         try {
             importEnrollments(Path.of("import-data/enrollments.csv"), conn);
             conn.commit();
-            System.out.println("? Successfully imported enrollments.csv");
+            System.out.println("✔ Successfully imported enrollments.csv");
+        } catch (IOException | SQLException | RuntimeException e) {
+            conn.rollback();
+            System.err.println("An unexpected error occurred during data import: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            conn.setAutoCommit(true);
+        }
+    } catch (SQLException e) {
+        System.err.println("Database connection error during enrollment import: " + e.getMessage());
+    }
+  }
+
+  public void importEnrollmentsFromTestData() {
+    System.out.println("     - Importing enrollments.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+        conn.setAutoCommit(false);
+        try {
+            importEnrollments(Path.of("test-data/enrollments.csv"), conn);
+            conn.commit();
+            System.out.println("✔ Successfully imported enrollments.csv");
         } catch (IOException | SQLException | RuntimeException e) {
             conn.rollback();
             System.err.println("An unexpected error occurred during data import: " + e.getMessage());
@@ -221,96 +439,154 @@ public class ImportExportService {
           }
           if (idxStudent < 0 || idxCourse < 0) return;
 
-          String line;
-          while ((line = reader.readLine()) != null) {
-              String[] parts = line.split(",");
-              if (parts.length < 2) continue;
+          // Highly resilient Oracle upsert MERGE query
+          String mergeSql = "MERGE INTO enrollments e "
+                          + "USING (SELECT ? AS student_reg_no, ? AS course_code, ? AS enrollment_year, ? AS enrollment_semester, ? AS grade FROM dual) src "
+                          + "ON (e.student_reg_no = src.student_reg_no AND e.course_code = src.course_code) "
+                          + "WHEN MATCHED THEN "
+                          + "  UPDATE SET e.grade = src.grade "
+                          + "WHEN NOT MATCHED THEN "
+                          + "  INSERT (student_reg_no, course_code, enrollment_year, enrollment_semester, grade) "
+                          + "  VALUES (src.student_reg_no, src.course_code, src.enrollment_year, src.enrollment_semester, src.grade)";
 
-              String studentRegNo = parts[idxStudent].trim();
-              CourseCode courseCode = new CourseCode(parts[idxCourse].trim());
-              int enrollYear = (idxYear >= 0 && idxYear < parts.length && !parts[idxYear].trim().isEmpty())
-                               ? Integer.parseInt(parts[idxYear].trim())
-                               : java.time.LocalDate.now().getYear();
+          try (PreparedStatement pstmt = conn.prepareStatement(mergeSql)) {
+              String line;
+              int count = 0;
+              while ((line = reader.readLine()) != null) {
+                  String[] parts = line.split(",");
+                  if (parts.length < 2) continue;
 
-              try {
+                  String studentRegNo = parts[idxStudent].trim();
+                  CourseCode courseCode = new CourseCode(parts[idxCourse].trim());
+                  int enrollYear = (idxYear >= 0 && idxYear < parts.length && !parts[idxYear].trim().isEmpty())
+                                   ? Integer.parseInt(parts[idxYear].trim())
+                                   : java.time.LocalDate.now().getYear();
+
+                  // Retrieve Course to find Semester
+                  String semester = "";
+                  try {
+                      Course course = courseService.findCourseByCode(courseCode, conn);
+                      semester = course.getSemester() != null ? course.getSemester().name() : "";
+                  } catch (RecordNotFoundException e) {
+                      System.err.println("Warning: Skipping enrollment for student " + studentRegNo + " in " + courseCode.getCode() + " because course was not found.");
+                      processed[0]++;
+                      if (callback != null) callback.onProgress(processed[0], total);
+                      continue;
+                  }
+
+                  // Retrieve Student to verify existence
+                  try {
+                      studentService.findStudentByRegNo(studentRegNo, conn);
+                  } catch (RecordNotFoundException e) {
+                      System.err.println("Warning: Skipping enrollment for student " + studentRegNo + " in " + courseCode.getCode() + " because student was not found.");
+                      processed[0]++;
+                      if (callback != null) callback.onProgress(processed[0], total);
+                      continue;
+                  }
+
+                  // Retrieve business credit limits
+                  int currentTotalCredits = getCurrentCreditsDirect(studentRegNo, conn);
+                  int currentSemesterCredits = getCurrentSemesterYearCreditsDirect(studentRegNo, semester, enrollYear, conn);
+
+                  try {
+                      Course course = courseService.findCourseByCode(courseCode, conn);
+                      if (currentTotalCredits + course.getCredits() > 225) {
+                          throw new MaxCreditLimitExceededException("Enrolling would exceed maximum total credits (225).");
+                      }
+                      if (currentSemesterCredits + course.getCredits() > 60) {
+                          throw new MaxCreditLimitExceededException("Enrolling would exceed semester credit limit (60).");
+                      }
+                  } catch (MaxCreditLimitExceededException | RecordNotFoundException e) {
+                      System.err.println("Warning: Could not process enrollment for " + studentRegNo + " in " + courseCode.getCode() + ". Reason: " + e.getMessage());
+                      processed[0]++;
+                      if (callback != null) callback.onProgress(processed[0], total);
+                      continue;
+                  }
+
+                  // Setup parameters
+                  pstmt.setString(1, studentRegNo);
+                  pstmt.setString(2, courseCode.getCode());
+                  pstmt.setInt(3, enrollYear);
+                  pstmt.setString(4, semester);
                   if (idxGrade >= 0 && idxGrade < parts.length && !parts[idxGrade].trim().isEmpty()) {
-                      Grade grade = Grade.valueOf(parts[idxGrade].trim().toUpperCase());
-                      enrollmentService.enrollStudentWithGradeAndYear(studentRegNo, courseCode, grade, enrollYear, conn);
+                      pstmt.setString(5, parts[idxGrade].trim().toUpperCase());
                   } else {
-                      enrollmentService.enrollStudent(studentRegNo, courseCode, conn);
+                      pstmt.setNull(5, Types.VARCHAR);
                   }
-              } catch (DuplicateEnrollmentException e) {
-                  System.out.println("Info: Student " + studentRegNo + " is already enrolled in " + courseCode.getCode() + ". Attempting to update grade.");
-                  if (idxGrade >= 0 && idxGrade < parts.length && !parts[idxGrade].trim().isEmpty()) {
-                      try {
-                         Grade grade = Grade.valueOf(parts[idxGrade].trim().toUpperCase());
-                         enrollmentService.recordGrade(studentRegNo, courseCode, grade, conn);
-                      }
-                      catch (Exception gradeException){
-                          System.err.println("Could not record grade for already enrolled student.");
-                      }
+
+                  pstmt.addBatch();
+                  count++;
+                  processed[0]++;
+                  if (count % 1000 == 0) {
+                      pstmt.executeBatch();
                   }
-              } catch (MaxCreditLimitExceededException | RecordNotFoundException | IllegalArgumentException e) {
-                  System.err.println("Warning: Could not process enrollment for " + studentRegNo + " in " + courseCode.getCode() + ". Reason: " + e.getMessage());
+                  if (callback != null) callback.onProgress(processed[0], total);
               }
-              processed[0]++;
-              if (callback != null) callback.onProgress(processed[0], total);
+              if (count % 1000 != 0) {
+                  pstmt.executeBatch();
+              }
           }
       }
   }
 
-  public void importStudentsFromTestData() {
-    System.out.println("     - Importing students.csv...");
-    try (Connection conn = DatabaseManager.getConnection()) {
-      importStudents(Path.of("test-data/students.csv"), conn);
-      System.out.println("? Successfully imported students.csv");
-    } catch (IOException | SQLException e) {
-      System.err.println("Error during student import: " + e.getMessage());
-    }
-  }
-
-
-  public void importInstructorsFromTestData() {
-    System.out.println("     - Importing instructors.csv...");
-    try (Connection conn = DatabaseManager.getConnection()) {
-      importInstructors(Path.of("test-data/instructors.csv"), conn);
-      System.out.println("? Successfully imported instructors.csv");
-    } catch (IOException | SQLException e) {
-      System.err.println("Error during instructor import: " + e.getMessage());
-    }
-  }
-
-  public void importCoursesFromTestData() {
-    System.out.println("     - Importing courses.csv...");
-    try (Connection conn = DatabaseManager.getConnection()) {
-      importCourses(Path.of("test-data/courses.csv"), conn);
-      System.out.println("? Successfully imported courses.csv");
-    } catch (IOException | SQLException e) {
-      System.err.println("Error during course import: " + e.getMessage());
-    }
-  }
-
-  public void importEnrollmentsFromTestData() {
-    System.out.println("     - Importing enrollments.csv...");
+  public void importEnrollmentsFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
     try (Connection conn = DatabaseManager.getConnection()) {
         conn.setAutoCommit(false);
         try {
-            importEnrollments(Path.of("test-data/enrollments.csv"), conn);
+            importEnrollments(path, conn, callback, processed, total);
             conn.commit();
-            System.out.println("? Successfully imported enrollments.csv");
-        } catch (IOException | SQLException | RuntimeException e) {
+        } catch (Exception e) {
             conn.rollback();
-            System.err.println("An unexpected error occurred during data import: " + e.getMessage());
-            e.printStackTrace();
+            throw e;
         } finally {
             conn.setAutoCommit(true);
         }
-    } catch (SQLException e) {
-        System.err.println("Database connection error during enrollment import: " + e.getMessage());
     }
   }
 
+  public void importEnrollmentsFile(Path path) throws Exception {
+      importEnrollmentsFile(path, null);
+  }
 
+  // =========================================================================
+  // CREDIT DIRECT CALCULATORS FOR ENROLLMENTS
+  // =========================================================================
+  private int getCurrentCreditsDirect(String studentRegNo, Connection conn) throws SQLException {
+      int totalCredits = 0;
+      String sql = "SELECT SUM(c.credits) FROM courses c JOIN enrollments e ON c.code = e.course_code WHERE e.student_reg_no = ?";
+      try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+          pstmt.setString(1, studentRegNo);
+          try (ResultSet rs = pstmt.executeQuery()) {
+              if (rs.next()) {
+                  totalCredits = rs.getInt(1);
+              }
+          }
+      }
+      return totalCredits;
+  }
+
+  private int getCurrentSemesterYearCreditsDirect(String studentRegNo, String semester, int year, Connection conn) throws SQLException {
+      int semesterCredits = 0;
+      String sql = "SELECT SUM(c.credits) FROM courses c JOIN enrollments e ON c.code = e.course_code "
+                 + "WHERE e.student_reg_no = ? AND e.enrollment_semester = ? AND e.enrollment_year = ?";
+      try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+          pstmt.setString(1, studentRegNo);
+          pstmt.setString(2, semester);
+          pstmt.setInt(3, year);
+          try (ResultSet rs = pstmt.executeQuery()) {
+              if (rs.next()) {
+                  semesterCredits = rs.getInt(1);
+              }
+          }
+      }
+      return semesterCredits;
+  }
+
+  // =========================================================================
+  // EXPORT UTILITIES
+  // =========================================================================
   public void exportData() throws IOException {
     Files.createDirectories(config.getDataDirectory());
     System.out.println("Exporting data from database...");
@@ -399,134 +675,6 @@ public class ImportExportService {
       StandardOpenOption.CREATE,
       StandardOpenOption.TRUNCATE_EXISTING
     );
-  }
-
-  public void importStudentsFile(Path path) throws Exception {
-      importStudentsFile(path, null);
-  }
-
-  public void importStudentsFile(Path path, ImportProgressCallback callback) throws Exception {
-    int total = (int) countDataLines(path);
-    int[] processed = {0};
-    try (Connection conn = DatabaseManager.getConnection()) {
-      try (BufferedReader reader = Files.newBufferedReader(path)) {
-        String line;
-        reader.readLine(); // skip header
-        while ((line = reader.readLine()) != null) {
-          String[] parts = line.split(",");
-          String status = parts[5].replaceAll("\"", "");
-          Student student = new Student(
-            Integer.parseInt(parts[0]),
-            parts[1],
-            new Name(parts[2], parts[3]),
-            parts[4],
-            Student.Status.valueOf(status),
-            parseDateRobust(parts[6]),
-            parts.length > 7 ? parseDateRobust(parts[7]) : null,
-            parts.length > 8 ? parts[8] : null
-          );
-          try {
-            studentService.addStudent(student, conn);
-          } catch (DataIntegrityException e) {
-            System.err.println("Student with registration number " + student.getRegNo() + " already exists.");
-          }
-          processed[0]++;
-          if (callback != null) callback.onProgress(processed[0], total);
-        }
-      }
-    }
-  }
-
-  public void importInstructorsFile(Path path) throws Exception {
-      importInstructorsFile(path, null);
-  }
-
-  public void importInstructorsFile(Path path, ImportProgressCallback callback) throws Exception {
-    int total = (int) countDataLines(path);
-    int[] processed = {0};
-    try (Connection conn = DatabaseManager.getConnection()) {
-      try (BufferedReader reader = Files.newBufferedReader(path)) {
-        String line;
-        reader.readLine();
-        while ((line = reader.readLine()) != null) {
-          String[] parts = line.split(",");
-          Instructor instructor = new Instructor(
-            parts[0],
-            new Name(parts[1], parts[2]),
-            parts[3],
-            parts[4],
-            parts.length > 5 ? parseDateRobust(parts[5]) : null,
-            parts.length > 6 ? parts[6] : null,
-            parts.length > 7 ? parts[7] : null
-          );
-          try {
-            instructorService.addInstructor(instructor, conn);
-          } catch (DataIntegrityException e) {
-            System.err.println("Instructor with FiD " + instructor.getFiD() + " already exists.");
-          }
-          processed[0]++;
-          if (callback != null) callback.onProgress(processed[0], total);
-        }
-      }
-    }
-  }
-
-  public void importCoursesFile(Path path) throws Exception {
-      importCoursesFile(path, null);
-  }
-
-  public void importCoursesFile(Path path, ImportProgressCallback callback) throws Exception {
-    int total = (int) countDataLines(path);
-    int[] processed = {0};
-    try (Connection conn = DatabaseManager.getConnection()) {
-      try (BufferedReader reader = Files.newBufferedReader(path)) {
-        String line;
-        reader.readLine();
-        while ((line = reader.readLine()) != null) {
-          String[] parts = line.split(",");
-          CourseCode courseCode = new CourseCode(parts[0]);
-          try {
-            Instructor instructor = instructorService.findInstructorByFiD(parts[4], conn);
-            Course course = new Course.Builder(courseCode)
-              .withTitle(parts[1])
-              .withCredits(Integer.parseInt(parts[2]))
-              .withDepartment(parts[3])
-              .withInstructor(instructor)
-              .withSemester(Semester.valueOf(parts[5]))
-              .withClassroomNo(parts.length > 6 ? parts[6] : null)
-              .build();
-            courseService.addCourse(course, conn);
-          } catch (RecordNotFoundException e) {
-            System.err.println("Skipping course " + courseCode + " because instructor was not found: " + e.getMessage());
-          } catch (DataIntegrityException e) {
-            System.err.println("Course with code " + courseCode.getCode() + " already exists.");
-          }
-          processed[0]++;
-          if (callback != null) callback.onProgress(processed[0], total);
-        }
-      }
-    }
-  }
-
-  public void importEnrollmentsFile(Path path) throws Exception {
-      importEnrollmentsFile(path, null);
-  }
-
-  public void importEnrollmentsFile(Path path, ImportProgressCallback callback) throws Exception {
-    int total = (int) countDataLines(path);
-    int[] processed = {0};
-    try (Connection conn = DatabaseManager.getConnection()) {
-        conn.setAutoCommit(false);
-        try {
-            importEnrollments(path, conn, callback, processed, total);
-            conn.commit();
-        } catch (Exception e) {
-            conn.rollback();
-            throw e;
-        } finally {
-            conn.setAutoCommit(true);
-        }
-    }
   }
 
   private LocalDate parseDateRobust(String dateStr) {

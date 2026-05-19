@@ -34,6 +34,49 @@ public class EnrollmentService {
         }
     }
 
+    public void enrollStudent(String studentRegNo, CourseCode courseCode, int enrollmentYear)
+            throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            enrollStudent(studentRegNo, courseCode, enrollmentYear, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error during enrollment: " + e.getMessage(), e);
+        }
+    }
+
+    public void enrollStudent(String studentRegNo, CourseCode courseCode, int enrollmentYear, Connection conn)
+            throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException, SQLException {
+        if (isEnrolled(studentRegNo, courseCode, conn)) {
+            throw new DuplicateEnrollmentException("Student is already enrolled in this course.");
+        }
+
+        int currentTotalCredits = getCurrentCredits(studentRegNo, conn);
+        Course course = this.courseService.findCourseByCode(courseCode, conn);
+        String semester = course.getSemester() != null ? course.getSemester().name() : "";
+        int currentSemesterCredits = getCurrentSemesterYearCredits(studentRegNo, semester, enrollmentYear, conn);
+
+        if (currentTotalCredits + course.getCredits() > MAX_TOTAL_CREDITS) {
+            throw new MaxCreditLimitExceededException(
+                    "Enrolling in this course would exceed the maximum total credit limit of " + MAX_TOTAL_CREDITS);
+        }
+
+        if (currentSemesterCredits + course.getCredits() > MAX_SEMESTER_CREDITS) {
+            throw new MaxCreditLimitExceededException(
+                    "Enrolling in this course would exceed the per-semester credit limit of " + MAX_SEMESTER_CREDITS
+                    + " for " + semester + " " + enrollmentYear);
+        }
+
+        String sql = "INSERT INTO enrollments (student_reg_no, course_code, enrollment_year, enrollment_semester) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, studentRegNo);
+            pstmt.setString(2, courseCode.getCode());
+            pstmt.setInt(3, enrollmentYear);
+            pstmt.setString(4, semester);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new SQLException("Failed to enroll student: " + e.getMessage(), e);
+        }
+    }
+
     public void enrollStudent(String studentRegNo, CourseCode courseCode, Connection conn)
             throws DuplicateEnrollmentException, MaxCreditLimitExceededException, RecordNotFoundException, SQLException {
         if (isEnrolled(studentRegNo, courseCode, conn)) {
@@ -314,5 +357,51 @@ public class EnrollmentService {
             pstmt.executeUpdate();
         }
         recordGrade(studentRegNo, courseCode, grade, conn);
+    }
+
+    public void updateEnrollmentYear(String studentRegNo, CourseCode courseCode, int newYear) throws RecordNotFoundException, MaxCreditLimitExceededException {
+        try (Connection conn = DatabaseManager.getConnection()) {
+            updateEnrollmentYear(studentRegNo, courseCode, newYear, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error updating enrollment year: " + e.getMessage(), e);
+        }
+    }
+
+    public void updateEnrollmentYear(String studentRegNo, CourseCode courseCode, int newYear, Connection conn) throws RecordNotFoundException, MaxCreditLimitExceededException, SQLException {
+        int oldYear = -1;
+        String checkSql = "SELECT enrollment_year FROM enrollments WHERE student_reg_no = ? AND course_code = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(checkSql)) {
+            pstmt.setString(1, studentRegNo);
+            pstmt.setString(2, courseCode.getCode());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    oldYear = rs.getInt(1);
+                } else {
+                    throw new RecordNotFoundException("Enrollment record not found for student " + studentRegNo + " in course " + courseCode);
+                }
+            }
+        }
+
+        if (oldYear == newYear) {
+            return;
+        }
+
+        Course course = this.courseService.findCourseByCode(courseCode, conn);
+        String semester = course.getSemester() != null ? course.getSemester().name() : "";
+        int currentSemesterCredits = getCurrentSemesterYearCredits(studentRegNo, semester, newYear, conn);
+
+        if (currentSemesterCredits + course.getCredits() > MAX_SEMESTER_CREDITS) {
+            throw new MaxCreditLimitExceededException(
+                    "Updating enrollment year would exceed the per-semester credit limit of " + MAX_SEMESTER_CREDITS
+                    + " for " + semester + " " + newYear);
+        }
+
+        String updateSql = "UPDATE enrollments SET enrollment_year = ? WHERE student_reg_no = ? AND course_code = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
+            pstmt.setInt(1, newYear);
+            pstmt.setString(2, studentRegNo);
+            pstmt.setString(3, courseCode.getCode());
+            pstmt.executeUpdate();
+        }
     }
 }

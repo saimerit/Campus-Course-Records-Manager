@@ -120,6 +120,22 @@ public class StudentService {
     }
 
 
+    public void updateStudentCgpa(String regNo, double cgpa) throws RecordNotFoundException {
+        String sql = "UPDATE students SET cgpa = ? WHERE reg_no = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDouble(1, cgpa);
+            pstmt.setString(2, regNo);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RecordNotFoundException("Student with Reg No. " + regNo + " not found.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Database error updating student CGPA: " + e.getMessage());
+            throw new RecordNotFoundException("Database error updating student CGPA: " + e.getMessage());
+        }
+    }
+
     public Student mapRowToStudent(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         String regNo = rs.getString("reg_no");
@@ -129,6 +145,17 @@ public class StudentService {
         LocalDate registrationDate = rs.getDate("registration_date").toLocalDate();
         LocalDate dob = rs.getDate("dob") != null ? rs.getDate("dob").toLocalDate() : null;
         String phone = rs.getString("phone");
-        return new Student(id, regNo, name, email, status, registrationDate, dob, phone);
+        Student student = new Student(id, regNo, name, email, status, registrationDate, dob, phone);
+        
+        try {
+            double dbCgpa = rs.getDouble("cgpa");
+            if (!rs.wasNull()) {
+                student.setCgpa(dbCgpa);
+            }
+        } catch (SQLException e) {
+            // CGPA column might not exist yet during migration
+        }
+        
+        return student;
     }
 }

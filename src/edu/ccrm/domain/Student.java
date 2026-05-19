@@ -14,6 +14,7 @@ public class Student extends Person {
     private String regNo;
     private Status status;
     private final LocalDate registrationDate;
+    private Double cgpa; // Can be null if not computed yet
 
     public Student(int id, String regNo, Name fullName, String email, LocalDate dob, String phone) {
         super(id, fullName, email, dob, phone);
@@ -45,10 +46,18 @@ public class Student extends Person {
         return registrationDate;
     }
 
+    public Double getCgpa() {
+        return cgpa;
+    }
+
+    public void setCgpa(Double cgpa) {
+        this.cgpa = cgpa;
+    }
+
     @Override
     public String getProfile() {
-        return String.format("Student | ID: %d, RegNo: %s, Name: %s, Email: %s, DOB: %s, Phone: %s, Status: %s, Registered On: %s",
-                getId(), regNo, getFullName(), getEmail(), getDob(), getPhone(), status, registrationDate);
+        return String.format("Student | ID: %d, RegNo: %s, Name: %s, Email: %s, DOB: %s, Phone: %s, Status: %s, Registered On: %s, CGPA: %s",
+                getId(), regNo, getFullName(), getEmail(), getDob(), getPhone(), status, registrationDate, cgpa != null ? String.format("%.2f", cgpa) : "N/A");
     }
     
     @Override

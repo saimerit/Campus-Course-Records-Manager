@@ -212,6 +212,13 @@ public class DatabaseInitializer {
                 System.out.println("    - Migrated: Added ENROLLMENT_SEMESTER column to ENROLLMENTS.");
             }
         }
+        // Add cgpa to STUDENTS if missing
+        try (ResultSet rs = conn.getMetaData().getColumns(null, null, "STUDENTS", "CGPA")) {
+            if (!rs.next()) {
+                stmt.executeUpdate("ALTER TABLE STUDENTS ADD cgpa NUMBER(3,2)");
+                System.out.println("    - Migrated: Added CGPA column to STUDENTS.");
+            }
+        }
     } catch (SQLException e) {
         System.err.println("Warning: Schema migration encountered an issue: " + e.getMessage());
     }
