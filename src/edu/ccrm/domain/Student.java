@@ -15,12 +15,14 @@ public class Student extends Person {
     private Status status;
     private final LocalDate registrationDate;
     private Double cgpa; // Can be null if not computed yet
+    private int probationCount = 0;
 
     public Student(int id, String regNo, Name fullName, String email, LocalDate dob, String phone) {
         super(id, fullName, email, dob, phone);
         this.regNo = regNo;
         this.status = Status.ACTIVE;
         this.registrationDate = LocalDate.now();
+        this.probationCount = 0;
     }
     
     public Student(int id, String regNo, Name fullName, String email, Status status, LocalDate registrationDate, LocalDate dob, String phone) {
@@ -28,6 +30,7 @@ public class Student extends Person {
         this.regNo = regNo;
         this.status = status;
         this.registrationDate = registrationDate;
+        this.probationCount = 0;
     }
 
     public String getRegNo() {
@@ -54,10 +57,18 @@ public class Student extends Person {
         this.cgpa = cgpa;
     }
 
+    public int getProbationCount() {
+        return probationCount;
+    }
+
+    public void setProbationCount(int probationCount) {
+        this.probationCount = probationCount;
+    }
+
     @Override
     public String getProfile() {
-        return String.format("Student | ID: %d, RegNo: %s, Name: %s, Email: %s, DOB: %s, Phone: %s, Status: %s, Registered On: %s, CGPA: %s",
-                getId(), regNo, getFullName(), getEmail(), getDob(), getPhone(), status, registrationDate, cgpa != null ? String.format("%.2f", cgpa) : "N/A");
+        return String.format("Student | ID: %d, RegNo: %s, Name: %s, Email: %s, DOB: %s, Phone: %s, Status: %s, Registered On: %s, CGPA: %s, Probation Count: %d",
+                getId(), regNo, getFullName(), getEmail(), getDob(), getPhone(), status, registrationDate, cgpa != null ? String.format("%.2f", cgpa) : "N/A", probationCount);
     }
     
     @Override
@@ -71,7 +82,8 @@ public class Student extends Person {
                 getStatus().name(),
                 getRegistrationDate().toString(),
                 getDob() != null ? getDob().toString() : "",
-                getPhone() != null ? getPhone() : ""
+                getPhone() != null ? getPhone() : "",
+                String.valueOf(getProbationCount())
         );
     }
 }

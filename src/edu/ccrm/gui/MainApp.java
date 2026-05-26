@@ -8,6 +8,7 @@ import edu.ccrm.io.DatabaseInitializer;
 import edu.ccrm.io.ImportExportService;
 import edu.ccrm.service.*;
 import edu.ccrm.util.RecursiveUtil;
+import java.time.LocalDate;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -52,10 +53,17 @@ public class MainApp extends Application {
     private final CourseService courseService = new CourseService(instructorService);
     private final EnrollmentService enrollmentService = new EnrollmentService(studentService, courseService);
     private final TranscriptService transcriptService = new TranscriptService(studentService, enrollmentService);
-    private final ImportExportService importExportService = new ImportExportService(studentService, instructorService, courseService, enrollmentService);
+    private final ProbationService probationService = new ProbationService();
+    private final ImportExportService importExportService = new ImportExportService(studentService, instructorService, courseService, enrollmentService, probationService);
     private final BackupService backupService = new BackupService();
     private final DatabaseAdminService dbAdminService = new DatabaseAdminService();
     private final AnalyticsService analyticsService = new AnalyticsService();
+
+    private final TextField probRegsField = new TextField();
+    private final TextArea probReasonArea = new TextArea();
+    private Runnable refreshStudentsTable;
+    private Runnable refreshProbTable;
+    private ProbationReport editingProbationReport = null;
 
     private ProgressIndicator globalProgressIndicator;
     private Label globalStatusLabel;
@@ -107,7 +115,7 @@ public class MainApp extends Application {
         Label progressHeading = new Label("Progress");
         progressHeading.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
 
-        progressBox = new VBox(10, progressHeading, centerSpinner, centerProgressBar, progressTextLabel, recordProgressBar, recordProgressLabel);
+        progressBox = new VBox(10, progressHeading, centerSpinner, progressTextLabel, centerProgressBar, recordProgressLabel, recordProgressBar);
         progressBox.setAlignment(Pos.CENTER);
         progressBox.setMaxSize(400, 230);
         progressBox.setStyle("-fx-background-color: rgba(0,0,0,0.85); -fx-padding: 25; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: rgba(255,255,255,0.2); -fx-border-width: 1;");
@@ -157,7 +165,7 @@ public class MainApp extends Application {
         mainLayout.setLeft(sidebar);
 
         btnDashboard.setOnAction(e -> mainLayout.setCenter(createDashboardView()));
-        btnStudents.setOnAction(e -> mainLayout.setCenter(createStudentsView()));
+        btnStudents.setOnAction(e -> mainLayout.setCenter(createStudentsOptionsView()));
         btnInstructors.setOnAction(e -> mainLayout.setCenter(createInstructorsView()));
         btnCourses.setOnAction(e -> mainLayout.setCenter(createCoursesView()));
         btnEnrollments.setOnAction(e -> mainLayout.setCenter(createEnrollmentsView()));
@@ -179,23 +187,61 @@ public class MainApp extends Application {
         }, () -> {
             // After init, check if this is a fresh install
             if (DatabaseInitializer.isFirstRun()) {
-                Alert firstRunAlert = new Alert(Alert.AlertType.CONFIRMATION);
-                firstRunAlert.setTitle("Fresh Database Detected");
-                firstRunAlert.setHeaderText("Welcome to CCRM!");
-                firstRunAlert.setContentText(
-                    "A new database has been created.\n\n" +
-                    "Would you like to load the bundled sample data to get started quickly?\n\n" +
-                    "Click OK to load sample data, or Cancel to start with an empty database and import your own files."
-                );
-                firstRunAlert.showAndWait().ifPresent(response -> {
-                    if (response == ButtonType.OK) {
-                        runTaskWithProgress("Loading sample data...",
-                            DatabaseInitializer::importSampleData,
-                            () -> showAlert(Alert.AlertType.INFORMATION, "Sample data loaded successfully!"));
-                    } else {
-                        showAlert(Alert.AlertType.INFORMATION,
-                            "Empty database ready. Use the 'System & Backup Ops' panel to import your own CSV files.");
+                Dialog<java.util.Map<String, Boolean>> sampleDataDialog = new Dialog<>();
+                sampleDataDialog.setTitle("Setup Database");
+                sampleDataDialog.setHeaderText("Welcome to CCRM!\nChoose which tables to load sample data into. Unselected tables will remain empty.");
+
+                ButtonType importButtonType = new ButtonType("Load Selected", ButtonBar.ButtonData.OK_DONE);
+                sampleDataDialog.getDialogPane().getButtonTypes().addAll(importButtonType, ButtonType.CANCEL);
+
+                GridPane grid = new GridPane();
+                grid.setHgap(10);
+                grid.setVgap(10);
+                grid.setPadding(new Insets(20, 150, 10, 10));
+
+                CheckBox cbInstructors = new CheckBox("Instructors");
+                cbInstructors.setSelected(true);
+                CheckBox cbCourses = new CheckBox("Courses");
+                cbCourses.setSelected(true);
+                CheckBox cbStudents = new CheckBox("Students");
+                cbStudents.setSelected(true);
+                CheckBox cbEnrollments = new CheckBox("Enrollments");
+                cbEnrollments.setSelected(true);
+                CheckBox cbProbation = new CheckBox("Probation Reports");
+                cbProbation.setSelected(true);
+
+                grid.add(new Label("Select tables to initialize with sample data:"), 0, 0, 2, 1);
+                grid.add(cbInstructors, 0, 1);
+                grid.add(cbCourses, 0, 2);
+                grid.add(cbStudents, 0, 3);
+                grid.add(cbEnrollments, 0, 4);
+                grid.add(cbProbation, 0, 5);
+
+                sampleDataDialog.getDialogPane().setContent(grid);
+
+                sampleDataDialog.setResultConverter(dialogButton -> {
+                    if (dialogButton == importButtonType) {
+                        java.util.Map<String, Boolean> selections = new java.util.HashMap<>();
+                        selections.put("instructors", cbInstructors.isSelected());
+                        selections.put("courses", cbCourses.isSelected());
+                        selections.put("students", cbStudents.isSelected());
+                        selections.put("enrollments", cbEnrollments.isSelected());
+                        selections.put("probation", cbProbation.isSelected());
+                        return selections;
                     }
+                    return null;
+                });
+
+                sampleDataDialog.showAndWait().ifPresent(selections -> {
+                    runTaskWithProgress("Loading sample data...", () -> {
+                        DatabaseInitializer.importSampleData(
+                            selections.get("instructors"),
+                            selections.get("courses"),
+                            selections.get("students"),
+                            selections.get("enrollments"),
+                            selections.get("probation")
+                        );
+                    }, () -> showAlert(Alert.AlertType.INFORMATION, "Sample data setup complete for selected tables!"));
                 });
             }
         });
@@ -232,6 +278,7 @@ public class MainApp extends Application {
             createMetricCard("Total Students", String.valueOf(allStudents.size()), "fas-users"),
             createMetricCard("Active Courses", String.valueOf(courseService.getAllCoursesSortedByCode().size()), "fas-book-open"),
             createMetricCard("Total Faculty", String.valueOf(instructorService.getAllInstructorsSortedById().size()), "fas-chalkboard-teacher"),
+            createMetricCard("On Probation", String.valueOf(prob), "fas-exclamation-triangle"),
             createMetricCard("Graduated", String.valueOf(graduated), "fas-graduation-cap")
         );
         
@@ -661,13 +708,14 @@ public class MainApp extends Application {
         Alert prompt = new Alert(Alert.AlertType.INFORMATION);
         prompt.setTitle("Bulk Import Sequence");
         prompt.setHeaderText("Bulk Import Started");
-        prompt.setContentText("You are about to bulk import all data. You will be prompted to select and preview 4 files in the exact order needed by the database:\n\n1. Instructors\n2. Courses\n3. Students\n4. Enrollments\n\nClick OK to select the first file (Instructors).");
+        prompt.setContentText("You are about to bulk import all data. You will be prompted to select and preview 5 files in the exact order needed by the database:\n\n1. Instructors\n2. Courses\n3. Students\n4. Enrollments\n5. Probation Reports\n\nClick OK to select the first file (Instructors).");
         prompt.showAndWait();
 
         String[] instReq = {"FiD", "firstName", "lastName", "email", "department", "dob", "phone", "cabinNo"};
         String[] coursesReq = {"code", "title", "credits", "department", "instructorId", "semester", "classroomNo"};
         String[] studentsReq = {"id", "regNo", "firstName", "lastName", "email", "status", "registrationDate", "dob", "phone"};
         String[] enrollReq = {"studentRegNo", "courseCode", "grade"};
+        String[] probationReq = {"probationId", "studentRegNos", "startDate", "endDate", "reason"};
 
         chooser.setTitle("1. Select Instructors CSV File");
         File instFile = promptAndPreviewFile(chooser, "Instructors", instReq);
@@ -690,24 +738,32 @@ public class MainApp extends Application {
         if (studentsFile == null) return;
         
         prompt.setHeaderText("Next: Enrollments");
-        prompt.setContentText("Students selected successfully.\n\nClick OK to select the final file (Enrollments).");
+        prompt.setContentText("Students selected successfully.\n\nClick OK to select the fourth file (Enrollments).");
         prompt.showAndWait();
 
         chooser.setTitle("4. Select Enrollments CSV File");
         File enrollFile = promptAndPreviewFile(chooser, "Enrollments", enrollReq);
         if (enrollFile == null) return;
 
+        prompt.setHeaderText("Next: Probation Reports");
+        prompt.setContentText("Enrollments selected successfully.\n\nClick OK to select the final file (Probation Reports).");
+        prompt.showAndWait();
+
+        chooser.setTitle("5. Select Probation Reports CSV File");
+        File probationFile = promptAndPreviewFile(chooser, "Probation Reports", probationReq);
+        if (probationFile == null) return;
+
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                updateProgress(0, 4);
+                updateProgress(0, 5);
                 
                 Platform.runLater(() -> {
                     recordProgressBar.setVisible(true);
                     recordProgressLabel.setVisible(true);
                 });
 
-                updateMessage("Importing Instructors (1/4)...");
+                updateMessage("Importing Instructors (1/5)...");
                 Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
                 importExportService.importInstructorsFile(instFile.toPath(), (p, t) -> {
                     double frac = t > 0 ? (double) p / t : 0;
@@ -717,10 +773,10 @@ public class MainApp extends Application {
                         recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
                     });
                 });
-                updateProgress(1, 4);
+                updateProgress(1, 5);
                 Thread.sleep(300);
 
-                updateMessage("Importing Courses (2/4)...");
+                updateMessage("Importing Courses (2/5)...");
                 Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
                 importExportService.importCoursesFile(coursesFile.toPath(), (p, t) -> {
                     double frac = t > 0 ? (double) p / t : 0;
@@ -730,10 +786,10 @@ public class MainApp extends Application {
                         recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
                     });
                 });
-                updateProgress(2, 4);
+                updateProgress(2, 5);
                 Thread.sleep(300);
 
-                updateMessage("Importing Students (3/4)...");
+                updateMessage("Importing Students (3/5)...");
                 Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
                 importExportService.importStudentsFile(studentsFile.toPath(), (p, t) -> {
                     double frac = t > 0 ? (double) p / t : 0;
@@ -743,10 +799,10 @@ public class MainApp extends Application {
                         recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
                     });
                 });
-                updateProgress(3, 4);
+                updateProgress(3, 5);
                 Thread.sleep(300);
 
-                updateMessage("Importing Enrollments (4/4)...");
+                updateMessage("Importing Enrollments (4/5)...");
                 Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
                 importExportService.importEnrollmentsFile(enrollFile.toPath(), (p, t) -> {
                     double frac = t > 0 ? (double) p / t : 0;
@@ -756,7 +812,20 @@ public class MainApp extends Application {
                         recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
                     });
                 });
-                updateProgress(4, 4);
+                updateProgress(4, 5);
+                Thread.sleep(300);
+
+                updateMessage("Importing Probation Reports (5/5)...");
+                Platform.runLater(() -> { recordProgressBar.setProgress(0); recordProgressLabel.setText("Starting..."); });
+                importExportService.importProbationReportsFile(probationFile.toPath(), (p, t) -> {
+                    double frac = t > 0 ? (double) p / t : 0;
+                    int pct = t > 0 ? (int)((p * 100L) / t) : 0;
+                    Platform.runLater(() -> {
+                        recordProgressBar.setProgress(frac);
+                        recordProgressLabel.setText(String.format("Record %d / %d (%d%%)", p, t, pct));
+                    });
+                });
+                updateProgress(5, 5);
                 Thread.sleep(300);
                 
                 return null;
@@ -783,10 +852,128 @@ public class MainApp extends Application {
     // =========================================================================
     // STUDENTS TAB
     // =========================================================================
-    private javafx.scene.Node createStudentsView() {
+    private javafx.scene.Node createStudentsOptionsView() {
+        VBox layout = new VBox(30);
+        layout.setPadding(new Insets(40));
+        layout.setAlignment(Pos.CENTER);
 
+        Label title = new Label("Student Management Options");
+        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -color-accent-fg;");
+
+        HBox optionsBox = new HBox(40);
+        optionsBox.setAlignment(Pos.CENTER);
+
+        // Card 1: Students Directory
+        VBox cardDirectory = createOptionCard(
+            "Students Directory",
+            "Add and manage student registration profiles,\ndetails, status updates, and transcripts.",
+            "fas-users",
+            e -> mainLayout.setCenter(createStudentsDirectoryView())
+        );
+
+        // Card 2: Probation Reports
+        VBox cardProbation = createOptionCard(
+            "Probation Reports",
+            "Put students on probationary periods,\nlog reasons, and view historical reports.",
+            "fas-exclamation-triangle",
+            e -> mainLayout.setCenter(createProbationReportsView())
+        );
+
+        optionsBox.getChildren().addAll(cardDirectory, cardProbation);
+
+        layout.getChildren().addAll(title, optionsBox);
+        return layout;
+    }
+
+    private VBox createOptionCard(String title, String description, String iconCode, javafx.event.EventHandler<javafx.event.ActionEvent> onAction) {
+        VBox card = new VBox(20);
+        card.setPadding(new Insets(30));
+        card.setAlignment(Pos.CENTER);
+        card.setPrefSize(350, 250);
+        card.setStyle(
+            "-fx-background-color: -color-bg-default; " +
+            "-fx-border-color: -color-border-default; " +
+            "-fx-border-width: 1px; " +
+            "-fx-border-radius: 12px; " +
+            "-fx-background-radius: 12px; " +
+            "-fx-cursor: hand;"
+        );
+
+        // Hover animations
+        card.setOnMouseEntered(e -> {
+            card.setStyle(
+                "-fx-background-color: -color-bg-subtle; " +
+                "-fx-border-color: -color-accent-emphasis; " +
+                "-fx-border-width: 1.5px; " +
+                "-fx-border-radius: 12px; " +
+                "-fx-background-radius: 12px; " +
+                "-fx-cursor: hand;"
+            );
+            card.setTranslateY(-5);
+        });
+        card.setOnMouseExited(e -> {
+            card.setStyle(
+                "-fx-background-color: -color-bg-default; " +
+                "-fx-border-color: -color-border-default; " +
+                "-fx-border-width: 1px; " +
+                "-fx-border-radius: 12px; " +
+                "-fx-background-radius: 12px; " +
+                "-fx-cursor: hand;"
+            );
+            card.setTranslateY(0);
+        });
+
+        FontIcon icon = new FontIcon(iconCode);
+        icon.setIconSize(48);
+        icon.setStyle("-fx-icon-color: -color-accent-fg;");
+
+        Label titleLbl = new Label(title);
+        titleLbl.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: -color-fg-default;");
+
+        Label descLbl = new Label(description);
+        descLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: -color-fg-muted; -fx-text-alignment: center;");
+        descLbl.setWrapText(true);
+
+        Button btnAction = new Button("Open Options", new FontIcon("fas-arrow-right"));
+        btnAction.setStyle("-fx-background-color: -color-accent-emphasis; -fx-text-fill: -color-fg-emphasis; -fx-font-weight: bold;");
+        btnAction.setOnAction(onAction);
+
+        // Clicking anywhere on the card triggers the action
+        card.setOnMouseClicked(e -> {
+            if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                btnAction.fire();
+            }
+        });
+
+        card.getChildren().addAll(icon, titleLbl, descLbl, btnAction);
+        return card;
+    }
+
+    private javafx.scene.Node createStudentsDirectoryView() {
+        BorderPane mainPane = new BorderPane();
+        mainPane.setPadding(new Insets(10));
+
+        // Header
+        HBox header = new HBox(15);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(10, 10, 20, 10));
+        
+        Button btnBack = new Button("Back to Student Options", new FontIcon("fas-arrow-left"));
+        btnBack.getStyleClass().add("flat");
+        btnBack.setOnAction(e -> mainLayout.setCenter(createStudentsOptionsView()));
+        
+        Label titleLabel = new Label("Students Directory");
+        titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: -color-accent-fg;");
+        
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+        
+        header.getChildren().addAll(btnBack, titleLabel, headerSpacer);
+        mainPane.setTop(header);
+
+        // Core Student Directory View Content
         BorderPane layout = new BorderPane();
-        layout.setPadding(new Insets(10));
+        layout.setPadding(new Insets(0));
 
         // Input Form
         GridPane form = new GridPane();
@@ -821,6 +1008,7 @@ public class MainApp extends Application {
 
         // Table
         TableView<Student> table = new TableView<>();
+        table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         TableColumn<Student, Integer> colId = new TableColumn<>("ID");
         colId.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getId()));
 
@@ -890,7 +1078,28 @@ public class MainApp extends Application {
             }
         });
 
-        table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colRegDate, colStatus, colCgpa);
+        TableColumn<Student, Integer> colProbCount = new TableColumn<>("Probations");
+        colProbCount.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getProbationCount()));
+        colProbCount.setCellFactory(column -> new TableCell<Student, Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    setText(String.valueOf(item));
+                    if (item > 0) {
+                        setStyle("-fx-font-weight: bold; -fx-text-fill: -color-warning-fg;");
+                    } else {
+                        setStyle("-fx-text-fill: -color-fg-muted;");
+                    }
+                    setAlignment(Pos.CENTER);
+                }
+            }
+        });
+
+        table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colRegDate, colStatus, colCgpa, colProbCount);
         table.setMinHeight(300);
         table.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(table, Priority.ALWAYS);
@@ -914,7 +1123,7 @@ public class MainApp extends Application {
         sortedData.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sortedData);
 
-        Runnable refreshTable = () -> {
+        refreshStudentsTable = () -> {
             runTaskWithProgress("Loading Students...", () -> {
                 List<Student> students = studentService.getAllStudentsSortedById();
                 Platform.runLater(() -> masterData.setAll(students));
@@ -928,7 +1137,7 @@ public class MainApp extends Application {
                 Student s = new Student(id, regNoField.getText(), new Name(firstNameField.getText(), lastNameField.getText()), emailField.getText(), Student.Status.ACTIVE, regDate, dobPicker.getValue(), phoneField.getText());
                 studentService.addStudent(s);
                 showAlert(Alert.AlertType.INFORMATION, "Student added successfully.");
-                refreshTable.run();
+                refreshStudentsTable.run();
                 idField.clear(); regNoField.clear(); firstNameField.clear(); lastNameField.clear(); emailField.clear(); phoneField.clear(); dobPicker.setValue(null); regDatePicker.setValue(null);
             } catch (Exception ex) {
                 showAlert(Alert.AlertType.ERROR, "Failed to add student: " + ex.getMessage());
@@ -937,7 +1146,7 @@ public class MainApp extends Application {
 
         // Bottom Actions
         Button btnRefresh = new Button("Refresh", new FontIcon("fas-sync"));
-        btnRefresh.setOnAction(e -> refreshTable.run());
+        btnRefresh.setOnAction(e -> refreshStudentsTable.run());
 
         java.util.function.Consumer<Student> transcriptAction = selected -> {
             runTaskWithProgress("Generating Transcript...", () -> {
@@ -1012,7 +1221,7 @@ public class MainApp extends Application {
             dialog.showAndWait().ifPresent(status -> {
                 try {
                     studentService.updateStudentStatus(selected.getRegNo(), status);
-                    refreshTable.run();
+                    refreshStudentsTable.run();
                 } catch (Exception ex) {
                     showAlert(Alert.AlertType.ERROR, "Failed to update status: " + ex.getMessage());
                 }
@@ -1061,12 +1270,26 @@ public class MainApp extends Application {
                     
                     runJavaFXTask(calcSingleTask, "Calculating CGPA for " + selected.getFullName() + "...", () -> {
                         showAlert(Alert.AlertType.INFORMATION, "CGPA calculated and saved successfully for " + selected.getFullName() + "!");
-                        refreshTable.run();
+                        refreshStudentsTable.run();
                     });
                 }
             });
             
-            contextMenu.getItems().addAll(viewTranscript, changeStatus, calcCgpa);
+            MenuItem addProbationReport = new MenuItem("Add Probation Report");
+            addProbationReport.setGraphic(new FontIcon("fas-exclamation-circle"));
+            addProbationReport.setOnAction(e -> {
+                ObservableList<Student> selected = table.getSelectionModel().getSelectedItems();
+                if (selected != null && !selected.isEmpty()) {
+                    String regNos = selected.stream()
+                        .map(Student::getRegNo)
+                        .collect(Collectors.joining(", "));
+                    probRegsField.setText(regNos);
+                    mainLayout.setCenter(createProbationReportsView());
+                    probReasonArea.requestFocus();
+                }
+            });
+            
+            contextMenu.getItems().addAll(viewTranscript, changeStatus, calcCgpa, addProbationReport);
             row.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
                 if (isEmpty) {
                     row.setContextMenu(null);
@@ -1074,6 +1297,9 @@ public class MainApp extends Application {
                     row.setContextMenu(contextMenu);
                 }
             });
+            if (!row.isEmpty()) {
+                row.setContextMenu(contextMenu);
+            }
             return row;
         });
 
@@ -1090,11 +1316,352 @@ public class MainApp extends Application {
         splitPane.setDividerPositions(0.70);
 
         layout.setCenter(splitPane);
+        mainPane.setCenter(layout);
 
+        // Initial table load
+        refreshStudentsTable.run();
+
+        return mainPane;
+    }
+
+    private javafx.scene.Node createProbationReportsView() {
+        BorderPane mainPane = new BorderPane();
+        mainPane.setPadding(new Insets(10));
+
+        // Header
+        HBox header = new HBox(15);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(10, 10, 20, 10));
         
-        // Refresh on load
-        refreshTable.run();
-        return layout;
+        Button btnBack = new Button("Back to Student Options", new FontIcon("fas-arrow-left"));
+        btnBack.getStyleClass().add("flat");
+        btnBack.setOnAction(e -> mainLayout.setCenter(createStudentsOptionsView()));
+        
+        Label titleLabel = new Label("Probation Reports");
+        titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: -color-accent-fg;");
+        
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+        
+        header.getChildren().addAll(btnBack, titleLabel, headerSpacer);
+        mainPane.setTop(header);
+
+        // Core Probation View Content
+        BorderPane probationLayout = new BorderPane();
+        probationLayout.setPadding(new Insets(0));
+
+        // Form (Right Pane)
+        GridPane probForm = new GridPane();
+        probForm.setHgap(10);
+        probForm.setVgap(10);
+
+        TextField probIdField = new TextField("PROB-" + (System.currentTimeMillis() % 10000));
+        probRegsField.setPromptText("Enter comma-separated Reg Nos...");
+        DatePicker probStartPicker = new DatePicker(LocalDate.now());
+        DatePicker probEndPicker = new DatePicker(LocalDate.now().plusMonths(6));
+        probReasonArea.setPromptText("Enter probation reason...");
+        probReasonArea.setPrefRowCount(3);
+
+        probForm.addRow(0, new Label("Probation ID:"), probIdField);
+        probForm.addRow(1, new Label("Student Reg Nos:"), probRegsField);
+        probForm.addRow(2, new Label("Start Date:"), probStartPicker);
+        probForm.addRow(3, new Label("End Date:"), probEndPicker);
+        probForm.addRow(4, new Label("Reason:"), probReasonArea);
+
+        Button btnCreateProb = new Button("Create Probation Report", new FontIcon("fas-plus-circle"));
+        btnCreateProb.setStyle("-fx-background-color: -color-accent-emphasis; -fx-text-fill: -color-fg-emphasis; -fx-font-weight: bold;");
+        
+        Button btnCancel = new Button("Cancel", new FontIcon("fas-times"));
+        HBox buttonBox = new HBox(10, btnCreateProb);
+        probForm.add(buttonBox, 0, 5, 2, 1);
+
+        TitledPane probFormPane = new TitledPane("New Probation Report", probForm);
+        btnCancel.setOnAction(ev -> {
+            editingProbationReport = null;
+            probIdField.setDisable(false);
+            probIdField.setText("PROB-" + (System.currentTimeMillis() % 10000));
+            probRegsField.clear();
+            probReasonArea.clear();
+            probStartPicker.setValue(LocalDate.now());
+            probEndPicker.setValue(LocalDate.now().plusMonths(6));
+            probFormPane.setText("New Probation Report");
+            btnCreateProb.setText("Create Probation Report");
+            btnCreateProb.setGraphic(new FontIcon("fas-plus-circle"));
+            buttonBox.getChildren().remove(btnCancel);
+        });
+        probFormPane.setCollapsible(false);
+        VBox probLeftFormPane = new VBox(probFormPane);
+        probLeftFormPane.setPadding(new Insets(10));
+
+        // Table (Left Pane)
+        TableView<ProbationReport> probTable = new TableView<>();
+        TableColumn<ProbationReport, String> colProbId = new TableColumn<>("Probation ID");
+        colProbId.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getProbationId()));
+
+        TableColumn<ProbationReport, String> colProbRegs = new TableColumn<>("Student Reg Nos");
+        colProbRegs.setCellValueFactory(c -> new ReadOnlyStringWrapper(String.join(", ", c.getValue().getStudentRegNos())));
+
+        TableColumn<ProbationReport, String> colProbStart = new TableColumn<>("Start Date");
+        colProbStart.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getStartDate().toString()));
+
+        TableColumn<ProbationReport, String> colProbEnd = new TableColumn<>("End Date");
+        colProbEnd.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getEndDate().toString()));
+
+        TableColumn<ProbationReport, String> colProbReason = new TableColumn<>("Reason");
+        colProbReason.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getReason()));
+
+        TableColumn<ProbationReport, String> colProbStatus = new TableColumn<>("Status");
+        colProbStatus.setCellValueFactory(c -> {
+            LocalDate today = LocalDate.now();
+            ProbationReport r = c.getValue();
+            if (today.isBefore(r.getStartDate())) {
+                return new ReadOnlyStringWrapper("Pending");
+            } else if (today.isAfter(r.getEndDate())) {
+                return new ReadOnlyStringWrapper("Completed");
+            } else {
+                return new ReadOnlyStringWrapper("On Going");
+            }
+        });
+        colProbStatus.setCellFactory(column -> new TableCell<ProbationReport, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    Label badge = new Label(item);
+                    badge.setPadding(new Insets(2, 8, 2, 8));
+                    badge.setStyle("-fx-background-radius: 10; -fx-font-weight: bold;");
+                    if ("On Going".equals(item)) {
+                        badge.setStyle(badge.getStyle() + "-fx-text-fill: -color-warning-fg; -fx-background-color: -color-warning-muted;");
+                    } else if ("Completed".equals(item)) {
+                        badge.setStyle(badge.getStyle() + "-fx-text-fill: -color-success-fg; -fx-background-color: -color-success-muted;");
+                    } else {
+                        badge.setStyle(badge.getStyle() + "-fx-text-fill: -color-info-fg; -fx-background-color: -color-info-muted;");
+                    }
+                    setGraphic(badge);
+                    setText(null);
+                    setAlignment(Pos.CENTER);
+                }
+            }
+        });
+
+        probTable.getColumns().addAll(colProbId, colProbRegs, colProbStart, colProbEnd, colProbReason, colProbStatus);
+        probTable.setMinHeight(300);
+        probTable.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(probTable, Priority.ALWAYS);
+
+        ObservableList<ProbationReport> probMasterData = FXCollections.observableArrayList();
+        FilteredList<ProbationReport> probFilteredData = new FilteredList<>(probMasterData, p -> true);
+
+        TextField probSearchField = new TextField();
+        probSearchField.setPromptText("Search by ID, Reg No, Reason, or Status...");
+        probSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            probFilteredData.setPredicate(report -> {
+                if (newValue == null || newValue.isEmpty()) return true;
+                String lowerCaseFilter = newValue.toLowerCase();
+                
+                LocalDate today = LocalDate.now();
+                String status = today.isBefore(report.getStartDate()) ? "pending" : (today.isAfter(report.getEndDate()) ? "completed" : "on going");
+
+                if (report.getProbationId().toLowerCase().contains(lowerCaseFilter)) return true;
+                if (report.getReason().toLowerCase().contains(lowerCaseFilter)) return true;
+                if (status.contains(lowerCaseFilter)) return true;
+                for (String reg : report.getStudentRegNos()) {
+                    if (reg.toLowerCase().contains(lowerCaseFilter)) return true;
+                }
+                return false;
+            });
+        });
+
+        SortedList<ProbationReport> probSortedData = new SortedList<>(probFilteredData);
+        probSortedData.comparatorProperty().bind(probTable.comparatorProperty());
+        probTable.setItems(probSortedData);
+
+        probTable.setRowFactory(tv -> {
+            TableRow<ProbationReport> row = new TableRow<>();
+            ContextMenu contextMenu = new ContextMenu();
+            
+            MenuItem updateReportMenu = new MenuItem("Update Probation Report");
+            updateReportMenu.setGraphic(new FontIcon("fas-edit"));
+            updateReportMenu.setOnAction(e -> {
+                ProbationReport selected = row.getItem();
+                if (selected != null) {
+                    editingProbationReport = selected;
+                    probIdField.setText(selected.getProbationId());
+                    probIdField.setDisable(true);
+                    probRegsField.setText(String.join(", ", selected.getStudentRegNos()));
+                    probStartPicker.setValue(selected.getStartDate());
+                    probEndPicker.setValue(selected.getEndDate());
+                    probReasonArea.setText(selected.getReason());
+                    probFormPane.setText("Update Probation Report");
+                    btnCreateProb.setText("Update Probation Report");
+                    btnCreateProb.setGraphic(new FontIcon("fas-save"));
+                    if (!buttonBox.getChildren().contains(btnCancel)) {
+                        buttonBox.getChildren().add(btnCancel);
+                    }
+                }
+            });
+
+            MenuItem deleteReportMenu = new MenuItem("Delete Probation Report");
+            deleteReportMenu.setGraphic(new FontIcon("fas-trash-alt"));
+            deleteReportMenu.setOnAction(e -> {
+                ProbationReport selected = row.getItem();
+                if (selected != null) {
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                    confirm.setTitle("Confirm Deletion");
+                    confirm.setHeaderText("Delete Probation Report: " + selected.getProbationId());
+                    confirm.setContentText("Are you sure you want to delete this probation report?\n" +
+                                           "This will decrement the probation counts for the involved students and " +
+                                           "restore their status to ACTIVE if they have no other active probations.");
+                    confirm.showAndWait().ifPresent(btnType -> {
+                        if (btnType == ButtonType.OK) {
+                            Task<Void> deleteTask = new Task<>() {
+                                @Override
+                                protected Void call() throws Exception {
+                                    updateMessage("Deleting probation report...");
+                                    probationService.deleteProbationReport(selected.getProbationId());
+                                    return null;
+                                }
+                            };
+                            runJavaFXTask(deleteTask, "Deleting Probation Report...", () -> {
+                                showAlert(Alert.AlertType.INFORMATION, "Probation report deleted successfully!");
+                                if (refreshProbTable != null) refreshProbTable.run();
+                                if (refreshStudentsTable != null) refreshStudentsTable.run();
+                            });
+                        }
+                    });
+                }
+            });
+            contextMenu.getItems().addAll(updateReportMenu, deleteReportMenu);
+            row.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
+                if (isEmpty) {
+                    row.setContextMenu(null);
+                } else {
+                    row.setContextMenu(contextMenu);
+                }
+            });
+            if (!row.isEmpty()) {
+                row.setContextMenu(contextMenu);
+            }
+            return row;
+        });
+
+        refreshProbTable = () -> {
+            runTaskWithProgress("Loading Probation Reports...", () -> {
+                List<ProbationReport> reports = probationService.getAllProbationReports();
+                Platform.runLater(() -> probMasterData.setAll(reports));
+            }, null);
+        };
+
+        // Submit Button Action
+        btnCreateProb.setOnAction(e -> {
+            try {
+                String probId = probIdField.getText().trim();
+                String regsStr = probRegsField.getText().trim();
+                LocalDate start = probStartPicker.getValue();
+                LocalDate end = probEndPicker.getValue();
+                String reason = probReasonArea.getText().trim();
+
+                if (probId.isEmpty() || regsStr.isEmpty() || reason.isEmpty() || start == null || end == null) {
+                    throw new IllegalArgumentException("All fields are required.");
+                }
+                if (end.isBefore(start)) {
+                    throw new IllegalArgumentException("End date cannot be before start date.");
+                }
+
+                List<String> regNos = java.util.Arrays.stream(regsStr.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+
+                ProbationReport report = new ProbationReport(probId, start, end, reason, regNos);
+                boolean isUpdate = (editingProbationReport != null);
+                String taskTitle = isUpdate ? "Updating Probation Report..." : "Creating Probation Report...";
+                String successMsg = isUpdate ? "Probation report updated successfully!" : "Probation report created successfully!";
+
+                Task<Void> task = new Task<>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        int totalStudents = report.getStudentRegNos().size();
+                        int totalSteps = totalStudents + 1;
+                        int currentStep = 0;
+
+                        // Verify all students exist and update progress
+                        for (int i = 0; i < totalStudents; i++) {
+                            String regNo = report.getStudentRegNos().get(i);
+                            updateMessage(String.format("Verifying student %s (%d/%d)...", regNo, i + 1, totalStudents));
+                            updateProgress(currentStep++, totalSteps);
+                            studentService.findStudentByRegNo(regNo);
+                            Thread.sleep(400); // Smooth animation delay
+                        }
+
+                        if (isUpdate) {
+                            updateMessage("Updating report and modifying student statuses in database...");
+                            updateProgress(currentStep++, totalSteps);
+                            probationService.updateProbationReport(report);
+                        } else {
+                            updateMessage("Adding report and updating student statuses in database...");
+                            updateProgress(currentStep++, totalSteps);
+                            probationService.addProbationReport(report);
+                        }
+                        Thread.sleep(400); // Smooth transition delay
+
+                        updateProgress(totalSteps, totalSteps);
+                        updateMessage("Complete!");
+                        Thread.sleep(200);
+                        return null;
+                    }
+                };
+
+                runJavaFXTask(task, taskTitle, () -> {
+                    showAlert(Alert.AlertType.INFORMATION, successMsg);
+                    
+                    // Reset editing state and form
+                    editingProbationReport = null;
+                    probIdField.setDisable(false);
+                    probIdField.setText("PROB-" + (System.currentTimeMillis() % 10000));
+                    probRegsField.clear();
+                    probReasonArea.clear();
+                    probStartPicker.setValue(LocalDate.now());
+                    probEndPicker.setValue(LocalDate.now().plusMonths(6));
+                    probFormPane.setText("New Probation Report");
+                    btnCreateProb.setText("Create Probation Report");
+                    btnCreateProb.setGraphic(new FontIcon("fas-plus-circle"));
+                    buttonBox.getChildren().remove(btnCancel);
+
+                    if (refreshProbTable != null) refreshProbTable.run();
+                    if (refreshStudentsTable != null) refreshStudentsTable.run();
+                });
+            } catch (Exception ex) {
+                String action = (editingProbationReport != null) ? "update" : "create";
+                showAlert(Alert.AlertType.ERROR, "Failed to " + action + " report: " + ex.getMessage());
+            }
+        });
+
+        Button btnRefreshProb = new Button("Refresh", new FontIcon("fas-sync"));
+        btnRefreshProb.setOnAction(e -> refreshProbTable.run());
+
+        HBox probTopBox = new HBox(10, new Label("Search:"), probSearchField, btnRefreshProb);
+        probTopBox.setAlignment(Pos.CENTER_LEFT);
+        probTopBox.setPadding(new Insets(0, 0, 10, 0));
+
+        VBox probRightPane = new VBox(probTopBox, probTable);
+        probRightPane.setPadding(new Insets(10));
+        VBox.setVgrow(probTable, Priority.ALWAYS);
+
+        SplitPane probSplitPane = new SplitPane();
+        probSplitPane.getItems().addAll(probRightPane, probLeftFormPane);
+        probSplitPane.setDividerPositions(0.70);
+        probationLayout.setCenter(probSplitPane);
+
+        mainPane.setCenter(probationLayout);
+
+        // Initial table load
+        refreshProbTable.run();
+
+        return mainPane;
     }
 
     // =========================================================================
@@ -1362,6 +1929,9 @@ public class MainApp extends Application {
                     row.setContextMenu(contextMenu);
                 }
             });
+            if (!row.isEmpty()) {
+                row.setContextMenu(contextMenu);
+            }
             return row;
         });
 
@@ -1553,6 +2123,9 @@ public class MainApp extends Application {
                     row.setContextMenu(contextMenu);
                 }
             });
+            if (!row.isEmpty()) {
+                row.setContextMenu(contextMenu);
+            }
             return row;
         });
 
@@ -1612,6 +2185,7 @@ public class MainApp extends Application {
         String[] coursesReq = {"code", "title", "credits", "department", "instructorId", "semester", "classroomNo"};
         String[] studentsReq = {"id", "regNo", "firstName", "lastName", "email", "status", "registrationDate", "dob", "phone"};
         String[] enrollReq = {"studentRegNo", "courseCode", "grade"};
+        String[] probationReq = {"probationId", "studentRegNos", "startDate", "endDate", "reason"};
 
         Button btnImportCourses = new Button("Import Courses");
         btnImportCourses.setOnAction(e -> handleSingleImport("Courses", coursesReq, importExportService::importCoursesFile));
@@ -1624,6 +2198,9 @@ public class MainApp extends Application {
 
         Button btnImportEnrollments = new Button("Import Enrollments");
         btnImportEnrollments.setOnAction(e -> handleSingleImport("Enrollments", enrollReq, importExportService::importEnrollmentsFile));
+
+        Button btnImportProbation = new Button("Import Probation");
+        btnImportProbation.setOnAction(e -> handleSingleImport("Probation Reports", probationReq, importExportService::importProbationReportsFile));
 
         Button btnImportAll = new Button("Import All");
         btnImportAll.setOnAction(e -> handleImportAll());
@@ -1666,7 +2243,7 @@ public class MainApp extends Application {
             });
         });
 
-        HBox row1 = new HBox(10, btnImportCourses, btnImportStudents, btnImportInstructors, btnImportEnrollments);
+        HBox row1 = new HBox(10, btnImportCourses, btnImportStudents, btnImportInstructors, btnImportEnrollments, btnImportProbation);
         HBox row2 = new HBox(10, btnImportAll, btnExport, btnBackup, btnShowBackupSize);
         HBox row3 = new HBox(10, btnDeleteDb);
 
@@ -1897,5 +2474,109 @@ public class MainApp extends Application {
         loadPop.run();
 
         return layout;
+    }
+
+    private void handleAddProbationReport(List<Student> selectedStudents, Runnable refreshTable) {
+        Dialog<ProbationReport> dialog = new Dialog<>();
+        dialog.setTitle("Add Probation Report");
+        dialog.setHeaderText("Put selected student(s) on Probation using Probationary ID");
+
+        ButtonType submitButtonType = new ButtonType("Put on Probation", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(submitButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField probationIdField = new TextField("PROB-" + (System.currentTimeMillis() % 10000));
+        
+        String initialRegNos = selectedStudents.stream()
+            .map(Student::getRegNo)
+            .collect(Collectors.joining(", "));
+        TextField studentRegNosField = new TextField(initialRegNos);
+        studentRegNosField.setPromptText("Enter comma-separated Registration Numbers...");
+        studentRegNosField.setPrefWidth(300);
+
+        DatePicker startDatePicker = new DatePicker(LocalDate.now());
+        DatePicker endDatePicker = new DatePicker(LocalDate.now().plusMonths(6));
+        TextArea reasonArea = new TextArea();
+        reasonArea.setPromptText("Enter the reason for probation...");
+        reasonArea.setPrefRowCount(3);
+
+        grid.add(new Label("Probation ID:"), 0, 0);
+        grid.add(probationIdField, 1, 0);
+        grid.add(new Label("Student Reg Nos:"), 0, 1);
+        grid.add(studentRegNosField, 1, 1);
+        grid.add(new Label("Start Date:"), 0, 2);
+        grid.add(startDatePicker, 1, 2);
+        grid.add(new Label("End Date:"), 0, 3);
+        grid.add(endDatePicker, 1, 3);
+        grid.add(new Label("Reason:"), 0, 4);
+        grid.add(reasonArea, 1, 4);
+
+        dialog.getDialogPane().setContent(grid);
+
+        javafx.scene.Node submitButton = dialog.getDialogPane().lookupButton(submitButtonType);
+        submitButton.setDisable(reasonArea.getText().trim().isEmpty());
+
+        Runnable validation = () -> {
+            boolean hasId = !probationIdField.getText().trim().isEmpty();
+            boolean hasRegs = !studentRegNosField.getText().trim().isEmpty();
+            boolean hasReason = !reasonArea.getText().trim().isEmpty();
+            boolean hasDates = startDatePicker.getValue() != null && endDatePicker.getValue() != null;
+            submitButton.setDisable(!(hasId && hasRegs && hasReason && hasDates));
+        };
+
+        probationIdField.textProperty().addListener((o, oldVal, newVal) -> validation.run());
+        studentRegNosField.textProperty().addListener((o, oldVal, newVal) -> validation.run());
+        reasonArea.textProperty().addListener((o, oldVal, newVal) -> validation.run());
+        startDatePicker.valueProperty().addListener((o, oldVal, newVal) -> validation.run());
+        endDatePicker.valueProperty().addListener((o, oldVal, newVal) -> validation.run());
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == submitButtonType) {
+                String regNosStr = studentRegNosField.getText().trim();
+                List<String> regNos = java.util.Arrays.stream(regNosStr.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+
+                return new ProbationReport(
+                    probationIdField.getText().trim(),
+                    startDatePicker.getValue(),
+                    endDatePicker.getValue(),
+                    reasonArea.getText().trim(),
+                    regNos
+                );
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(report -> {
+            if (report.getEndDate().isBefore(report.getStartDate())) {
+                showAlert(Alert.AlertType.ERROR, "End Date cannot be before Start Date.");
+                return;
+            }
+            Task<Void> task = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    // Validate all students exist
+                    for (String regNo : report.getStudentRegNos()) {
+                        updateMessage("Validating student " + regNo + "...");
+                        studentService.findStudentByRegNo(regNo);
+                    }
+                    
+                    updateMessage("Adding probation report...");
+                    probationService.addProbationReport(report);
+                    return null;
+                }
+            };
+
+            runJavaFXTask(task, "Processing Probation Report...", () -> {
+                showAlert(Alert.AlertType.INFORMATION, "Student(s) successfully placed on probation under report " + report.getProbationId());
+                refreshTable.run();
+            });
+        });
     }
 }

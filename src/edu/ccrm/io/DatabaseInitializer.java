@@ -4,6 +4,7 @@ import edu.ccrm.service.CourseService;
 import edu.ccrm.service.EnrollmentService;
 import edu.ccrm.service.InstructorService;
 import edu.ccrm.service.StudentService;
+import edu.ccrm.service.ProbationService;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,6 +22,8 @@ public class DatabaseInitializer {
     "STUDENTS",
     "COURSES",
     "ENROLLMENTS",
+    "PROBATION_REPORTS",
+    "PROBATION_STUDENTS",
   };
 
   private static boolean firstRun = false;
@@ -66,21 +69,38 @@ public class DatabaseInitializer {
   }
 
   public static void importSampleData() {
+      importSampleData(true, true, true, true, true);
+  }
+
+  public static void importSampleData(boolean impInstructors, boolean impCourses, boolean impStudents, boolean impEnrollments, boolean impProbation) {
     System.out.println("    - Importing sample data...");
     try {
       StudentService studentService = new StudentService();
       InstructorService instructorService = new InstructorService();
       CourseService courseService = new CourseService(instructorService);
       EnrollmentService enrollmentService = new EnrollmentService(studentService, courseService);
+      ProbationService probationService = new ProbationService();
       ImportExportService importExportService = new ImportExportService(
-        studentService, instructorService, courseService, enrollmentService
+        studentService, instructorService, courseService, enrollmentService, probationService
       );
-      importExportService.importStudents();
-      importExportService.importInstructors();
-      Thread.sleep(2000);
-      importExportService.importCourses();
-      Thread.sleep(2000);
-      importExportService.importEnrollments();
+      if (impStudents) {
+          importExportService.importStudents();
+      }
+      if (impInstructors) {
+          importExportService.importInstructors();
+          Thread.sleep(1000);
+      }
+      if (impCourses) {
+          importExportService.importCourses();
+          Thread.sleep(1000);
+      }
+      if (impEnrollments) {
+          importExportService.importEnrollments();
+          Thread.sleep(1000);
+      }
+      if (impProbation) {
+          importExportService.importProbationReports();
+      }
       System.out.println("? Sample data imported successfully.");
     } catch (InterruptedException e) {
       System.err.println("Data import process was interrupted.");
@@ -101,11 +121,13 @@ public class DatabaseInitializer {
         studentService,
         courseService
       );
+      ProbationService probationService = new ProbationService();
       ImportExportService importExportService = new ImportExportService(
         studentService,
         instructorService,
         courseService,
-        enrollmentService
+        enrollmentService,
+        probationService
       );
 
       importExportService.importStudents();
@@ -162,7 +184,8 @@ public class DatabaseInitializer {
   }
 
   private static boolean verifySchema(Connection conn) throws SQLException {
-    for (String tableName : EXPECTED_TABLES) {
+    String[] coreTables = {"INSTRUCTORS", "STUDENTS", "COURSES", "ENROLLMENTS"};
+    for (String tableName : coreTables) {
       try (
         ResultSet rs = conn
           .getMetaData()
@@ -170,7 +193,7 @@ public class DatabaseInitializer {
       ) {
         if (!rs.next()) {
           System.err.println(
-            "    - VERIFICATION FAILED: Table '" + tableName + "' is missing."
+            "    - VERIFICATION FAILED: Core table '" + tableName + "' is missing."
           );
           return false;
         }
@@ -219,6 +242,13 @@ public class DatabaseInitializer {
                 System.out.println("    - Migrated: Added CGPA column to STUDENTS.");
             }
         }
+        // Add probation_count to STUDENTS if missing
+        try (ResultSet rs = conn.getMetaData().getColumns(null, null, "STUDENTS", "PROBATION_COUNT")) {
+            if (!rs.next()) {
+                stmt.executeUpdate("ALTER TABLE STUDENTS ADD probation_count NUMBER DEFAULT 0");
+                System.out.println("    - Migrated: Added PROBATION_COUNT column to STUDENTS.");
+            }
+        }
         
         // Create DROPPED_ENROLLMENTS table if missing
         boolean droppedTableExists = false;
@@ -230,6 +260,55 @@ public class DatabaseInitializer {
         if (!droppedTableExists) {
             stmt.executeUpdate("CREATE TABLE DROPPED_ENROLLMENTS (student_reg_no VARCHAR2(20), course_code VARCHAR2(10), drop_date DATE)");
             System.out.println("    - Migrated: Created DROPPED_ENROLLMENTS table.");
+        }
+        
+        // Create PROBATION_REPORTS table if missing (or recreate if old schema found)
+        boolean probationReportsExists = false;
+        boolean hasProbationIdColumn = false;
+        try (ResultSet rs = conn.getMetaData().getTables(null, null, "PROBATION_REPORTS", null)) {
+            if (rs.next()) {
+                probationReportsExists = true;
+            }
+        }
+        if (probationReportsExists) {
+            try (ResultSet rs = conn.getMetaData().getColumns(null, null, "PROBATION_REPORTS", "PROBATION_ID")) {
+                if (rs.next()) {
+                    hasProbationIdColumn = true;
+                }
+            }
+        }
+        if (probationReportsExists && !hasProbationIdColumn) {
+            System.out.println("    - Detected old PROBATION_REPORTS schema. Recreating...");
+            stmt.executeUpdate("DROP TABLE PROBATION_REPORTS CASCADE CONSTRAINTS");
+            probationReportsExists = false;
+        }
+
+        if (!probationReportsExists) {
+            stmt.executeUpdate("CREATE TABLE PROBATION_REPORTS ("
+                + "probation_id VARCHAR2(20) PRIMARY KEY, "
+                + "start_date DATE NOT NULL, "
+                + "end_date DATE NOT NULL, "
+                + "reason VARCHAR2(1000) NOT NULL"
+                + ")");
+            System.out.println("    - Migrated: Created PROBATION_REPORTS table.");
+        }
+
+        // Create PROBATION_STUDENTS table if missing
+        boolean probationStudentsExists = false;
+        try (ResultSet rs = conn.getMetaData().getTables(null, null, "PROBATION_STUDENTS", null)) {
+            if (rs.next()) {
+                probationStudentsExists = true;
+            }
+        }
+        if (!probationStudentsExists) {
+            stmt.executeUpdate("CREATE TABLE PROBATION_STUDENTS ("
+                + "probation_id VARCHAR2(20) NOT NULL, "
+                + "student_reg_no VARCHAR2(20) NOT NULL, "
+                + "PRIMARY KEY (probation_id, student_reg_no), "
+                + "CONSTRAINT fk_probation_report FOREIGN KEY (probation_id) REFERENCES PROBATION_REPORTS(probation_id) ON DELETE CASCADE, "
+                + "CONSTRAINT fk_probation_student_reg FOREIGN KEY (student_reg_no) REFERENCES STUDENTS(reg_no)"
+                + ")");
+            System.out.println("    - Migrated: Created PROBATION_STUDENTS table.");
         }
     } catch (SQLException e) {
         System.err.println("Warning: Schema migration encountered an issue: " + e.getMessage());

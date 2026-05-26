@@ -24,7 +24,7 @@ public class StudentService {
     }
 
     public void addStudent(Student student, Connection conn) throws DataIntegrityException {
-        String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date, dob, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date, dob, phone, probation_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, student.getId());
             pstmt.setString(2, student.getRegNo());
@@ -35,6 +35,7 @@ public class StudentService {
             pstmt.setDate(7, Date.valueOf(student.getRegistrationDate()));
             pstmt.setDate(8, student.getDob() != null ? Date.valueOf(student.getDob()) : null);
             pstmt.setString(9, student.getPhone());
+            pstmt.setInt(10, student.getProbationCount());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             if ("23505".equals(e.getSQLState())) {
@@ -154,6 +155,15 @@ public class StudentService {
             }
         } catch (SQLException e) {
             // CGPA column might not exist yet during migration
+        }
+
+        try {
+            int dbProbCount = rs.getInt("probation_count");
+            if (!rs.wasNull()) {
+                student.setProbationCount(dbProbCount);
+            }
+        } catch (SQLException e) {
+            // probation_count column might not exist yet during migration
         }
         
         return student;

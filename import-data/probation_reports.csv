@@ -1,0 +1,3 @@
+probationId,studentRegNos,startDate,endDate,reason
+P001,S016;S017,26-05-2026,26-11-2026,GPA below 2.0 in the previous semester
+P002,S019,26-05-2026,26-08-2026,Excessive unexcused absences

@@ -1,0 +1,501 @@
+probationId,studentRegNos,startDate,endDate,reason
+PROB-11223,S10654,03-07-2025,31-10-2025,Repeated poor performance in core subjects
+PROB-11224,S12056;S10990,20-03-2025,16-09-2025,Academic warning escalated to probation status
+PROB-11225,S14370,28-03-2026,26-06-2026,Failure to meet minimum credit completion requirements
+PROB-11226,S14854,22-07-2025,18-01-2026,Excessive unexcused absences
+PROB-11227,S11561,15-04-2026,13-08-2026,Failure to satisfy academic progress benchmarks
+PROB-11228,S13077,27-05-2025,24-09-2025,Failure to meet minimum credit completion requirements
+PROB-11229,S10988,05-01-2026,05-05-2026,Repeated poor performance in core subjects
+PROB-11230,S12001,23-09-2025,21-01-2026,Insufficient attendance in mandatory classes
+PROB-11231,S10582,29-11-2025,29-03-2026,Low cumulative GPA requiring academic intervention
+PROB-11232,S11702,11-04-2026,08-10-2026,Multiple failed courses in the semester
+PROB-11233,S12563,25-02-2026,25-06-2026,Failure to meet minimum credit completion requirements
+PROB-11234,S12714;S11507,27-12-2025,25-06-2026,Repeated poor performance in core subjects
+PROB-11235,S12075,10-02-2026,09-08-2026,Academic warning escalated to probation status
+PROB-11236,S14851,05-05-2025,02-09-2025,Low cumulative GPA requiring academic intervention
+PROB-11237,S13787,14-12-2025,12-06-2026,GPA below 2.0 in the previous semester
+PROB-11238,S14174,20-03-2026,18-07-2026,GPA below 2.0 in the previous semester
+PROB-11239,S12229,11-08-2025,09-11-2025,GPA below 2.0 in the previous semester
+PROB-11240,S11973,29-12-2025,29-03-2026,GPA below 2.0 in the previous semester
+PROB-11241,S11814,03-11-2025,01-02-2026,Repeated poor performance in core subjects
+PROB-11242,S11237,21-02-2025,22-05-2025,Repeated poor performance in core subjects
+PROB-11243,S14138,28-08-2025,26-11-2025,Failure to meet minimum credit completion requirements
+PROB-11244,S12103,17-04-2025,15-08-2025,Low cumulative GPA requiring academic intervention
+PROB-11245,S10723,21-02-2025,20-08-2025,Academic warning escalated to probation status
+PROB-11246,S11058,08-11-2025,07-05-2026,Insufficient attendance in mandatory classes
+PROB-11247,S11333,22-08-2025,20-11-2025,Insufficient attendance in mandatory classes
+PROB-11248,S14855,01-05-2025,30-07-2025,Failure to meet minimum credit completion requirements
+PROB-11249,S12517;S13835,20-01-2026,19-07-2026,Multiple failed courses in the semester
+PROB-11250,S13490,12-01-2025,11-07-2025,GPA below 2.0 in the previous semester
+PROB-11251,S11945;S12255;S12612,18-04-2025,15-10-2025,Low cumulative GPA requiring academic intervention
+PROB-11252,S10261,06-12-2025,04-06-2026,Multiple failed courses in the semester
+PROB-11253,S13515,23-12-2025,21-06-2026,Failure to meet minimum credit completion requirements
+PROB-11254,S13122,14-08-2025,12-12-2025,GPA below 2.0 in the previous semester
+PROB-11255,S14222,22-03-2026,20-07-2026,Repeated poor performance in core subjects
+PROB-11256,S10866,16-05-2025,12-11-2025,Excessive unexcused absences
+PROB-11257,S13323,18-03-2026,14-09-2026,GPA below 2.0 in the previous semester
+PROB-11258,S13422,26-02-2026,25-08-2026,Low cumulative GPA requiring academic intervention
+PROB-11259,S10386,27-03-2025,25-07-2025,Academic performance below departmental standards
+PROB-11260,S12508,06-06-2025,03-12-2025,Academic warning escalated to probation status
+PROB-11261,S10034,06-01-2026,05-07-2026,Multiple failed courses in the semester
+PROB-11262,S14447,26-03-2025,24-06-2025,GPA below 2.0 in the previous semester
+PROB-11263,S14636,03-03-2025,01-06-2025,Failure to meet minimum credit completion requirements
+PROB-11264,S12815,16-09-2025,15-12-2025,Repeated poor performance in core subjects
+PROB-11265,S10935,10-10-2025,07-02-2026,GPA below 2.0 in the previous semester
+PROB-11266,S12309,15-05-2025,11-11-2025,Repeated poor performance in core subjects
+PROB-11267,S12984,01-12-2025,30-05-2026,Repeated poor performance in core subjects
+PROB-11268,S13623,16-07-2025,12-01-2026,GPA below 2.0 in the previous semester
+PROB-11269,S14172,06-04-2025,03-10-2025,Academic warning escalated to probation status
+PROB-11270,S10020,06-03-2026,04-06-2026,Insufficient attendance in mandatory classes
+PROB-11271,S10090,28-05-2025,24-11-2025,Multiple failed courses in the semester
+PROB-11272,S10336,12-02-2026,11-08-2026,Failure to meet minimum credit completion requirements
+PROB-11273,S13965,04-07-2025,01-11-2025,Academic warning escalated to probation status
+PROB-11274,S14249;S12017;S11565,20-01-2025,19-07-2025,Excessive unexcused absences
+PROB-11275,S11337;S14864,08-08-2025,06-11-2025,Academic warning escalated to probation status
+PROB-11276,S10128,01-08-2025,29-11-2025,GPA below 2.0 in the previous semester
+PROB-11277,S10372,11-05-2025,07-11-2025,Failure to meet minimum credit completion requirements
+PROB-11278,S11505;S14002,16-05-2025,12-11-2025,Multiple failed courses in the semester
+PROB-11279,S14921,23-07-2025,21-10-2025,Excessive unexcused absences
+PROB-11280,S12228,04-11-2025,03-05-2026,Repeated poor performance in core subjects
+PROB-11281,S10244,02-12-2025,01-04-2026,Multiple failed courses in the semester
+PROB-11282,S11985,22-05-2025,19-09-2025,Failure to meet minimum credit completion requirements
+PROB-11283,S11413,03-12-2025,02-04-2026,Repeated poor performance in core subjects
+PROB-11284,S10464,12-04-2025,10-08-2025,Insufficient attendance in mandatory classes
+PROB-11285,S10389,17-04-2025,15-08-2025,GPA below 2.0 in the previous semester
+PROB-11286,S13637,22-03-2025,20-07-2025,Failure to meet minimum credit completion requirements
+PROB-11287,S11924,16-03-2026,14-07-2026,Failure to meet minimum credit completion requirements
+PROB-11288,S12995,05-12-2025,05-03-2026,Failure to meet minimum credit completion requirements
+PROB-11289,S11733,10-02-2026,11-05-2026,Academic warning escalated to probation status
+PROB-11290,S14760,21-02-2026,22-05-2026,Multiple failed courses in the semester
+PROB-11291,S13722,18-12-2025,18-03-2026,Multiple failed courses in the semester
+PROB-11292,S14946;S10422;S14528,10-10-2025,07-02-2026,Failure to meet minimum credit completion requirements
+PROB-11293,S10293,24-04-2026,23-07-2026,Academic warning escalated to probation status
+PROB-11294,S11622,16-04-2026,13-10-2026,GPA below 2.0 in the previous semester
+PROB-11295,S10796,15-07-2025,12-11-2025,Excessive unexcused absences
+PROB-11296,S10621,13-05-2026,11-08-2026,GPA below 2.0 in the previous semester
+PROB-11297,S10398,26-11-2025,25-05-2026,Academic warning escalated to probation status
+PROB-11298,S13507,08-10-2025,06-04-2026,Academic warning escalated to probation status
+PROB-11299,S10233,01-01-2025,30-06-2025,Failure to meet minimum credit completion requirements
+PROB-11300,S10362,29-01-2026,29-04-2026,Multiple failed courses in the semester
+PROB-11301,S12591,21-05-2025,18-09-2025,Failure to satisfy academic progress benchmarks
+PROB-11302,S12702,07-03-2026,05-06-2026,Academic warning escalated to probation status
+PROB-11303,S14562,12-12-2025,11-04-2026,Academic warning escalated to probation status
+PROB-11304,S13469,21-11-2025,20-05-2026,Academic warning escalated to probation status
+PROB-11305,S14144,25-02-2026,26-05-2026,GPA below 2.0 in the previous semester
+PROB-11306,S13554,16-09-2025,14-01-2026,Insufficient attendance in mandatory classes
+PROB-11307,S11948;S11879;S12294,28-06-2025,26-10-2025,GPA below 2.0 in the previous semester
+PROB-11308,S13702,13-07-2025,11-10-2025,Academic performance below departmental standards
+PROB-11309,S10636,19-02-2025,18-08-2025,GPA below 2.0 in the previous semester
+PROB-11310,S13638,26-04-2025,25-07-2025,GPA below 2.0 in the previous semester
+PROB-11311,S10589,27-02-2025,26-08-2025,Repeated poor performance in core subjects
+PROB-11312,S14601,10-01-2025,10-04-2025,Academic performance below departmental standards
+PROB-11313,S14036;S10641,29-12-2025,29-03-2026,Academic warning escalated to probation status
+PROB-11314,S11041,18-02-2025,17-08-2025,Academic warning escalated to probation status
+PROB-11315,S10219;S12503,31-03-2025,29-07-2025,Insufficient attendance in mandatory classes
+PROB-11316,S10002;S12325;S10740,03-12-2025,01-06-2026,Academic warning escalated to probation status
+PROB-11317,S11664,23-08-2025,21-12-2025,Repeated poor performance in core subjects
+PROB-11318,S13988,10-07-2025,06-01-2026,GPA below 2.0 in the previous semester
+PROB-11319,S10322,15-01-2026,14-07-2026,Repeated poor performance in core subjects
+PROB-11320,S14313,09-02-2026,09-06-2026,Repeated poor performance in core subjects
+PROB-11321,S10469,03-02-2025,03-06-2025,Academic performance below departmental standards
+PROB-11322,S12079,07-02-2025,06-08-2025,GPA below 2.0 in the previous semester
+PROB-11323,S12770,25-09-2025,24-03-2026,Failure to meet minimum credit completion requirements
+PROB-11324,S12205;S10061,25-04-2026,22-10-2026,Academic performance below departmental standards
+PROB-11325,S13591,01-03-2026,29-06-2026,Insufficient attendance in mandatory classes
+PROB-11326,S13633,29-04-2025,27-08-2025,Insufficient attendance in mandatory classes
+PROB-11327,S12683,02-03-2025,31-05-2025,Academic warning escalated to probation status
+PROB-11328,S10684,13-02-2026,13-06-2026,Failure to meet minimum credit completion requirements
+PROB-11329,S10173,27-07-2025,23-01-2026,Low cumulative GPA requiring academic intervention
+PROB-11330,S13376,19-03-2025,17-07-2025,Low cumulative GPA requiring academic intervention
+PROB-11331,S14804,08-05-2026,06-08-2026,GPA below 2.0 in the previous semester
+PROB-11332,S11721,05-06-2025,03-10-2025,GPA below 2.0 in the previous semester
+PROB-11333,S11881,27-09-2025,25-01-2026,Insufficient attendance in mandatory classes
+PROB-11334,S11296,08-03-2025,04-09-2025,Multiple failed courses in the semester
+PROB-11335,S10180,03-03-2025,01-06-2025,Low cumulative GPA requiring academic intervention
+PROB-11336,S12159,07-02-2026,06-08-2026,Low cumulative GPA requiring academic intervention
+PROB-11337,S14723,28-01-2025,28-05-2025,Academic warning escalated to probation status
+PROB-11338,S13589;S13404;S10547,22-03-2026,20-07-2026,Failure to satisfy academic progress benchmarks
+PROB-11339,S10517;S10411,02-04-2025,01-07-2025,Insufficient attendance in mandatory classes
+PROB-11340,S14652,07-05-2026,03-11-2026,Low cumulative GPA requiring academic intervention
+PROB-11341,S14386,25-04-2025,22-10-2025,Academic warning escalated to probation status
+PROB-11342,S10760,01-01-2025,01-04-2025,Low cumulative GPA requiring academic intervention
+PROB-11343,S12025,06-04-2025,05-07-2025,GPA below 2.0 in the previous semester
+PROB-11344,S11925,11-05-2025,07-11-2025,Failure to meet minimum credit completion requirements
+PROB-11345,S14696,05-05-2025,03-08-2025,Low cumulative GPA requiring academic intervention
+PROB-11346,S11671,25-06-2025,23-09-2025,Academic warning escalated to probation status
+PROB-11347,S11504,09-07-2025,06-11-2025,Academic performance below departmental standards
+PROB-11348,S12166,27-03-2026,25-07-2026,Academic warning escalated to probation status
+PROB-11349,S12579,15-01-2025,14-07-2025,GPA below 2.0 in the previous semester
+PROB-11350,S11445,26-09-2025,25-03-2026,Multiple failed courses in the semester
+PROB-11351,S11473,19-01-2025,19-04-2025,Failure to meet minimum credit completion requirements
+PROB-11352,S12470,16-05-2026,14-08-2026,Insufficient attendance in mandatory classes
+PROB-11353,S13284,25-12-2025,23-06-2026,Academic warning escalated to probation status
+PROB-11354,S14236,03-05-2025,30-10-2025,Insufficient attendance in mandatory classes
+PROB-11355,S13844,05-03-2026,03-06-2026,Insufficient attendance in mandatory classes
+PROB-11356,S10032,06-07-2025,04-10-2025,GPA below 2.0 in the previous semester
+PROB-11357,S10826,16-04-2025,15-07-2025,Failure to satisfy academic progress benchmarks
+PROB-11358,S14853,12-05-2025,08-11-2025,GPA below 2.0 in the previous semester
+PROB-11359,S10219,04-11-2025,04-03-2026,Academic warning escalated to probation status
+PROB-11360,S11487,13-09-2025,11-01-2026,Multiple failed courses in the semester
+PROB-11361,S11610,06-03-2026,04-06-2026,Low cumulative GPA requiring academic intervention
+PROB-11362,S13176,04-12-2025,03-04-2026,GPA below 2.0 in the previous semester
+PROB-11363,S12716,19-08-2025,17-12-2025,Failure to meet minimum credit completion requirements
+PROB-11364,S14258,08-05-2025,06-08-2025,Failure to satisfy academic progress benchmarks
+PROB-11365,S13950,13-08-2025,11-11-2025,Failure to meet minimum credit completion requirements
+PROB-11366,S11070,20-08-2025,16-02-2026,Academic performance below departmental standards
+PROB-11367,S11069,09-01-2025,09-05-2025,Repeated poor performance in core subjects
+PROB-11368,S12578,04-08-2025,31-01-2026,Low cumulative GPA requiring academic intervention
+PROB-11369,S14588,01-08-2025,28-01-2026,Repeated poor performance in core subjects
+PROB-11370,S13944,11-04-2026,08-10-2026,Insufficient attendance in mandatory classes
+PROB-11371,S14660,19-11-2025,19-03-2026,Repeated poor performance in core subjects
+PROB-11372,S14677;S13166;S13090,12-01-2026,12-04-2026,Academic performance below departmental standards
+PROB-11373,S10481,31-01-2026,01-05-2026,Failure to meet minimum credit completion requirements
+PROB-11374,S14723,16-04-2025,13-10-2025,Repeated poor performance in core subjects
+PROB-11375,S10874,05-07-2025,03-10-2025,Failure to meet minimum credit completion requirements
+PROB-11376,S14959,03-03-2025,01-06-2025,Low cumulative GPA requiring academic intervention
+PROB-11377,S13203,20-04-2025,18-08-2025,Academic performance below departmental standards
+PROB-11378,S12129,31-05-2025,29-08-2025,Insufficient attendance in mandatory classes
+PROB-11379,S13672,03-02-2025,02-08-2025,Failure to satisfy academic progress benchmarks
+PROB-11380,S13078,09-08-2025,07-11-2025,GPA below 2.0 in the previous semester
+PROB-11381,S11273,21-04-2025,20-07-2025,Insufficient attendance in mandatory classes
+PROB-11382,S10514,22-04-2026,20-08-2026,GPA below 2.0 in the previous semester
+PROB-11383,S11398,29-04-2025,26-10-2025,Low cumulative GPA requiring academic intervention
+PROB-11384,S12883,20-03-2026,16-09-2026,GPA below 2.0 in the previous semester
+PROB-11385,S13181,13-04-2026,12-07-2026,Excessive unexcused absences
+PROB-11386,S12177,03-04-2025,30-09-2025,Excessive unexcused absences
+PROB-11387,S13449,20-04-2026,19-07-2026,GPA below 2.0 in the previous semester
+PROB-11388,S11887,08-12-2025,07-04-2026,GPA below 2.0 in the previous semester
+PROB-11389,S13543,06-07-2025,03-11-2025,Failure to satisfy academic progress benchmarks
+PROB-11390,S11040,22-03-2026,20-07-2026,Failure to meet minimum credit completion requirements
+PROB-11391,S11035,18-11-2025,16-02-2026,GPA below 2.0 in the previous semester
+PROB-11392,S11439,11-04-2025,10-07-2025,Repeated poor performance in core subjects
+PROB-11393,S10675,06-08-2025,04-12-2025,Multiple failed courses in the semester
+PROB-11394,S11650,23-01-2025,23-04-2025,Low cumulative GPA requiring academic intervention
+PROB-11395,S11671,30-07-2025,26-01-2026,Insufficient attendance in mandatory classes
+PROB-11396,S11750,24-11-2025,24-03-2026,GPA below 2.0 in the previous semester
+PROB-11397,S13957,22-03-2026,18-09-2026,Insufficient attendance in mandatory classes
+PROB-11398,S11723,05-10-2025,03-04-2026,Excessive unexcused absences
+PROB-11399,S14696;S11353;S14003,21-02-2026,21-06-2026,Repeated poor performance in core subjects
+PROB-11400,S13263;S12800,18-02-2026,19-05-2026,Insufficient attendance in mandatory classes
+PROB-11401,S14650,15-04-2025,12-10-2025,Excessive unexcused absences
+PROB-11402,S12185,10-05-2026,08-08-2026,GPA below 2.0 in the previous semester
+PROB-11403,S13367,19-12-2025,19-03-2026,Failure to satisfy academic progress benchmarks
+PROB-11404,S12837,19-04-2026,18-07-2026,GPA below 2.0 in the previous semester
+PROB-11405,S11687,04-12-2025,04-03-2026,Multiple failed courses in the semester
+PROB-11406,S14301,09-09-2025,07-01-2026,Excessive unexcused absences
+PROB-11407,S10540,10-02-2025,11-05-2025,Multiple failed courses in the semester
+PROB-11408,S13988,01-04-2025,28-09-2025,Failure to meet minimum credit completion requirements
+PROB-11409,S11784,27-04-2026,24-10-2026,Low cumulative GPA requiring academic intervention
+PROB-11410,S13423;S13466,12-05-2026,09-09-2026,Failure to meet minimum credit completion requirements
+PROB-11411,S13952,27-04-2026,24-10-2026,Academic warning escalated to probation status
+PROB-11412,S14730,08-06-2025,06-10-2025,Failure to meet minimum credit completion requirements
+PROB-11413,S10864,12-08-2025,10-12-2025,Low cumulative GPA requiring academic intervention
+PROB-11414,S14109,29-10-2025,27-04-2026,Repeated poor performance in core subjects
+PROB-11415,S11304,11-04-2025,09-08-2025,Insufficient attendance in mandatory classes
+PROB-11416,S11586,04-03-2026,31-08-2026,Failure to meet minimum credit completion requirements
+PROB-11417,S11456;S13587,20-05-2025,18-08-2025,GPA below 2.0 in the previous semester
+PROB-11418,S12441,26-01-2026,26-04-2026,Failure to meet minimum credit completion requirements
+PROB-11419,S13622,05-04-2025,04-07-2025,Failure to meet minimum credit completion requirements
+PROB-11420,S12746,21-03-2025,19-06-2025,Low cumulative GPA requiring academic intervention
+PROB-11421,S11946,24-09-2025,23-03-2026,Academic warning escalated to probation status
+PROB-11422,S11497,20-12-2025,18-06-2026,Academic performance below departmental standards
+PROB-11423,S14212,18-11-2025,17-05-2026,Repeated poor performance in core subjects
+PROB-11424,S11425,19-10-2025,16-02-2026,Failure to meet minimum credit completion requirements
+PROB-11425,S10841,31-07-2025,28-11-2025,Academic warning escalated to probation status
+PROB-11426,S13145,16-01-2025,15-07-2025,Failure to meet minimum credit completion requirements
+PROB-11427,S12967;S14400;S10588,27-03-2025,25-06-2025,Excessive unexcused absences
+PROB-11428,S11784,31-03-2025,29-06-2025,Excessive unexcused absences
+PROB-11429,S14462,21-06-2025,19-10-2025,Low cumulative GPA requiring academic intervention
+PROB-11430,S14905,30-04-2026,29-07-2026,GPA below 2.0 in the previous semester
+PROB-11431,S13311,31-03-2026,29-07-2026,Failure to meet minimum credit completion requirements
+PROB-11432,S13745,03-12-2025,03-03-2026,Multiple failed courses in the semester
+PROB-11433,S11642,15-04-2025,12-10-2025,Excessive unexcused absences
+PROB-11434,S10805,27-01-2026,27-05-2026,Multiple failed courses in the semester
+PROB-11435,S13292,04-01-2026,04-04-2026,Repeated poor performance in core subjects
+PROB-11436,S10257,01-05-2025,29-08-2025,Failure to meet minimum credit completion requirements
+PROB-11437,S14149,03-03-2025,30-08-2025,Repeated poor performance in core subjects
+PROB-11438,S10767,04-10-2025,02-01-2026,Academic performance below departmental standards
+PROB-11439,S14343,05-11-2025,03-02-2026,Low cumulative GPA requiring academic intervention
+PROB-11440,S12605,11-01-2025,11-05-2025,Low cumulative GPA requiring academic intervention
+PROB-11441,S12675,05-10-2025,03-04-2026,Academic performance below departmental standards
+PROB-11442,S11990,12-02-2026,12-06-2026,GPA below 2.0 in the previous semester
+PROB-11443,S10847,15-10-2025,13-01-2026,Failure to meet minimum credit completion requirements
+PROB-11444,S11505,16-06-2025,14-09-2025,Failure to meet minimum credit completion requirements
+PROB-11445,S14071;S12377;S12555,20-08-2025,18-11-2025,Multiple failed courses in the semester
+PROB-11446,S12228,01-04-2025,30-07-2025,Academic performance below departmental standards
+PROB-11447,S10510,10-03-2025,08-07-2025,Insufficient attendance in mandatory classes
+PROB-11448,S14431,17-03-2025,15-07-2025,Insufficient attendance in mandatory classes
+PROB-11449,S13849,10-05-2025,08-08-2025,Low cumulative GPA requiring academic intervention
+PROB-11450,S13104,03-04-2026,30-09-2026,Repeated poor performance in core subjects
+PROB-11451,S13304,22-05-2025,20-08-2025,GPA below 2.0 in the previous semester
+PROB-11452,S13752,15-07-2025,13-10-2025,Insufficient attendance in mandatory classes
+PROB-11453,S10525,16-12-2025,15-04-2026,Academic performance below departmental standards
+PROB-11454,S10223,19-07-2025,17-10-2025,Failure to meet minimum credit completion requirements
+PROB-11455,S14048,06-01-2025,06-05-2025,Failure to meet minimum credit completion requirements
+PROB-11456,S12167,23-01-2026,22-07-2026,Repeated poor performance in core subjects
+PROB-11457,S14159,03-12-2025,02-04-2026,Low cumulative GPA requiring academic intervention
+PROB-11458,S14514,18-01-2025,17-07-2025,Low cumulative GPA requiring academic intervention
+PROB-11459,S13754,18-04-2025,15-10-2025,Repeated poor performance in core subjects
+PROB-11460,S12066,10-03-2025,08-06-2025,Academic warning escalated to probation status
+PROB-11461,S14378,19-02-2025,19-06-2025,Low cumulative GPA requiring academic intervention
+PROB-11462,S13076,13-02-2025,12-08-2025,Repeated poor performance in core subjects
+PROB-11463,S14461,10-12-2025,08-06-2026,Academic performance below departmental standards
+PROB-11464,S10877,23-03-2026,21-06-2026,Insufficient attendance in mandatory classes
+PROB-11465,S13156,10-02-2026,09-08-2026,Excessive unexcused absences
+PROB-11466,S12578,26-04-2025,24-08-2025,Multiple failed courses in the semester
+PROB-11467,S12396,03-06-2025,30-11-2025,Excessive unexcused absences
+PROB-11468,S10021,01-09-2025,30-11-2025,Academic performance below departmental standards
+PROB-11469,S12657,05-07-2025,03-10-2025,Repeated poor performance in core subjects
+PROB-11470,S14166,15-03-2025,11-09-2025,Academic performance below departmental standards
+PROB-11471,S11768,19-02-2026,18-08-2026,Academic warning escalated to probation status
+PROB-11472,S11031,16-04-2026,13-10-2026,Insufficient attendance in mandatory classes
+PROB-11473,S13047,10-07-2025,08-10-2025,GPA below 2.0 in the previous semester
+PROB-11474,S11213,13-02-2026,13-06-2026,Academic warning escalated to probation status
+PROB-11475,S13998,03-01-2026,03-05-2026,Academic warning escalated to probation status
+PROB-11476,S11957;S11488,25-03-2025,23-07-2025,Academic warning escalated to probation status
+PROB-11477,S13837,18-11-2025,18-03-2026,Academic warning escalated to probation status
+PROB-11478,S13405,20-01-2026,19-07-2026,Repeated poor performance in core subjects
+PROB-11479,S14473,24-02-2025,23-08-2025,Academic performance below departmental standards
+PROB-11480,S12968,17-03-2026,15-06-2026,Failure to satisfy academic progress benchmarks
+PROB-11481,S14387,07-10-2025,05-04-2026,Multiple failed courses in the semester
+PROB-11482,S14591,18-05-2025,14-11-2025,Failure to meet minimum credit completion requirements
+PROB-11483,S12861,06-10-2025,03-02-2026,Insufficient attendance in mandatory classes
+PROB-11484,S11459,05-01-2025,05-04-2025,Insufficient attendance in mandatory classes
+PROB-11485,S12558,09-04-2026,08-07-2026,Repeated poor performance in core subjects
+PROB-11486,S10790,07-02-2026,08-05-2026,Failure to meet minimum credit completion requirements
+PROB-11487,S12703,24-05-2025,22-08-2025,Repeated poor performance in core subjects
+PROB-11488,S13244;S12515;S13091,14-03-2026,10-09-2026,Academic warning escalated to probation status
+PROB-11489,S10104,29-11-2025,29-03-2026,Excessive unexcused absences
+PROB-11490,S11220;S12348;S11625,27-08-2025,25-12-2025,Insufficient attendance in mandatory classes
+PROB-11491,S10187,01-03-2026,30-05-2026,Excessive unexcused absences
+PROB-11492,S13960;S11986,07-04-2026,05-08-2026,Repeated poor performance in core subjects
+PROB-11493,S14415,21-02-2025,22-05-2025,GPA below 2.0 in the previous semester
+PROB-11494,S10989,04-04-2026,03-07-2026,GPA below 2.0 in the previous semester
+PROB-11495,S13819,27-07-2025,24-11-2025,Repeated poor performance in core subjects
+PROB-11496,S12312,02-05-2025,31-07-2025,Multiple failed courses in the semester
+PROB-11497,S14513,28-12-2025,26-06-2026,Academic warning escalated to probation status
+PROB-11498,S12486;S11198,04-01-2025,03-07-2025,Excessive unexcused absences
+PROB-11499,S10071,17-02-2026,18-05-2026,Multiple failed courses in the semester
+PROB-11500,S13261,13-02-2025,13-06-2025,Insufficient attendance in mandatory classes
+PROB-11501,S14825,08-01-2025,07-07-2025,GPA below 2.0 in the previous semester
+PROB-11502,S12984,27-03-2026,23-09-2026,Failure to satisfy academic progress benchmarks
+PROB-11503,S11324,29-04-2025,27-08-2025,Academic warning escalated to probation status
+PROB-11504,S12956;S13881,02-02-2026,03-05-2026,Failure to meet minimum credit completion requirements
+PROB-11505,S12597;S11157,28-08-2025,26-11-2025,Multiple failed courses in the semester
+PROB-11506,S10486,25-12-2025,23-06-2026,Low cumulative GPA requiring academic intervention
+PROB-11507,S14519,27-08-2025,25-12-2025,GPA below 2.0 in the previous semester
+PROB-11508,S11007,31-12-2025,31-03-2026,Multiple failed courses in the semester
+PROB-11509,S12711,01-02-2025,01-06-2025,Repeated poor performance in core subjects
+PROB-11510,S14331,26-01-2025,26-04-2025,Failure to meet minimum credit completion requirements
+PROB-11511,S14837;S10242;S13684,09-05-2025,05-11-2025,Repeated poor performance in core subjects
+PROB-11512,S11870,29-04-2025,26-10-2025,Failure to meet minimum credit completion requirements
+PROB-11513,S10674,25-02-2025,24-08-2025,Academic performance below departmental standards
+PROB-11514,S14149,09-03-2025,05-09-2025,Academic performance below departmental standards
+PROB-11515,S13777,11-04-2025,08-10-2025,GPA below 2.0 in the previous semester
+PROB-11516,S13418,14-02-2026,15-05-2026,Failure to meet minimum credit completion requirements
+PROB-11517,S14099,11-03-2026,09-07-2026,Insufficient attendance in mandatory classes
+PROB-11518,S13305,16-12-2025,16-03-2026,Low cumulative GPA requiring academic intervention
+PROB-11519,S13135;S13797;S10657,25-02-2025,26-05-2025,Failure to meet minimum credit completion requirements
+PROB-11520,S11601,21-02-2025,22-05-2025,Failure to meet minimum credit completion requirements
+PROB-11521,S14207,12-10-2025,09-02-2026,Low cumulative GPA requiring academic intervention
+PROB-11522,S14686,28-04-2025,27-07-2025,Low cumulative GPA requiring academic intervention
+PROB-11523,S10508;S11927;S13541,14-01-2025,14-05-2025,Excessive unexcused absences
+PROB-11524,S14400,03-12-2025,03-03-2026,Multiple failed courses in the semester
+PROB-11525,S12777;S10225,19-02-2026,20-05-2026,Academic performance below departmental standards
+PROB-11526,S12597,05-05-2025,02-09-2025,Multiple failed courses in the semester
+PROB-11527,S10735,22-11-2025,22-03-2026,Low cumulative GPA requiring academic intervention
+PROB-11528,S12497;S13583;S13271,11-01-2026,10-07-2026,Low cumulative GPA requiring academic intervention
+PROB-11529,S14954,16-09-2025,15-03-2026,Academic warning escalated to probation status
+PROB-11530,S11812,03-06-2025,01-09-2025,Low cumulative GPA requiring academic intervention
+PROB-11531,S12387,24-03-2025,20-09-2025,Excessive unexcused absences
+PROB-11532,S13750,02-10-2025,31-12-2025,Low cumulative GPA requiring academic intervention
+PROB-11533,S13974;S11170,07-12-2025,05-06-2026,Insufficient attendance in mandatory classes
+PROB-11534,S14462,12-01-2025,12-04-2025,Excessive unexcused absences
+PROB-11535,S13847,23-09-2025,22-12-2025,Excessive unexcused absences
+PROB-11536,S13846,03-01-2025,03-05-2025,Failure to meet minimum credit completion requirements
+PROB-11537,S12694,03-06-2025,01-10-2025,Low cumulative GPA requiring academic intervention
+PROB-11538,S13851,21-07-2025,19-10-2025,Academic warning escalated to probation status
+PROB-11539,S14025,14-10-2025,12-04-2026,GPA below 2.0 in the previous semester
+PROB-11540,S12897,21-08-2025,19-11-2025,Academic warning escalated to probation status
+PROB-11541,S14022;S10015;S11994,13-04-2026,12-07-2026,Low cumulative GPA requiring academic intervention
+PROB-11542,S12124,30-09-2025,29-03-2026,Excessive unexcused absences
+PROB-11543,S11942,06-03-2025,04-07-2025,Repeated poor performance in core subjects
+PROB-11544,S11128,30-04-2026,27-10-2026,Multiple failed courses in the semester
+PROB-11545,S11266;S11623;S12897,24-03-2025,22-07-2025,Repeated poor performance in core subjects
+PROB-11546,S12383,13-08-2025,11-12-2025,Excessive unexcused absences
+PROB-11547,S10983,10-04-2025,07-10-2025,Multiple failed courses in the semester
+PROB-11548,S12921,25-04-2025,24-07-2025,GPA below 2.0 in the previous semester
+PROB-11549,S14630;S10148;S14121,13-05-2026,10-09-2026,Low cumulative GPA requiring academic intervention
+PROB-11550,S14442,04-05-2025,02-08-2025,Insufficient attendance in mandatory classes
+PROB-11551,S13784;S11821,28-02-2025,27-08-2025,Repeated poor performance in core subjects
+PROB-11552,S10977;S13784,23-01-2026,22-07-2026,Low cumulative GPA requiring academic intervention
+PROB-11553,S13326,23-08-2025,19-02-2026,Academic performance below departmental standards
+PROB-11554,S12448,22-10-2025,20-01-2026,Academic performance below departmental standards
+PROB-11555,S12616,02-04-2025,31-07-2025,Academic warning escalated to probation status
+PROB-11556,S13618,07-11-2025,05-02-2026,Multiple failed courses in the semester
+PROB-11557,S10374,06-06-2025,04-10-2025,Failure to meet minimum credit completion requirements
+PROB-11558,S13756,06-03-2025,04-07-2025,Academic warning escalated to probation status
+PROB-11559,S11054,16-09-2025,15-03-2026,GPA below 2.0 in the previous semester
+PROB-11560,S11078,29-03-2026,25-09-2026,Multiple failed courses in the semester
+PROB-11561,S13099;S12368;S12983,15-03-2026,13-07-2026,Failure to meet minimum credit completion requirements
+PROB-11562,S10193,29-10-2025,27-04-2026,Academic warning escalated to probation status
+PROB-11563,S11124,08-05-2026,06-08-2026,Low cumulative GPA requiring academic intervention
+PROB-11564,S14989,03-03-2026,01-06-2026,Academic warning escalated to probation status
+PROB-11565,S14686,02-06-2025,30-09-2025,Failure to meet minimum credit completion requirements
+PROB-11566,S13851;S13682;S12430,25-06-2025,23-10-2025,Academic warning escalated to probation status
+PROB-11567,S11290;S10469;S10025,09-04-2025,07-08-2025,Multiple failed courses in the semester
+PROB-11568,S13077,10-07-2025,08-10-2025,Repeated poor performance in core subjects
+PROB-11569,S13081,25-02-2026,26-05-2026,Multiple failed courses in the semester
+PROB-11570,S10205,10-04-2026,08-08-2026,Academic performance below departmental standards
+PROB-11571,S14069;S13056;S11908,08-02-2025,07-08-2025,GPA below 2.0 in the previous semester
+PROB-11572,S12891,21-06-2025,19-09-2025,GPA below 2.0 in the previous semester
+PROB-11573,S13797,11-05-2026,09-08-2026,Failure to satisfy academic progress benchmarks
+PROB-11574,S13576,03-05-2025,30-10-2025,Repeated poor performance in core subjects
+PROB-11575,S13743,02-10-2025,31-03-2026,Academic warning escalated to probation status
+PROB-11576,S10408,30-01-2025,30-04-2025,Failure to satisfy academic progress benchmarks
+PROB-11577,S13643,01-06-2025,28-11-2025,Insufficient attendance in mandatory classes
+PROB-11578,S12614,25-04-2026,24-07-2026,Low cumulative GPA requiring academic intervention
+PROB-11579,S13157,26-09-2025,25-12-2025,Academic warning escalated to probation status
+PROB-11580,S10304,16-11-2025,15-05-2026,GPA below 2.0 in the previous semester
+PROB-11581,S14996,11-02-2026,11-06-2026,Failure to meet minimum credit completion requirements
+PROB-11582,S11461,20-01-2025,19-07-2025,Insufficient attendance in mandatory classes
+PROB-11583,S14804,12-09-2025,10-01-2026,Academic warning escalated to probation status
+PROB-11584,S11629,28-05-2025,24-11-2025,Repeated poor performance in core subjects
+PROB-11585,S11102,22-08-2025,20-12-2025,Low cumulative GPA requiring academic intervention
+PROB-11586,S11204,21-06-2025,18-12-2025,Academic warning escalated to probation status
+PROB-11587,S11565;S13095,05-01-2025,05-05-2025,Academic warning escalated to probation status
+PROB-11588,S14138,25-06-2025,23-09-2025,Low cumulative GPA requiring academic intervention
+PROB-11589,S12522;S13389;S12959,23-04-2026,21-08-2026,Academic performance below departmental standards
+PROB-11590,S13165,17-12-2025,17-03-2026,Failure to meet minimum credit completion requirements
+PROB-11591,S13389,06-03-2026,02-09-2026,Academic warning escalated to probation status
+PROB-11592,S13338;S14465;S14775,09-10-2025,07-01-2026,Failure to meet minimum credit completion requirements
+PROB-11593,S11184,17-01-2025,17-04-2025,Low cumulative GPA requiring academic intervention
+PROB-11594,S14953,05-03-2025,01-09-2025,Low cumulative GPA requiring academic intervention
+PROB-11595,S10448,07-09-2025,06-03-2026,Excessive unexcused absences
+PROB-11596,S14628,08-03-2026,04-09-2026,Low cumulative GPA requiring academic intervention
+PROB-11597,S10351,15-01-2025,15-04-2025,Failure to meet minimum credit completion requirements
+PROB-11598,S14279,31-03-2025,27-09-2025,Insufficient attendance in mandatory classes
+PROB-11599,S10078,22-09-2025,21-12-2025,Academic warning escalated to probation status
+PROB-11600,S13010,13-08-2025,11-11-2025,Academic performance below departmental standards
+PROB-11601,S13883,04-01-2025,04-04-2025,Excessive unexcused absences
+PROB-11602,S10227;S13597;S14331,05-05-2025,01-11-2025,Insufficient attendance in mandatory classes
+PROB-11603,S12974;S12324,26-07-2025,22-01-2026,GPA below 2.0 in the previous semester
+PROB-11604,S12453,18-03-2025,14-09-2025,Multiple failed courses in the semester
+PROB-11605,S14326,11-08-2025,09-12-2025,Academic performance below departmental standards
+PROB-11606,S10214,22-11-2025,21-05-2026,Multiple failed courses in the semester
+PROB-11607,S12119,11-01-2026,10-07-2026,Repeated poor performance in core subjects
+PROB-11608,S11343,30-08-2025,28-12-2025,Insufficient attendance in mandatory classes
+PROB-11609,S11689,19-06-2025,17-10-2025,Low cumulative GPA requiring academic intervention
+PROB-11610,S11449,08-07-2025,06-10-2025,Excessive unexcused absences
+PROB-11611,S13108,16-02-2026,16-06-2026,Excessive unexcused absences
+PROB-11612,S10488,14-04-2026,12-08-2026,Multiple failed courses in the semester
+PROB-11613,S14530,29-04-2026,27-08-2026,GPA below 2.0 in the previous semester
+PROB-11614,S14693,25-04-2025,24-07-2025,Repeated poor performance in core subjects
+PROB-11615,S11477,18-02-2026,17-08-2026,Failure to meet minimum credit completion requirements
+PROB-11616,S14335,05-08-2025,03-12-2025,Excessive unexcused absences
+PROB-11617,S10003,04-03-2025,31-08-2025,GPA below 2.0 in the previous semester
+PROB-11618,S12085,18-04-2025,17-07-2025,Repeated poor performance in core subjects
+PROB-11619,S10974;S14042;S11663,19-04-2026,18-07-2026,Academic performance below departmental standards
+PROB-11620,S14462,29-12-2025,28-04-2026,Failure to meet minimum credit completion requirements
+PROB-11621,S11643,16-03-2026,14-06-2026,Repeated poor performance in core subjects
+PROB-11622,S11820,22-02-2026,21-08-2026,Low cumulative GPA requiring academic intervention
+PROB-11623,S12611;S12193,28-07-2025,25-11-2025,Multiple failed courses in the semester
+PROB-11624,S12042,15-09-2025,14-03-2026,Failure to satisfy academic progress benchmarks
+PROB-11625,S13786,19-10-2025,17-01-2026,Low cumulative GPA requiring academic intervention
+PROB-11626,S12637,27-01-2026,27-05-2026,Excessive unexcused absences
+PROB-11627,S12745,02-08-2025,30-11-2025,Academic performance below departmental standards
+PROB-11628,S13836,02-12-2025,02-03-2026,Failure to satisfy academic progress benchmarks
+PROB-11629,S11478,05-09-2025,04-12-2025,Failure to meet minimum credit completion requirements
+PROB-11630,S14019,12-09-2025,11-03-2026,Insufficient attendance in mandatory classes
+PROB-11631,S13827,09-03-2026,07-07-2026,Academic warning escalated to probation status
+PROB-11632,S13353,30-05-2025,28-08-2025,Multiple failed courses in the semester
+PROB-11633,S13914,04-01-2026,04-05-2026,Insufficient attendance in mandatory classes
+PROB-11634,S10253,09-09-2025,08-12-2025,Failure to satisfy academic progress benchmarks
+PROB-11635,S13745;S13175;S13708,21-01-2026,20-07-2026,Academic warning escalated to probation status
+PROB-11636,S13178;S10000,18-02-2025,18-06-2025,GPA below 2.0 in the previous semester
+PROB-11637,S13298,02-04-2025,01-07-2025,Excessive unexcused absences
+PROB-11638,S14262;S11826,14-08-2025,10-02-2026,Failure to meet minimum credit completion requirements
+PROB-11639,S13355,01-10-2025,30-12-2025,Failure to satisfy academic progress benchmarks
+PROB-11640,S12406,07-01-2026,06-07-2026,Failure to meet minimum credit completion requirements
+PROB-11641,S10826,29-08-2025,27-12-2025,GPA below 2.0 in the previous semester
+PROB-11642,S10090,17-03-2025,15-07-2025,Repeated poor performance in core subjects
+PROB-11643,S10825,07-05-2025,03-11-2025,Multiple failed courses in the semester
+PROB-11644,S12490,02-08-2025,31-10-2025,Insufficient attendance in mandatory classes
+PROB-11645,S14020,14-04-2025,12-08-2025,Repeated poor performance in core subjects
+PROB-11646,S12610,23-01-2026,22-07-2026,Academic performance below departmental standards
+PROB-11647,S10186,15-03-2026,13-07-2026,Academic warning escalated to probation status
+PROB-11648,S13166,15-04-2026,13-08-2026,Low cumulative GPA requiring academic intervention
+PROB-11649,S12656,12-08-2025,10-12-2025,Insufficient attendance in mandatory classes
+PROB-11650,S13425,16-07-2025,13-11-2025,Excessive unexcused absences
+PROB-11651,S13310;S14718;S11694,09-01-2026,08-07-2026,Excessive unexcused absences
+PROB-11652,S11151,18-04-2025,16-08-2025,Repeated poor performance in core subjects
+PROB-11653,S12283,28-02-2025,27-08-2025,Academic warning escalated to probation status
+PROB-11654,S14388,04-09-2025,03-03-2026,Low cumulative GPA requiring academic intervention
+PROB-11655,S10246,04-10-2025,02-04-2026,Academic performance below departmental standards
+PROB-11656,S12417,29-09-2025,28-03-2026,GPA below 2.0 in the previous semester
+PROB-11657,S10918,16-02-2025,16-06-2025,GPA below 2.0 in the previous semester
+PROB-11658,S11671,17-02-2026,16-08-2026,Excessive unexcused absences
+PROB-11659,S13441,14-04-2025,12-08-2025,Excessive unexcused absences
+PROB-11660,S13857,03-10-2025,31-01-2026,Low cumulative GPA requiring academic intervention
+PROB-11661,S10143,21-01-2026,21-04-2026,Repeated poor performance in core subjects
+PROB-11662,S11852,11-03-2026,09-07-2026,Multiple failed courses in the semester
+PROB-11663,S10151,13-10-2025,10-02-2026,Academic warning escalated to probation status
+PROB-11664,S12525,27-10-2025,25-04-2026,Multiple failed courses in the semester
+PROB-11665,S12075,14-02-2026,14-06-2026,Academic warning escalated to probation status
+PROB-11666,S14096,29-03-2025,27-06-2025,Multiple failed courses in the semester
+PROB-11667,S11679,27-04-2026,24-10-2026,Repeated poor performance in core subjects
+PROB-11668,S13358,25-08-2025,23-12-2025,Academic warning escalated to probation status
+PROB-11669,S10285,29-05-2025,27-08-2025,Insufficient attendance in mandatory classes
+PROB-11670,S12058,12-01-2025,11-07-2025,Failure to meet minimum credit completion requirements
+PROB-11671,S10547,29-10-2025,27-04-2026,Low cumulative GPA requiring academic intervention
+PROB-11672,S11446,04-10-2025,02-04-2026,Academic warning escalated to probation status
+PROB-11673,S10811,14-03-2025,12-07-2025,Insufficient attendance in mandatory classes
+PROB-11674,S10722,10-05-2026,08-08-2026,Academic warning escalated to probation status
+PROB-11675,S13784;S13026,28-08-2025,24-02-2026,Repeated poor performance in core subjects
+PROB-11676,S13846,14-05-2026,11-09-2026,Failure to meet minimum credit completion requirements
+PROB-11677,S10305;S11575;S12428,15-09-2025,14-12-2025,Failure to satisfy academic progress benchmarks
+PROB-11678,S12466,17-06-2025,15-10-2025,Academic warning escalated to probation status
+PROB-11679,S10045,10-04-2026,09-07-2026,Insufficient attendance in mandatory classes
+PROB-11680,S10671,03-02-2025,04-05-2025,Repeated poor performance in core subjects
+PROB-11681,S11975,07-04-2026,04-10-2026,Academic performance below departmental standards
+PROB-11682,S10048,07-03-2026,03-09-2026,Repeated poor performance in core subjects
+PROB-11683,S11384,14-01-2025,13-07-2025,Insufficient attendance in mandatory classes
+PROB-11684,S11748,27-03-2025,23-09-2025,Insufficient attendance in mandatory classes
+PROB-11685,S10162,25-02-2025,25-06-2025,Repeated poor performance in core subjects
+PROB-11686,S12339,05-02-2026,05-06-2026,Repeated poor performance in core subjects
+PROB-11687,S10268,08-12-2025,07-04-2026,Academic performance below departmental standards
+PROB-11688,S11758,07-11-2025,06-05-2026,Academic performance below departmental standards
+PROB-11689,S11236,16-06-2025,13-12-2025,Insufficient attendance in mandatory classes
+PROB-11690,S12484;S14515,05-12-2025,03-06-2026,Insufficient attendance in mandatory classes
+PROB-11691,S14018,28-03-2025,26-07-2025,Multiple failed courses in the semester
+PROB-11692,S12391,23-12-2025,22-04-2026,Insufficient attendance in mandatory classes
+PROB-11693,S14701,30-10-2025,27-02-2026,GPA below 2.0 in the previous semester
+PROB-11694,S13779,28-06-2025,26-09-2025,GPA below 2.0 in the previous semester
+PROB-11695,S12913,25-03-2025,21-09-2025,Low cumulative GPA requiring academic intervention
+PROB-11696,S13611,30-06-2025,28-09-2025,Academic warning escalated to probation status
+PROB-11697,S14701,27-01-2025,27-05-2025,Multiple failed courses in the semester
+PROB-11698,S12605,25-06-2025,22-12-2025,Failure to meet minimum credit completion requirements
+PROB-11699,S13255,15-02-2025,14-08-2025,Insufficient attendance in mandatory classes
+PROB-11700,S10105,12-07-2025,09-11-2025,Failure to meet minimum credit completion requirements
+PROB-11701,S10829,20-07-2025,17-11-2025,Multiple failed courses in the semester
+PROB-11702,S14683;S12673;S13046,15-02-2026,16-05-2026,Academic warning escalated to probation status
+PROB-11703,S11045,14-03-2025,12-07-2025,GPA below 2.0 in the previous semester
+PROB-11704,S13370,29-01-2026,29-04-2026,Low cumulative GPA requiring academic intervention
+PROB-11705,S14693,19-10-2025,17-04-2026,Repeated poor performance in core subjects
+PROB-11706,S10517;S12963;S11714,02-09-2025,31-12-2025,Repeated poor performance in core subjects
+PROB-11707,S11889,01-09-2025,28-02-2026,Failure to meet minimum credit completion requirements
+PROB-11708,S14238,01-01-2025,01-05-2025,Insufficient attendance in mandatory classes
+PROB-11709,S14541,10-05-2026,07-09-2026,Academic warning escalated to probation status
+PROB-11710,S11094,20-04-2025,17-10-2025,Academic performance below departmental standards
+PROB-11711,S10494,12-10-2025,09-02-2026,Insufficient attendance in mandatory classes
+PROB-11712,S12383,16-08-2025,14-12-2025,GPA below 2.0 in the previous semester
+PROB-11713,S12566,08-05-2025,05-09-2025,Multiple failed courses in the semester
+PROB-11714,S11664,25-11-2025,24-05-2026,Low cumulative GPA requiring academic intervention
+PROB-11715,S12726,01-09-2025,30-11-2025,Insufficient attendance in mandatory classes
+PROB-11716,S10850,17-01-2025,17-05-2025,Multiple failed courses in the semester
+PROB-11717,S13386,04-03-2026,02-07-2026,Low cumulative GPA requiring academic intervention
+PROB-11718,S11967;S10139;S11560,12-01-2025,12-04-2025,Low cumulative GPA requiring academic intervention
+PROB-11719,S13117,19-12-2025,19-03-2026,Insufficient attendance in mandatory classes
+PROB-11720,S12350,26-03-2026,22-09-2026,Multiple failed courses in the semester
+PROB-11721,S13153,13-01-2026,13-04-2026,GPA below 2.0 in the previous semester
+PROB-11722,S10908,13-12-2025,11-06-2026,GPA below 2.0 in the previous semester

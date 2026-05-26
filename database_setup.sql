@@ -1,3 +1,5 @@
+DROP TABLE PROBATION_STUDENTS;
+DROP TABLE PROBATION_REPORTS;
 DROP TABLE ENROLLMENTS;
 DROP TABLE COURSES;
 DROP TABLE STUDENTS;
@@ -23,7 +25,9 @@ CREATE TABLE STUDENTS (
     status VARCHAR2(20),
     registration_date DATE,
     dob DATE,
-    phone VARCHAR2(20)
+    phone VARCHAR2(20),
+    cgpa NUMBER(3,2),
+    probation_count NUMBER DEFAULT 0
 );
 
 CREATE TABLE COURSES (
@@ -46,4 +50,19 @@ CREATE TABLE ENROLLMENTS (
     PRIMARY KEY (student_reg_no, course_code),
     CONSTRAINT fk_student FOREIGN KEY (student_reg_no) REFERENCES STUDENTS(reg_no),
     CONSTRAINT fk_course FOREIGN KEY (course_code) REFERENCES COURSES(code)
+);
+
+CREATE TABLE PROBATION_REPORTS (
+    probation_id VARCHAR2(20) PRIMARY KEY,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    reason VARCHAR2(1000) NOT NULL
+);
+
+CREATE TABLE PROBATION_STUDENTS (
+    probation_id VARCHAR2(20) NOT NULL,
+    student_reg_no VARCHAR2(20) NOT NULL,
+    PRIMARY KEY (probation_id, student_reg_no),
+    CONSTRAINT fk_probation_report FOREIGN KEY (probation_id) REFERENCES PROBATION_REPORTS(probation_id) ON DELETE CASCADE,
+    CONSTRAINT fk_probation_student_reg FOREIGN KEY (student_reg_no) REFERENCES STUDENTS(reg_no)
 );

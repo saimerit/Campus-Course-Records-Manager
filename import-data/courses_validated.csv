@@ -1,0 +1,501 @@
+code,title,credits,department,instructorId,semester,classroomNo
+BIO100,Modern Statistics,4,Biology,1026,WINTER,LR976
+PHY101,Modern Algorithms,5,Physics,1097,WINTER,CR580
+PSY102,Machine Learning with Thermodynamics,2,Psychology,1172,SUMMER,LR553
+CS103,Data Structures in Networks,4,Computer Science,1273,SUMMER,CR940
+ECE104,Fundamentals of IoT,2,Electronics,1180,SPRING,LR202
+BIO105,Modern Cloud Computing,4,Biology,1089,SUMMER,CR784
+BIO106,Concepts of Linear Algebra,2,Biology,1146,SUMMER,ACH356
+ME107,Analytics using Microeconomics,3,Mechanical Engineering,1021,FALL,CR488
+ENG108,Machine Learning with Artificial Intelligence,5,English,1010,FALL,CR823
+CS109,Fundamentals of Microeconomics,4,Computer Science,1032,SUMMER,CR853
+HIST110,Programming in Artificial Intelligence,3,History,1091,SUMMER,LR404
+DS111,Programming in Microeconomics,3,Data Science,1131,WINTER,CR150
+CS112,Advanced Cloud Computing,2,Computer Science,1239,SUMMER,CR014
+MATH113,Machine Learning with Operating Systems,3,Mathematics,1109,SUMMER,ACH798
+PHY114,Principles of Data Mining,3,Physics,1120,SUMMER,CR734
+PSY115,Advanced Psychology,5,Psychology,1045,FALL,CR806
+ECON116,Analytics using Linear Algebra,3,Economics,1077,WINTER,ACH478
+ECON117,Data Structures in Thermodynamics,4,Economics,1042,FALL,CR790
+ME118,Machine Learning with Linear Algebra,4,Mechanical Engineering,1242,WINTER,CR722
+PHY119,Modern Ethics,5,Physics,1230,SUMMER,LR362
+CE120,Theory of Psychology,5,Civil Engineering,1182,SUMMER,ACH740
+CE121,Introduction to Ethics,5,Civil Engineering,1007,SPRING,LR303
+SOC122,Data Structures in Software Engineering,3,Sociology,1009,SUMMER,CR911
+POLI123,Concepts of Digital Forensics,4,Political Science,1258,WINTER,CR672
+SOC124,Concepts of Software Engineering,5,Sociology,1082,SPRING,ACH399
+ENG125,Principles of Cloud Computing,3,English,1115,SUMMER,CR755
+HIST126,Introduction to Algorithms,4,History,1059,WINTER,ACH273
+DS127,Concepts of Ethics,4,Data Science,1086,WINTER,CR329
+CE128,Applied Data Mining,2,Civil Engineering,1015,WINTER,CR905
+MATH129,Advanced Ethics,3,Mathematics,1021,SUMMER,CR838
+ECE130,Applied Macroeconomics,5,Electronics,1269,FALL,LR693
+MATH131,Machine Learning with Ethics,5,Mathematics,1123,SUMMER,LR787
+PHIL132,Theory of Artificial Intelligence,4,Philosophy,1053,SPRING,LR258
+BIO133,Applied IoT,5,Biology,1243,SUMMER,CR641
+POLI134,Fundamentals of IoT,3,Political Science,1247,SPRING,CR098
+CHEM135,Advanced Ethics,5,Chemistry,1153,SPRING,CR862
+PSY136,Fundamentals of Psychology,3,Psychology,1200,WINTER,CR498
+POLI137,Analytics using Organic Chemistry,5,Political Science,1212,FALL,CR903
+ECE138,Analytics using Database Systems,2,Electronics,1075,FALL,CR244
+BIO139,Applied Linear Algebra,5,Biology,1251,FALL,LR958
+CS140,Principles of Cloud Computing,2,Computer Science,1065,SPRING,CR722
+PHY141,Analytics using Psychology,5,Physics,1179,FALL,ACH695
+ECE142,Principles of Statistics,4,Electronics,1005,SUMMER,LR338
+BIO143,Fundamentals of Cloud Computing,3,Biology,1216,SPRING,CR883
+ME144,Data Structures in Linear Algebra,3,Mechanical Engineering,1108,SUMMER,ACH408
+MATH145,Analytics using Statistics,3,Mathematics,1123,FALL,ACH451
+ECE146,Theory of IoT,2,Electronics,1005,SUMMER,CR084
+PHY147,Applied Database Systems,5,Physics,1007,SPRING,CR564
+POLI148,Advanced Microeconomics,2,Political Science,1083,SUMMER,LR751
+CE149,Theory of Networks,2,Civil Engineering,1186,SPRING,CR691
+POLI150,Introduction to Data Mining,2,Political Science,1147,SPRING,CR510
+HIST151,Programming in Algorithms,5,History,1056,FALL,CR390
+CE152,Theory of Microeconomics,5,Civil Engineering,1022,FALL,CR529
+CYB153,Machine Learning with Microeconomics,4,Cyber Security,1095,SUMMER,CR474
+CYB154,Machine Learning with Ethics,5,Cyber Security,1297,SPRING,ACH321
+CYB155,Modern Networks,2,Cyber Security,1226,WINTER,LR108
+DS156,Analytics using Operating Systems,2,Data Science,1260,SPRING,CR745
+PSY157,Applied Thermodynamics,4,Psychology,1036,WINTER,CR109
+CE158,Programming in Psychology,3,Civil Engineering,1246,SPRING,ACH944
+ENG159,Introduction to Macroeconomics,2,English,1210,FALL,CR211
+ME160,Fundamentals of IoT,5,Mechanical Engineering,1047,WINTER,CR205
+PHY161,Modern Psychology,5,Physics,1149,SPRING,ACH724
+DS162,Applied IoT,3,Data Science,1000,SUMMER,CR416
+PSY163,Data Structures in Cyber Security,2,Psychology,1046,SUMMER,CR997
+CE164,Advanced Organic Chemistry,5,Civil Engineering,1256,SUMMER,CR305
+ME165,Advanced Cloud Computing,3,Mechanical Engineering,1095,SUMMER,CR985
+HIST166,Principles of Database Systems,2,History,1265,WINTER,CR197
+CS167,Principles of Microeconomics,5,Computer Science,1108,FALL,ACH317
+PHIL168,Analytics using Quantum Physics,5,Philosophy,1026,SPRING,ACH863
+BIO169,Programming in Cloud Computing,2,Biology,1176,FALL,CR442
+PHIL170,Data Structures in IoT,2,Philosophy,1188,FALL,LR628
+DS171,Analytics using Ethics,5,Data Science,1179,SUMMER,CR705
+PHIL172,Applied Networks,4,Philosophy,1068,SPRING,CR504
+CHEM173,Advanced Microeconomics,3,Chemistry,1161,SPRING,LR129
+CYB174,Principles of Microeconomics,5,Cyber Security,1225,SPRING,CR043
+SOC175,Introduction to Data Mining,3,Sociology,1148,WINTER,LR090
+ECE176,Modern Macroeconomics,3,Electronics,1074,SUMMER,ACH279
+CHEM177,Concepts of Algorithms,5,Chemistry,1004,FALL,CR121
+BIO178,Applied Thermodynamics,5,Biology,1185,WINTER,LR900
+BIO179,Data Structures in Organic Chemistry,3,Biology,1286,SPRING,CR603
+ENG180,Applied Cyber Security,2,English,1129,FALL,CR584
+CE181,Machine Learning with Linear Algebra,5,Civil Engineering,1285,FALL,CR919
+DS182,Introduction to Microeconomics,3,Data Science,1042,SUMMER,CR249
+PHIL183,Analytics using Artificial Intelligence,3,Philosophy,1150,WINTER,CR897
+DS184,Applied Statistics,2,Data Science,1125,WINTER,CR015
+ENG185,Concepts of Cloud Computing,4,English,1159,WINTER,LR533
+DS186,Advanced Cyber Security,4,Data Science,1145,FALL,LR775
+HIST187,Analytics using Software Engineering,5,History,1179,SPRING,LR174
+BIO188,Modern Data Mining,2,Biology,1149,FALL,CR842
+ME189,Machine Learning with Statistics,3,Mechanical Engineering,1036,WINTER,CR441
+CE190,Applied Operating Systems,3,Civil Engineering,1116,SUMMER,CR402
+HIST191,Analytics using Algorithms,4,History,1051,SPRING,LR853
+BIO192,Concepts of Psychology,3,Biology,1043,SPRING,ACH981
+CHEM193,Modern Cloud Computing,3,Chemistry,1189,SPRING,CR981
+CHEM194,Programming in Microeconomics,5,Chemistry,1287,SUMMER,CR990
+DS195,Fundamentals of Artificial Intelligence,2,Data Science,1129,SUMMER,CR687
+DS196,Theory of Organic Chemistry,3,Data Science,1220,WINTER,CR107
+PHY197,Theory of Ethics,4,Physics,1100,WINTER,LR022
+CYB198,Introduction to Networks,2,Cyber Security,1209,SPRING,CR248
+CHEM199,Theory of Cyber Security,3,Chemistry,1298,SPRING,CR497
+CE200,Applied Networks,3,Civil Engineering,1078,WINTER,LR561
+CE201,Machine Learning with Psychology,4,Civil Engineering,1135,SUMMER,LR256
+CHEM202,Modern Database Systems,3,Chemistry,1233,WINTER,CR053
+CS203,Concepts of Software Engineering,5,Computer Science,1200,SPRING,CR020
+PSY204,Data Structures in Software Engineering,2,Psychology,1268,SUMMER,LR153
+CHEM205,Principles of IoT,3,Chemistry,1074,SPRING,CR946
+STAT206,Theory of Microeconomics,2,Statistics,1071,SPRING,LR263
+BIO207,Data Structures in Linear Algebra,3,Biology,1231,SPRING,LR569
+STAT208,Applied Artificial Intelligence,2,Statistics,1283,SPRING,ACH781
+PSY209,Applied Macroeconomics,3,Psychology,1108,WINTER,CR073
+CS210,Fundamentals of Organic Chemistry,2,Computer Science,1190,FALL,CR647
+STAT211,Theory of Operating Systems,5,Statistics,1294,FALL,LR264
+PSY212,Modern IoT,3,Psychology,1184,SPRING,CR721
+MATH213,Fundamentals of Artificial Intelligence,3,Mathematics,1046,SUMMER,ACH332
+SOC214,Fundamentals of Operating Systems,3,Sociology,1156,FALL,ACH430
+POLI215,Principles of IoT,5,Political Science,1216,SPRING,CR602
+STAT216,Applied Quantum Physics,5,Statistics,1103,SUMMER,CR494
+DS217,Theory of Database Systems,4,Data Science,1123,WINTER,LR694
+BIO218,Programming in Linear Algebra,2,Biology,1255,FALL,CR204
+HIST219,Analytics using Macroeconomics,3,History,1288,WINTER,CR336
+BIO220,Modern Psychology,5,Biology,1075,SPRING,LR905
+PHIL221,Advanced Quantum Physics,2,Philosophy,1273,SPRING,LR349
+STAT222,Concepts of Database Systems,4,Statistics,1131,SPRING,ACH355
+CYB223,Modern Quantum Physics,3,Cyber Security,1102,SUMMER,CR446
+POLI224,Introduction to Networks,5,Political Science,1067,SUMMER,LR977
+DS225,Advanced Networks,3,Data Science,1021,FALL,ACH166
+CE226,Advanced Cyber Security,4,Civil Engineering,1012,FALL,LR284
+STAT227,Applied IoT,2,Statistics,1109,SPRING,LR379
+ECON228,Modern Ethics,3,Economics,1199,FALL,LR101
+STAT229,Programming in IoT,5,Statistics,1219,WINTER,CR381
+BIO230,Applied Algorithms,3,Biology,1038,SUMMER,CR662
+BIO231,Concepts of Data Mining,4,Biology,1045,SPRING,LR950
+CYB232,Analytics using Thermodynamics,5,Cyber Security,1145,WINTER,CR933
+ECON233,Theory of Macroeconomics,5,Economics,1126,FALL,CR761
+POLI234,Concepts of Cyber Security,3,Political Science,1004,FALL,ACH976
+PHY235,Applied Psychology,4,Physics,1051,SPRING,LR145
+PHY236,Advanced Thermodynamics,2,Physics,1253,SUMMER,CR296
+MATH237,Advanced Organic Chemistry,5,Mathematics,1186,SPRING,ACH567
+ECE238,Machine Learning with Cyber Security,3,Electronics,1047,WINTER,CR024
+CE239,Programming in Software Engineering,2,Civil Engineering,1148,WINTER,CR843
+CS240,Data Structures in Linear Algebra,2,Computer Science,1222,WINTER,CR608
+STAT241,Analytics using Macroeconomics,3,Statistics,1017,SPRING,CR596
+ME242,Principles of Cyber Security,3,Mechanical Engineering,1091,SUMMER,CR531
+PHY243,Modern Operating Systems,4,Physics,1141,SPRING,CR424
+ECE244,Theory of Ethics,3,Electronics,1106,FALL,CR441
+CHEM245,Modern Thermodynamics,2,Chemistry,1201,FALL,LR971
+SOC246,Theory of Organic Chemistry,4,Sociology,1224,SUMMER,LR973
+CS247,Analytics using Data Mining,5,Computer Science,1021,SUMMER,CR344
+SOC248,Machine Learning with Cyber Security,2,Sociology,1159,WINTER,CR660
+CE249,Introduction to Macroeconomics,2,Civil Engineering,1183,WINTER,ACH057
+ENG250,Applied Macroeconomics,2,English,1216,SPRING,CR259
+CYB251,Analytics using Statistics,5,Cyber Security,1012,FALL,LR449
+CS252,Advanced Psychology,5,Computer Science,1141,SUMMER,CR554
+PHY253,Programming in Cyber Security,3,Physics,1268,WINTER,CR853
+CHEM254,Theory of Algorithms,3,Chemistry,1066,FALL,CR959
+PHIL255,Theory of Ethics,4,Philosophy,1165,FALL,CR969
+CYB256,Concepts of Statistics,4,Cyber Security,1115,SPRING,CR434
+ME257,Machine Learning with Digital Forensics,3,Mechanical Engineering,1029,SUMMER,CR376
+CYB258,Analytics using Psychology,2,Cyber Security,1164,FALL,CR856
+HIST259,Advanced Linear Algebra,4,History,1293,SPRING,CR699
+BIO260,Concepts of Psychology,4,Biology,1110,SPRING,LR480
+ECON261,Machine Learning with Linear Algebra,5,Economics,1036,FALL,CR049
+CHEM262,Concepts of Cloud Computing,5,Chemistry,1118,SUMMER,LR253
+ENG263,Concepts of Cyber Security,5,English,1266,SUMMER,CR188
+CHEM264,Advanced Algorithms,3,Chemistry,1153,SUMMER,CR829
+CYB265,Programming in Algorithms,3,Cyber Security,1042,SPRING,ACH318
+ENG266,Concepts of IoT,2,English,1196,WINTER,CR666
+CE267,Applied Organic Chemistry,5,Civil Engineering,1245,SPRING,CR687
+ECE268,Fundamentals of IoT,3,Electronics,1065,SUMMER,CR068
+PHIL269,Applied Networks,4,Philosophy,1066,SUMMER,LR749
+ECE270,Fundamentals of Cloud Computing,2,Electronics,1289,SUMMER,LR124
+HIST271,Data Structures in Operating Systems,3,History,1164,SPRING,CR214
+BIO272,Concepts of Artificial Intelligence,4,Biology,1280,SUMMER,CR226
+BIO273,Concepts of Algorithms,3,Biology,1271,SPRING,CR781
+MATH274,Concepts of Psychology,4,Mathematics,1160,SUMMER,CR391
+PHIL275,Modern Psychology,5,Philosophy,1270,SPRING,CR146
+PSY276,Concepts of Artificial Intelligence,4,Psychology,1171,SPRING,CR279
+POLI277,Modern Quantum Physics,4,Political Science,1267,WINTER,CR363
+PHIL278,Modern Artificial Intelligence,3,Philosophy,1267,SPRING,ACH585
+CS279,Introduction to Microeconomics,3,Computer Science,1220,FALL,CR991
+CE280,Applied IoT,2,Civil Engineering,1248,WINTER,CR411
+ECON281,Applied Cloud Computing,4,Economics,1272,FALL,CR256
+SOC282,Advanced Networks,2,Sociology,1142,SUMMER,ACH108
+ENG283,Modern Macroeconomics,4,English,1100,SUMMER,ACH020
+POLI284,Fundamentals of Data Mining,5,Political Science,1082,SPRING,ACH230
+CHEM285,Principles of IoT,2,Chemistry,1020,SPRING,CR724
+HIST286,Fundamentals of Digital Forensics,2,History,1256,SPRING,ACH942
+STAT287,Data Structures in Microeconomics,4,Statistics,1075,WINTER,ACH039
+HIST288,Programming in Operating Systems,2,History,1065,SUMMER,CR365
+HIST289,Concepts of Software Engineering,4,History,1002,FALL,CR128
+CYB290,Theory of Networks,5,Cyber Security,1070,SPRING,ACH328
+CE291,Concepts of Cyber Security,2,Civil Engineering,1144,SUMMER,ACH020
+POLI292,Analytics using Operating Systems,4,Political Science,1067,SPRING,LR744
+MATH293,Analytics using Linear Algebra,5,Mathematics,1018,WINTER,LR885
+STAT294,Programming in Database Systems,3,Statistics,1181,WINTER,CR864
+PSY295,Concepts of Software Engineering,5,Psychology,1247,WINTER,LR525
+POLI296,Fundamentals of Statistics,2,Political Science,1094,SUMMER,CR901
+HIST297,Data Structures in Algorithms,5,History,1141,FALL,CR883
+SOC298,Fundamentals of Organic Chemistry,4,Sociology,1030,SPRING,CR304
+ECON299,Fundamentals of Artificial Intelligence,3,Economics,1257,FALL,CR280
+MATH300,Machine Learning with Operating Systems,4,Mathematics,1205,SUMMER,CR374
+POLI301,Introduction to Thermodynamics,3,Political Science,1162,SPRING,CR290
+CS302,Machine Learning with Macroeconomics,4,Computer Science,1218,FALL,CR856
+PHY303,Analytics using Software Engineering,4,Physics,1250,SUMMER,LR783
+ECE304,Data Structures in Organic Chemistry,4,Electronics,1083,SPRING,LR748
+CS305,Modern Thermodynamics,4,Computer Science,1157,SUMMER,CR457
+POLI306,Introduction to Software Engineering,2,Political Science,1299,WINTER,CR865
+POLI307,Machine Learning with IoT,3,Political Science,1066,WINTER,ACH284
+PHIL308,Modern Quantum Physics,3,Philosophy,1238,WINTER,CR027
+BIO309,Theory of Thermodynamics,5,Biology,1150,FALL,CR467
+BIO310,Theory of Database Systems,5,Biology,1141,SUMMER,CR938
+ME311,Principles of Statistics,3,Mechanical Engineering,1275,WINTER,CR738
+ECON312,Machine Learning with Organic Chemistry,2,Economics,1254,FALL,ACH469
+ECON313,Principles of Ethics,3,Economics,1103,SPRING,CR455
+BIO314,Advanced Psychology,3,Biology,1063,WINTER,CR361
+DS315,Advanced Cyber Security,3,Data Science,1146,SPRING,ACH833
+CHEM316,Concepts of Ethics,2,Chemistry,1014,SPRING,ACH045
+CS317,Machine Learning with Artificial Intelligence,3,Computer Science,1038,SUMMER,LR888
+PHY318,Applied Operating Systems,2,Physics,1211,SPRING,ACH900
+CHEM319,Programming in Microeconomics,2,Chemistry,1209,SUMMER,LR957
+BIO320,Theory of Data Mining,5,Biology,1118,SUMMER,CR163
+SOC321,Modern Cloud Computing,3,Sociology,1136,SUMMER,LR264
+MATH322,Programming in Quantum Physics,2,Mathematics,1116,SPRING,LR582
+MATH323,Advanced Software Engineering,4,Mathematics,1005,SPRING,CR746
+PSY324,Concepts of Operating Systems,2,Psychology,1050,SUMMER,LR890
+CS325,Fundamentals of Psychology,5,Computer Science,1243,SUMMER,LR669
+CYB326,Machine Learning with Organic Chemistry,3,Cyber Security,1148,WINTER,ACH930
+CHEM327,Theory of Statistics,2,Chemistry,1085,SUMMER,LR603
+CHEM328,Applied Macroeconomics,2,Chemistry,1021,FALL,CR298
+CHEM329,Modern Database Systems,2,Chemistry,1041,SUMMER,CR464
+ECON330,Concepts of Cyber Security,4,Economics,1113,SUMMER,ACH685
+ECE331,Principles of Organic Chemistry,4,Electronics,1205,FALL,CR989
+CHEM332,Applied Cloud Computing,4,Chemistry,1228,FALL,CR237
+PHY333,Introduction to Operating Systems,3,Physics,1211,FALL,CR339
+BIO334,Concepts of Digital Forensics,5,Biology,1052,SPRING,ACH708
+CHEM335,Data Structures in Psychology,4,Chemistry,1259,SUMMER,CR826
+PHY336,Modern Operating Systems,3,Physics,1181,WINTER,CR255
+CYB337,Modern Cloud Computing,5,Cyber Security,1151,WINTER,CR114
+ECE338,Data Structures in Microeconomics,3,Electronics,1105,SUMMER,CR856
+DS339,Concepts of Software Engineering,5,Data Science,1107,WINTER,ACH713
+STAT340,Programming in Thermodynamics,5,Statistics,1073,SPRING,ACH940
+ECE341,Programming in Data Mining,3,Electronics,1133,SPRING,ACH175
+PHIL342,Modern Algorithms,3,Philosophy,1210,SPRING,CR263
+CYB343,Programming in Cloud Computing,3,Cyber Security,1268,SPRING,CR631
+MATH344,Modern Macroeconomics,3,Mathematics,1119,FALL,CR190
+ME345,Principles of Software Engineering,5,Mechanical Engineering,1107,SUMMER,LR066
+HIST346,Fundamentals of Artificial Intelligence,3,History,1149,SPRING,LR501
+BIO347,Concepts of Algorithms,5,Biology,1050,FALL,CR756
+MATH348,Analytics using Networks,2,Mathematics,1168,WINTER,LR106
+ECON349,Introduction to Operating Systems,4,Economics,1244,SUMMER,CR172
+PHY350,Fundamentals of Database Systems,2,Physics,1032,WINTER,CR443
+BIO351,Principles of Cloud Computing,3,Biology,1188,FALL,ACH612
+CE352,Concepts of Microeconomics,5,Civil Engineering,1201,SPRING,LR531
+SOC353,Advanced Operating Systems,2,Sociology,1119,SPRING,CR340
+ECON354,Programming in Statistics,2,Economics,1272,WINTER,CR197
+ECE355,Machine Learning with Digital Forensics,4,Electronics,1126,FALL,ACH432
+PHIL356,Concepts of Statistics,4,Philosophy,1205,SPRING,LR773
+PSY357,Concepts of Operating Systems,3,Psychology,1090,WINTER,CR007
+MATH358,Fundamentals of Ethics,3,Mathematics,1223,SPRING,LR856
+ME359,Theory of Microeconomics,5,Mechanical Engineering,1009,WINTER,CR179
+ECON360,Introduction to Macroeconomics,5,Economics,1160,SUMMER,ACH783
+POLI361,Advanced Networks,2,Political Science,1014,FALL,LR041
+ENG362,Introduction to Thermodynamics,4,English,1202,SUMMER,ACH873
+STAT363,Advanced Database Systems,3,Statistics,1054,SPRING,ACH657
+SOC364,Fundamentals of Software Engineering,3,Sociology,1067,SPRING,CR542
+PHIL365,Applied Database Systems,2,Philosophy,1171,WINTER,ACH232
+MATH366,Introduction to Microeconomics,2,Mathematics,1273,FALL,CR543
+CS367,Modern Organic Chemistry,5,Computer Science,1155,SUMMER,LR340
+ENG368,Concepts of Macroeconomics,3,English,1118,SPRING,LR765
+ENG369,Concepts of Cyber Security,2,English,1200,SUMMER,LR018
+CS370,Data Structures in Ethics,5,Computer Science,1115,SPRING,ACH595
+SOC371,Principles of Operating Systems,5,Sociology,1175,SPRING,LR550
+PHY372,Analytics using Thermodynamics,3,Physics,1110,SUMMER,LR557
+ECON373,Programming in Cyber Security,4,Economics,1178,WINTER,LR803
+BIO374,Modern Organic Chemistry,4,Biology,1113,WINTER,CR770
+MATH375,Analytics using Ethics,3,Mathematics,1164,SUMMER,CR230
+PHY376,Principles of Data Mining,5,Physics,1140,SPRING,CR330
+CS377,Principles of Organic Chemistry,2,Computer Science,1255,WINTER,CR686
+CHEM378,Theory of Microeconomics,3,Chemistry,1082,FALL,CR001
+ECON379,Advanced Quantum Physics,4,Economics,1135,FALL,ACH241
+PHY380,Advanced Statistics,5,Physics,1148,FALL,LR696
+CE381,Applied Digital Forensics,3,Civil Engineering,1291,SPRING,ACH051
+CE382,Introduction to Macroeconomics,4,Civil Engineering,1070,WINTER,CR961
+ECE383,Data Structures in Operating Systems,5,Electronics,1152,FALL,CR444
+PSY384,Data Structures in Microeconomics,4,Psychology,1002,SPRING,LR325
+ECE385,Programming in Digital Forensics,4,Electronics,1097,SPRING,ACH926
+MATH386,Analytics using Thermodynamics,2,Mathematics,1099,SUMMER,CR439
+CHEM387,Applied Ethics,3,Chemistry,1058,WINTER,CR371
+PHY388,Fundamentals of Ethics,5,Physics,1061,SPRING,CR993
+CYB389,Theory of Digital Forensics,5,Cyber Security,1195,SPRING,CR724
+PHY390,Principles of Networks,5,Physics,1240,WINTER,CR804
+HIST391,Concepts of Microeconomics,2,History,1128,FALL,CR171
+ENG392,Data Structures in Cloud Computing,3,English,1279,WINTER,CR002
+CHEM393,Applied Digital Forensics,2,Chemistry,1173,SUMMER,ACH175
+CE394,Principles of Linear Algebra,4,Civil Engineering,1000,SPRING,CR339
+DS395,Introduction to Macroeconomics,5,Data Science,1029,WINTER,CR310
+HIST396,Introduction to Linear Algebra,2,History,1282,WINTER,CR054
+POLI397,Applied Statistics,2,Political Science,1041,SUMMER,CR865
+PHY398,Applied Ethics,2,Physics,1273,FALL,CR668
+ME399,Concepts of Cyber Security,3,Mechanical Engineering,1066,FALL,LR281
+ECON400,Introduction to Database Systems,5,Economics,1216,FALL,CR662
+SOC401,Principles of Linear Algebra,4,Sociology,1179,WINTER,CR398
+CE402,Theory of Software Engineering,3,Civil Engineering,1017,WINTER,CR650
+CYB403,Analytics using Data Mining,5,Cyber Security,1248,SPRING,LR263
+STAT404,Data Structures in Linear Algebra,2,Statistics,1269,SUMMER,CR594
+ENG405,Machine Learning with Microeconomics,2,English,1215,SUMMER,CR787
+ME406,Principles of Cloud Computing,4,Mechanical Engineering,1180,SPRING,CR169
+ECE407,Applied Cyber Security,2,Electronics,1188,WINTER,CR591
+BIO408,Machine Learning with Digital Forensics,2,Biology,1085,SPRING,LR727
+HIST409,Analytics using Linear Algebra,5,History,1083,SUMMER,CR965
+DS410,Fundamentals of Macroeconomics,3,Data Science,1269,SUMMER,CR109
+CS411,Modern Macroeconomics,2,Computer Science,1221,FALL,CR268
+SOC412,Programming in Networks,5,Sociology,1082,WINTER,CR629
+ECE413,Concepts of Macroeconomics,4,Electronics,1181,WINTER,LR732
+PSY414,Modern Networks,3,Psychology,1195,WINTER,LR793
+ECE415,Modern Statistics,3,Electronics,1173,WINTER,LR113
+DS416,Applied Psychology,4,Data Science,1054,SPRING,ACH851
+PHY417,Advanced Database Systems,2,Physics,1025,WINTER,CR643
+CHEM418,Theory of IoT,2,Chemistry,1246,WINTER,CR484
+PSY419,Data Structures in Artificial Intelligence,4,Psychology,1027,WINTER,CR139
+HIST420,Fundamentals of Digital Forensics,5,History,1130,SPRING,CR950
+HIST421,Theory of Networks,4,History,1201,WINTER,CR804
+ECE422,Machine Learning with Ethics,2,Electronics,1114,FALL,LR847
+PHIL423,Programming in Organic Chemistry,4,Philosophy,1123,FALL,CR221
+SOC424,Concepts of Thermodynamics,2,Sociology,1017,WINTER,ACH602
+MATH425,Introduction to Algorithms,3,Mathematics,1020,FALL,LR498
+PSY426,Analytics using IoT,4,Psychology,1182,FALL,CR598
+ECON427,Data Structures in Psychology,3,Economics,1083,WINTER,CR681
+HIST428,Data Structures in Ethics,2,History,1128,WINTER,ACH502
+BIO429,Machine Learning with Ethics,3,Biology,1245,WINTER,LR882
+ENG430,Programming in Statistics,5,English,1088,SUMMER,LR908
+CHEM431,Analytics using Operating Systems,2,Chemistry,1163,WINTER,LR021
+POLI432,Programming in Statistics,4,Political Science,1006,SUMMER,LR038
+PHY433,Advanced Algorithms,5,Physics,1047,SPRING,LR659
+BIO434,Introduction to IoT,2,Biology,1130,WINTER,LR486
+CS435,Analytics using Operating Systems,5,Computer Science,1262,FALL,LR838
+ECON436,Fundamentals of Thermodynamics,4,Economics,1272,SUMMER,LR086
+STAT437,Fundamentals of Ethics,4,Statistics,1281,SPRING,CR038
+POLI438,Advanced Operating Systems,2,Political Science,1005,SPRING,CR351
+CHEM439,Theory of IoT,2,Chemistry,1053,SPRING,LR869
+BIO440,Applied Quantum Physics,3,Biology,1119,SPRING,CR928
+PHY441,Theory of Macroeconomics,3,Physics,1042,WINTER,ACH410
+CHEM442,Theory of Algorithms,5,Chemistry,1018,SPRING,CR323
+CE443,Machine Learning with Database Systems,3,Civil Engineering,1110,WINTER,LR203
+DS444,Modern Digital Forensics,3,Data Science,1047,SUMMER,CR253
+SOC445,Introduction to Statistics,2,Sociology,1207,SPRING,LR880
+ENG446,Modern Cloud Computing,2,English,1172,SUMMER,CR403
+PSY447,Analytics using Quantum Physics,2,Psychology,1282,SUMMER,CR914
+CS448,Programming in Algorithms,3,Computer Science,1031,SUMMER,CR824
+CYB449,Advanced Linear Algebra,2,Cyber Security,1178,FALL,LR332
+BIO450,Fundamentals of Database Systems,3,Biology,1130,FALL,ACH912
+POLI451,Theory of Linear Algebra,2,Political Science,1111,FALL,CR802
+STAT452,Machine Learning with Organic Chemistry,5,Statistics,1199,WINTER,LR006
+ECE453,Programming in Ethics,3,Electronics,1259,FALL,CR959
+ECON454,Fundamentals of Quantum Physics,5,Economics,1248,SPRING,LR350
+SOC455,Principles of Linear Algebra,5,Sociology,1270,WINTER,ACH033
+ME456,Concepts of IoT,4,Mechanical Engineering,1135,FALL,LR624
+CHEM457,Data Structures in Ethics,5,Chemistry,1053,SUMMER,CR154
+CYB458,Modern Database Systems,5,Cyber Security,1052,SUMMER,LR836
+MATH459,Programming in Quantum Physics,5,Mathematics,1252,FALL,CR520
+PSY460,Modern Ethics,2,Psychology,1131,SPRING,CR981
+ECON461,Modern Psychology,3,Economics,1159,FALL,LR669
+PHIL462,Advanced Linear Algebra,4,Philosophy,1182,FALL,CR340
+BIO463,Modern Networks,2,Biology,1092,FALL,CR759
+CS464,Analytics using Microeconomics,3,Computer Science,1207,WINTER,CR424
+ENG465,Fundamentals of Software Engineering,2,English,1069,WINTER,CR137
+SOC466,Data Structures in Linear Algebra,3,Sociology,1273,SPRING,CR965
+STAT467,Applied IoT,2,Statistics,1182,WINTER,CR977
+ECE468,Modern Microeconomics,3,Electronics,1279,SUMMER,ACH284
+MATH469,Theory of Cloud Computing,2,Mathematics,1122,FALL,ACH194
+ECE470,Advanced Networks,5,Electronics,1115,SUMMER,CR242
+ENG471,Data Structures in Ethics,3,English,1169,SPRING,CR196
+SOC472,Introduction to Data Mining,2,Sociology,1064,WINTER,LR535
+SOC473,Principles of Ethics,2,Sociology,1126,SPRING,CR181
+ENG474,Machine Learning with Algorithms,2,English,1097,WINTER,ACH911
+CHEM475,Concepts of Organic Chemistry,4,Chemistry,1185,FALL,ACH772
+CYB476,Concepts of Database Systems,4,Cyber Security,1259,WINTER,ACH337
+MATH477,Concepts of Organic Chemistry,5,Mathematics,1136,WINTER,CR052
+CHEM478,Modern IoT,2,Chemistry,1259,SPRING,ACH241
+PHIL479,Introduction to Algorithms,3,Philosophy,1168,SPRING,CR497
+ENG480,Analytics using Psychology,3,English,1171,SUMMER,CR525
+PHY481,Fundamentals of Macroeconomics,2,Physics,1198,SPRING,CR334
+POLI482,Introduction to Networks,2,Political Science,1270,FALL,CR936
+PHY483,Applied Microeconomics,5,Physics,1295,FALL,CR401
+ECON484,Principles of Data Mining,5,Economics,1293,SPRING,CR407
+BIO485,Modern Operating Systems,5,Biology,1292,WINTER,CR307
+CHEM486,Programming in Cyber Security,3,Chemistry,1130,WINTER,ACH348
+CE487,Applied Microeconomics,5,Civil Engineering,1228,SUMMER,LR611
+PHY488,Applied Organic Chemistry,2,Physics,1105,FALL,LR326
+STAT489,Fundamentals of Linear Algebra,2,Statistics,1021,SPRING,CR224
+CE490,Introduction to Linear Algebra,2,Civil Engineering,1027,SUMMER,LR117
+ME491,Concepts of Linear Algebra,5,Mechanical Engineering,1152,SPRING,ACH334
+ENG492,Fundamentals of Data Mining,4,English,1144,FALL,CR781
+ME493,Machine Learning with Operating Systems,2,Mechanical Engineering,1272,SUMMER,LR905
+PHIL494,Modern Ethics,5,Philosophy,1052,SUMMER,LR074
+DS495,Fundamentals of Database Systems,4,Data Science,1102,WINTER,CR211
+ECON496,Machine Learning with Organic Chemistry,2,Economics,1194,SUMMER,CR534
+ME497,Advanced Networks,3,Mechanical Engineering,1132,SPRING,CR611
+ME498,Principles of Quantum Physics,2,Mechanical Engineering,1244,WINTER,CR914
+PSY499,Theory of Macroeconomics,4,Psychology,1196,SPRING,CR139
+STAT500,Advanced Macroeconomics,5,Statistics,1285,SUMMER,ACH685
+BIO501,Concepts of Cyber Security,5,Biology,1210,FALL,CR531
+MATH502,Theory of Quantum Physics,4,Mathematics,1203,SPRING,LR369
+MATH503,Machine Learning with Ethics,5,Mathematics,1137,SUMMER,CR492
+SOC504,Fundamentals of Ethics,3,Sociology,1021,FALL,CR190
+PSY505,Data Structures in Cloud Computing,5,Psychology,1089,SPRING,LR555
+MATH506,Machine Learning with Thermodynamics,2,Mathematics,1102,SUMMER,CR736
+CHEM507,Introduction to Artificial Intelligence,4,Chemistry,1290,SUMMER,CR432
+PHY508,Programming in Networks,4,Physics,1002,SUMMER,CR401
+DS509,Concepts of Ethics,2,Data Science,1252,SUMMER,CR888
+POLI510,Theory of Linear Algebra,3,Political Science,1056,SUMMER,LR564
+CYB511,Machine Learning with Organic Chemistry,4,Cyber Security,1241,SPRING,CR666
+CHEM512,Principles of Cyber Security,5,Chemistry,1113,FALL,CR555
+PHIL513,Principles of Microeconomics,2,Philosophy,1139,SUMMER,CR065
+ECON514,Modern Digital Forensics,3,Economics,1268,SPRING,CR448
+CE515,Concepts of Microeconomics,2,Civil Engineering,1095,SUMMER,LR190
+POLI516,Advanced Statistics,2,Political Science,1012,FALL,CR549
+CE517,Data Structures in Algorithms,5,Civil Engineering,1257,SUMMER,ACH626
+CE518,Advanced Artificial Intelligence,2,Civil Engineering,1231,FALL,CR306
+PHIL519,Programming in Cyber Security,3,Philosophy,1044,SUMMER,ACH445
+CHEM520,Advanced Organic Chemistry,4,Chemistry,1135,WINTER,CR268
+CE521,Analytics using Macroeconomics,4,Civil Engineering,1265,WINTER,CR505
+POLI522,Modern Digital Forensics,2,Political Science,1098,FALL,CR574
+SOC523,Analytics using Microeconomics,5,Sociology,1162,SPRING,CR722
+POLI524,Machine Learning with Cyber Security,2,Political Science,1061,SUMMER,CR321
+ECE525,Fundamentals of Operating Systems,4,Electronics,1048,WINTER,CR942
+CS526,Fundamentals of Data Mining,5,Computer Science,1218,FALL,CR217
+HIST527,Analytics using Database Systems,3,History,1050,WINTER,CR414
+CHEM528,Applied Software Engineering,5,Chemistry,1186,SUMMER,ACH598
+POLI529,Machine Learning with Macroeconomics,4,Political Science,1002,WINTER,ACH914
+ECE530,Applied Organic Chemistry,3,Electronics,1236,SPRING,CR740
+PSY531,Analytics using Microeconomics,2,Psychology,1229,WINTER,CR822
+ME532,Data Structures in Macroeconomics,4,Mechanical Engineering,1127,SPRING,CR432
+CS533,Theory of Operating Systems,5,Computer Science,1213,SUMMER,LR695
+PSY534,Applied IoT,3,Psychology,1099,FALL,CR078
+CE535,Applied Database Systems,4,Civil Engineering,1254,SPRING,CR040
+ME536,Introduction to Linear Algebra,4,Mechanical Engineering,1076,SPRING,CR894
+MATH537,Theory of Organic Chemistry,2,Mathematics,1277,WINTER,ACH011
+CYB538,Machine Learning with Algorithms,2,Cyber Security,1011,FALL,CR565
+BIO539,Modern Organic Chemistry,3,Biology,1205,SPRING,CR125
+POLI540,Principles of Linear Algebra,5,Political Science,1019,SPRING,CR348
+SOC541,Fundamentals of Artificial Intelligence,5,Sociology,1281,FALL,CR216
+PHIL542,Machine Learning with Ethics,5,Philosophy,1122,WINTER,CR501
+CHEM543,Applied Organic Chemistry,4,Chemistry,1079,SUMMER,CR953
+ECE544,Machine Learning with Microeconomics,3,Electronics,1036,SUMMER,LR490
+POLI545,Principles of Psychology,3,Political Science,1121,FALL,CR602
+SOC546,Advanced Organic Chemistry,5,Sociology,1023,SUMMER,LR588
+DS547,Concepts of Networks,3,Data Science,1269,WINTER,CR180
+ENG548,Programming in Macroeconomics,5,English,1228,FALL,CR200
+ECE549,Theory of Psychology,5,Electronics,1023,WINTER,CR891
+CS550,Programming in Algorithms,5,Computer Science,1061,SPRING,ACH277
+BIO551,Data Structures in Organic Chemistry,3,Biology,1111,FALL,CR533
+BIO552,Data Structures in Software Engineering,4,Biology,1129,SPRING,LR291
+DS553,Principles of Ethics,2,Data Science,1202,WINTER,CR723
+PSY554,Theory of Artificial Intelligence,2,Psychology,1151,SPRING,CR503
+POLI555,Machine Learning with Networks,4,Political Science,1077,SPRING,CR451
+SOC556,Data Structures in Cloud Computing,4,Sociology,1196,SPRING,LR307
+CHEM557,Analytics using Data Mining,2,Chemistry,1203,SUMMER,CR501
+PSY558,Principles of Software Engineering,5,Psychology,1055,SUMMER,CR936
+PHIL559,Machine Learning with Operating Systems,4,Philosophy,1124,FALL,CR209
+CS560,Theory of IoT,3,Computer Science,1286,SPRING,LR285
+PHY561,Introduction to Operating Systems,2,Physics,1161,SPRING,ACH996
+PHIL562,Fundamentals of Networks,5,Philosophy,1079,SPRING,CR669
+PSY563,Theory of Ethics,2,Psychology,1164,SPRING,LR624
+SOC564,Concepts of Cloud Computing,3,Sociology,1036,SUMMER,LR358
+STAT565,Applied IoT,5,Statistics,1152,SPRING,CR465
+ECE566,Principles of Algorithms,3,Electronics,1145,SUMMER,CR219
+PHIL567,Principles of Cyber Security,3,Philosophy,1219,WINTER,CR218
+CE568,Applied Organic Chemistry,2,Civil Engineering,1223,WINTER,LR007
+CYB569,Machine Learning with Quantum Physics,5,Cyber Security,1176,WINTER,ACH201
+CHEM570,Theory of Psychology,5,Chemistry,1113,SUMMER,LR238
+CS571,Applied Digital Forensics,2,Computer Science,1202,WINTER,CR441
+CS572,Data Structures in Organic Chemistry,2,Computer Science,1175,WINTER,LR467
+MATH573,Modern Operating Systems,5,Mathematics,1125,WINTER,LR092
+POLI574,Introduction to Statistics,4,Political Science,1098,SUMMER,ACH387
+CYB575,Analytics using Cyber Security,5,Cyber Security,1130,SPRING,ACH624
+ECON576,Machine Learning with Operating Systems,4,Economics,1046,FALL,CR235
+ME577,Analytics using Operating Systems,4,Mechanical Engineering,1289,FALL,CR068
+DS578,Advanced Cloud Computing,5,Data Science,1056,WINTER,ACH718
+ECON579,Data Structures in Cyber Security,4,Economics,1082,SUMMER,LR131
+ENG580,Data Structures in Data Mining,4,English,1134,WINTER,ACH549
+PHY581,Introduction to Algorithms,3,Physics,1097,SUMMER,CR242
+CHEM582,Machine Learning with Networks,5,Chemistry,1208,WINTER,LR630
+ENG583,Fundamentals of Thermodynamics,2,English,1133,SUMMER,ACH229
+DS584,Concepts of Database Systems,2,Data Science,1261,FALL,CR873
+CHEM585,Introduction to Database Systems,5,Chemistry,1143,FALL,CR587
+CS586,Principles of Microeconomics,2,Computer Science,1223,WINTER,LR754
+DS587,Principles of Data Mining,3,Data Science,1040,SUMMER,CR746
+POLI588,Theory of Digital Forensics,4,Political Science,1135,SUMMER,ACH953
+HIST589,Analytics using Statistics,5,History,1064,SUMMER,ACH840
+PHY590,Data Structures in Algorithms,2,Physics,1008,SUMMER,LR211
+MATH591,Principles of Algorithms,4,Mathematics,1220,WINTER,CR148
+STAT592,Advanced Microeconomics,3,Statistics,1242,WINTER,CR251
+HIST593,Fundamentals of Data Mining,5,History,1112,FALL,CR630
+CYB594,Data Structures in Software Engineering,3,Cyber Security,1238,SPRING,CR530
+ME595,Concepts of Ethics,2,Mechanical Engineering,1276,SPRING,CR923
+BIO596,Programming in Organic Chemistry,2,Biology,1007,SPRING,ACH787
+CE597,Fundamentals of Artificial Intelligence,4,Civil Engineering,1052,SPRING,CR133
+PHIL598,Applied Quantum Physics,5,Philosophy,1165,FALL,LR925
+PHY599,Principles of Organic Chemistry,2,Physics,1171,SUMMER,CR005

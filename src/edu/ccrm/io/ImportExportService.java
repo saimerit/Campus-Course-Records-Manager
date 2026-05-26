@@ -10,6 +10,8 @@ import edu.ccrm.service.CourseService;
 import edu.ccrm.service.EnrollmentService;
 import edu.ccrm.service.InstructorService;
 import edu.ccrm.service.StudentService;
+import edu.ccrm.service.ProbationService;
+import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,17 +33,20 @@ public class ImportExportService {
   private final InstructorService instructorService;
   private final CourseService courseService;
   private final EnrollmentService enrollmentService;
+  private final ProbationService probationService;
 
   public ImportExportService(
     StudentService studentService,
     InstructorService instructorService,
     CourseService courseService,
-    EnrollmentService enrollmentService
+    EnrollmentService enrollmentService,
+    ProbationService probationService
   ) {
     this.studentService = studentService;
     this.instructorService = instructorService;
     this.courseService = courseService;
     this.enrollmentService = enrollmentService;
+    this.probationService = probationService;
   }
 
   // Progress callback for record-level reporting
@@ -105,7 +110,7 @@ public class ImportExportService {
 
   private void importStudents(Path filePath, Connection conn, ImportProgressCallback callback, int[] processed, int total)
     throws IOException, SQLException {
-    String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date, dob, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    String sql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date, dob, phone, probation_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     try (PreparedStatement pstmt = conn.prepareStatement(sql);
          BufferedReader reader = Files.newBufferedReader(filePath)) {
       String line;
@@ -124,6 +129,7 @@ public class ImportExportService {
         pstmt.setDate(7, java.sql.Date.valueOf(parseDateRobust(parts[6])));
         pstmt.setDate(8, parts.length > 7 ? (parseDateRobust(parts[7]) != null ? java.sql.Date.valueOf(parseDateRobust(parts[7])) : null) : null);
         pstmt.setString(9, parts.length > 8 ? parts[8] : null);
+        pstmt.setInt(10, parts.length > 9 ? Integer.parseInt(parts[9].replaceAll("\"", "").trim()) : 0);
 
         pstmt.addBatch();
         count++;
@@ -551,6 +557,156 @@ public class ImportExportService {
   }
 
   // =========================================================================
+  // PROBATION REPORTS IMPORT (BATCH & TRANSACTIONAL)
+  // =========================================================================
+  private List<String[]> parseCsv(Path path) throws IOException {
+      List<String[]> rows = new ArrayList<>();
+      try (BufferedReader br = Files.newBufferedReader(path)) {
+          String line;
+          while ((line = br.readLine()) != null) {
+              if (line.trim().isEmpty()) continue;
+              List<String> values = new ArrayList<>();
+              boolean inQuotes = false;
+              StringBuilder curVal = new StringBuilder();
+              for (int i = 0; i < line.length(); i++) {
+                  char c = line.charAt(i);
+                  if (c == '\"') {
+                      inQuotes = !inQuotes;
+                  } else if (c == ',' && !inQuotes) {
+                      values.add(curVal.toString().trim());
+                      curVal.setLength(0);
+                  } else {
+                      curVal.append(c);
+                  }
+              }
+              values.add(curVal.toString().trim());
+              rows.add(values.toArray(new String[0]));
+          }
+      }
+      return rows;
+  }
+
+  public void importProbationReports() {
+    System.out.println("     - Importing probation_reports.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importProbationReports(Path.of("import-data/probation_reports.csv"), conn);
+        conn.commit();
+        System.out.println("✔ Successfully imported probation_reports.csv");
+      } catch (IOException | SQLException | RuntimeException e) {
+        conn.rollback();
+        System.err.println("Error during probation report import: " + e.getMessage());
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      System.err.println("Database connection error: " + e.getMessage());
+    }
+  }
+
+  public void importProbationReportsFromTestData() {
+    System.out.println("     - Importing probation_reports.csv...");
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importProbationReports(Path.of("test-data/probation_reports.csv"), conn);
+        conn.commit();
+        System.out.println("✔ Successfully imported probation_reports.csv");
+      } catch (IOException | SQLException | RuntimeException e) {
+        conn.rollback();
+        System.err.println("Error during probation report import: " + e.getMessage());
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      System.err.println("Database connection error: " + e.getMessage());
+    }
+  }
+
+  private void importProbationReports(Path filePath, Connection conn) throws IOException, SQLException {
+      importProbationReports(filePath, conn, null, new int[]{0}, 0);
+  }
+
+  private void importProbationReports(Path filePath, Connection conn, ImportProgressCallback callback, int[] processed, int total)
+    throws IOException, SQLException {
+    List<String[]> rows = parseCsv(filePath);
+    if (rows.isEmpty()) return;
+    
+    String insertReportSql = "INSERT INTO probation_reports (probation_id, start_date, end_date, reason) VALUES (?, ?, ?, ?)";
+    String insertStudentSql = "INSERT INTO probation_students (probation_id, student_reg_no) VALUES (?, ?)";
+    String updateStudentStatusSql = "UPDATE students SET status = 'PROBATION', probation_count = probation_count + 1 WHERE reg_no = ?";
+    
+    try (PreparedStatement pstmtReport = conn.prepareStatement(insertReportSql);
+         PreparedStatement pstmtStudent = conn.prepareStatement(insertStudentSql);
+         PreparedStatement pstmtStatus = conn.prepareStatement(updateStudentStatusSql)) {
+      
+      int count = 0;
+      for (int i = 1; i < rows.size(); i++) {
+        String[] parts = rows.get(i);
+        if (parts.length < 5) continue;
+        
+        String probationId = parts[0];
+        String regNosStr = parts[1].replaceAll("\"", "");
+        LocalDate start = parseDateRobust(parts[2]);
+        LocalDate end = parseDateRobust(parts[3]);
+        String reason = parts[4].replaceAll("\"", "");
+        
+        List<String> regNos = java.util.Arrays.stream(regNosStr.split(";"))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toList());
+        
+        pstmtReport.setString(1, probationId);
+        pstmtReport.setDate(2, java.sql.Date.valueOf(start));
+        pstmtReport.setDate(3, java.sql.Date.valueOf(end));
+        pstmtReport.setString(4, reason);
+        pstmtReport.executeUpdate();
+        
+        for (String regNo : regNos) {
+            try {
+                studentService.findStudentByRegNo(regNo, conn);
+                
+                pstmtStudent.setString(1, probationId);
+                pstmtStudent.setString(2, regNo);
+                pstmtStudent.executeUpdate();
+                
+                pstmtStatus.setString(1, regNo);
+                pstmtStatus.executeUpdate();
+            } catch (RecordNotFoundException e) {
+                System.err.println("Warning: Skipping probation student association for " + regNo + " - Student not found.");
+            }
+        }
+        
+        count++;
+        processed[0]++;
+        if (callback != null) callback.onProgress(processed[0], total);
+      }
+    }
+  }
+
+  public void importProbationReportsFile(Path path, ImportProgressCallback callback) throws Exception {
+    int total = (int) countDataLines(path);
+    int[] processed = {0};
+    try (Connection conn = DatabaseManager.getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        importProbationReports(path, conn, callback, processed, total);
+        conn.commit();
+      } catch (Exception e) {
+        conn.rollback();
+        throw e;
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    }
+  }
+
+  public void importProbationReportsFile(Path path) throws Exception {
+      importProbationReportsFile(path, null);
+  }
+
+  // =========================================================================
   // CREDIT DIRECT CALCULATORS FOR ENROLLMENTS
   // =========================================================================
   private int getCurrentCreditsDirect(String studentRegNo, Connection conn) throws SQLException {
@@ -594,6 +750,7 @@ public class ImportExportService {
     exportInstructors(config.getInstructorsFilePath());
     exportCourses(config.getCoursesFilePath());
     exportEnrollments(config.getEnrollmentsFilePath());
+    exportProbationReports(config.getDataDirectory().resolve("probation_reports.csv"));
     System.out.println("Data exported successfully.");
   }
 
@@ -603,7 +760,7 @@ public class ImportExportService {
       .stream()
       .map(Student::toCsvString)
       .collect(Collectors.toList());
-    lines.add(0, "id,regNo,firstName,lastName,email,status,registrationDate,dob,phone");
+    lines.add(0, "id,regNo,firstName,lastName,email,status,registrationDate,dob,phone,probationCount");
     Files.write(
       path,
       lines,
@@ -669,6 +826,30 @@ public class ImportExportService {
       )
       .collect(Collectors.toList());
     lines.add(0, "studentRegNo,courseCode,grade");
+    Files.write(
+      path,
+      lines,
+      StandardOpenOption.CREATE,
+      StandardOpenOption.TRUNCATE_EXISTING
+    );
+  }
+
+  private void exportProbationReports(Path path) throws IOException {
+    List<String> lines = probationService
+      .getAllProbationReports()
+      .stream()
+      .map(r ->
+        String.join(
+          ",",
+          r.getProbationId(),
+          "\"" + String.join(";", r.getStudentRegNos()) + "\"",
+          r.getStartDate().toString(),
+          r.getEndDate().toString(),
+          "\"" + r.getReason().replace("\"", "\"\"") + "\""
+        )
+      )
+      .collect(Collectors.toList());
+    lines.add(0, "probationId,studentRegNos,startDate,endDate,reason");
     Files.write(
       path,
       lines,
