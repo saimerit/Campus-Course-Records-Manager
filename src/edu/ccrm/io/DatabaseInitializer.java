@@ -235,6 +235,13 @@ public class DatabaseInitializer {
                 System.out.println("    - Migrated: Added ENROLLMENT_SEMESTER column to ENROLLMENTS.");
             }
         }
+        // Add grand_total_marks if missing
+        try (ResultSet rs = conn.getMetaData().getColumns(null, null, "ENROLLMENTS", "GRAND_TOTAL_MARKS")) {
+            if (!rs.next()) {
+                stmt.executeUpdate("ALTER TABLE ENROLLMENTS ADD grand_total_marks NUMBER(5,2) DEFAULT 0");
+                System.out.println("    - Migrated: Added GRAND_TOTAL_MARKS column to ENROLLMENTS.");
+            }
+        }
         // Add cgpa to STUDENTS if missing
         try (ResultSet rs = conn.getMetaData().getColumns(null, null, "STUDENTS", "CGPA")) {
             if (!rs.next()) {

@@ -434,13 +434,17 @@ public class ImportExportService {
           String headerLine = reader.readLine(); // Read header to find column positions
           if (headerLine == null) return;
           String[] headers = headerLine.split(",");
-          int idxStudent = -1, idxCourse = -1, idxGrade = -1, idxYear = -1;
+          if (headers.length > 0 && headers[0].startsWith("\ufeff")) {
+              headers[0] = headers[0].substring(1);
+          }
+          int idxStudent = -1, idxCourse = -1, idxGrade = -1, idxYear = -1, idxSemester = -1;
           for (int i = 0; i < headers.length; i++) {
               switch (headers[i].trim().toLowerCase()) {
                   case "studentregno": idxStudent = i; break;
                   case "coursecode":   idxCourse = i; break;
                   case "grade":        idxGrade = i; break;
                   case "enrollmentyear": idxYear = i; break;
+                  case "semester":     idxSemester = i; break;
               }
           }
           if (idxStudent < 0 || idxCourse < 0) return;
@@ -467,46 +471,76 @@ public class ImportExportService {
                   int enrollYear = (idxYear >= 0 && idxYear < parts.length && !parts[idxYear].trim().isEmpty())
                                    ? Integer.parseInt(parts[idxYear].trim())
                                    : java.time.LocalDate.now().getYear();
+                  String csvSemester = (idxSemester >= 0 && idxSemester < parts.length && !parts[idxSemester].trim().isEmpty())
+                                   ? parts[idxSemester].trim().toUpperCase()
+                                   : "";
 
-                  // Retrieve Course to find Semester
+                  // Retrieve Course to find Semester or auto-create it
                   String semester = "";
                   try {
                       Course course = courseService.findCourseByCode(courseCode, conn);
                       semester = course.getSemester() != null ? course.getSemester().name() : "";
                   } catch (RecordNotFoundException e) {
-                      System.err.println("Warning: Skipping enrollment for student " + studentRegNo + " in " + courseCode.getCode() + " because course was not found.");
-                      processed[0]++;
-                      if (callback != null) callback.onProgress(processed[0], total);
-                      continue;
+                      semester = !csvSemester.isEmpty() ? csvSemester : "FALL";
+                      try {
+                          String insertCourseSql = "INSERT INTO courses (code, title, credits, department, semester) VALUES (?, ?, ?, ?, ?)";
+                          try (PreparedStatement coursePstmt = conn.prepareStatement(insertCourseSql)) {
+                              coursePstmt.setString(1, courseCode.getCode());
+                              coursePstmt.setString(2, courseCode.getCode() + " Placeholder");
+                              coursePstmt.setInt(3, 3);
+                              coursePstmt.setString(4, "General");
+                              coursePstmt.setString(5, semester);
+                              coursePstmt.executeUpdate();
+                          }
+                          System.out.println("    - Auto-created placeholder course: " + courseCode.getCode());
+                      } catch (SQLException sqle) {
+                          System.err.println("Warning: Failed to auto-create course " + courseCode.getCode() + ": " + sqle.getMessage());
+                          processed[0]++;
+                          if (callback != null) callback.onProgress(processed[0], total);
+                          continue;
+                      }
                   }
 
-                  // Retrieve Student to verify existence
+                  // Retrieve Student to verify existence or auto-create it
                   try {
                       studentService.findStudentByRegNo(studentRegNo, conn);
                   } catch (RecordNotFoundException e) {
-                      System.err.println("Warning: Skipping enrollment for student " + studentRegNo + " in " + courseCode.getCode() + " because student was not found.");
-                      processed[0]++;
-                      if (callback != null) callback.onProgress(processed[0], total);
-                      continue;
+                      try {
+                          String insertStudentSql = "INSERT INTO students (id, reg_no, first_name, last_name, email, status, registration_date) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                          try (PreparedStatement studentPstmt = conn.prepareStatement(insertStudentSql)) {
+                              int placeholderId = 900000 + Math.abs(studentRegNo.hashCode() % 100000);
+                              studentPstmt.setInt(1, placeholderId);
+                              studentPstmt.setString(2, studentRegNo);
+                              studentPstmt.setString(3, "Placeholder");
+                              studentPstmt.setString(4, studentRegNo);
+                              studentPstmt.setString(5, studentRegNo.toLowerCase() + "@placeholder.com");
+                              studentPstmt.setString(6, "ACTIVE");
+                              studentPstmt.setDate(7, java.sql.Date.valueOf(java.time.LocalDate.now()));
+                              studentPstmt.executeUpdate();
+                          }
+                          System.out.println("    - Auto-created placeholder student: " + studentRegNo);
+                      } catch (SQLException sqle) {
+                          System.err.println("Warning: Failed to auto-create student " + studentRegNo + ": " + sqle.getMessage());
+                          processed[0]++;
+                          if (callback != null) callback.onProgress(processed[0], total);
+                          continue;
+                      }
                   }
 
-                  // Retrieve business credit limits
+                  // Retrieve business credit limits (warn only)
                   int currentTotalCredits = getCurrentCreditsDirect(studentRegNo, conn);
                   int currentSemesterCredits = getCurrentSemesterYearCreditsDirect(studentRegNo, semester, enrollYear, conn);
 
                   try {
                       Course course = courseService.findCourseByCode(courseCode, conn);
                       if (currentTotalCredits + course.getCredits() > 225) {
-                          throw new MaxCreditLimitExceededException("Enrolling would exceed maximum total credits (225).");
+                          System.err.println("Warning: Credit limit validation: student " + studentRegNo + " enrollment in " + courseCode.getCode() + " would exceed total credits (225). Proceeding anyway.");
                       }
                       if (currentSemesterCredits + course.getCredits() > 60) {
-                          throw new MaxCreditLimitExceededException("Enrolling would exceed semester credit limit (60).");
+                          System.err.println("Warning: Credit limit validation: student " + studentRegNo + " enrollment in " + courseCode.getCode() + " would exceed semester credits (60). Proceeding anyway.");
                       }
-                  } catch (MaxCreditLimitExceededException | RecordNotFoundException e) {
-                      System.err.println("Warning: Could not process enrollment for " + studentRegNo + " in " + courseCode.getCode() + ". Reason: " + e.getMessage());
-                      processed[0]++;
-                      if (callback != null) callback.onProgress(processed[0], total);
-                      continue;
+                  } catch (RecordNotFoundException e) {
+                      // Already handled or created placeholder
                   }
 
                   // Setup parameters

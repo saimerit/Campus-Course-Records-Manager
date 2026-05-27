@@ -300,6 +300,36 @@ public class EnrollmentService {
         return enrollments;
     }
 
+    public List<Enrollment> getEnrollmentsForCourse(String courseCode) {
+        List<Enrollment> enrollments = new ArrayList<>();
+        String sql = "SELECT e.student_reg_no, e.course_code, e.grade, e.enrollment_year, e.enrollment_semester FROM enrollments e INNER JOIN courses c ON e.course_code = c.code WHERE e.course_code = ? ORDER BY e.enrollment_year ASC, e.enrollment_semester ASC";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, courseCode);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    try {
+                        Student student = this.studentService.findStudentByRegNo(rs.getString("student_reg_no"), conn);
+                        Course course = this.courseService.findCourseByCode(new CourseCode(rs.getString("course_code")), conn);
+                        String gradeStr = rs.getString("grade");
+                        Grade grade = (gradeStr != null && !gradeStr.isEmpty()) ? Grade.valueOf(gradeStr) : Grade.NA;
+                        int year = rs.getInt("enrollment_year");
+                        String sem = rs.getString("enrollment_semester");
+                        Enrollment enrollment = new Enrollment(student, course, grade, year, sem);
+                        enrollments.add(enrollment);
+
+                    } catch (RecordNotFoundException | SQLException e) {
+                        System.err.println("Skipping enrollment record due to missing data: " + e.getMessage());
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Database error fetching enrollments for course: " + e.getMessage());
+        }
+        return enrollments;
+    }
 
     private boolean isEnrolled(String studentRegNo, CourseCode courseCode, Connection conn) throws SQLException {
         String sql = "SELECT COUNT(*) FROM enrollments WHERE student_reg_no = ? AND course_code = ?";
@@ -420,6 +450,183 @@ public class EnrollmentService {
             pstmt.setString(2, studentRegNo);
             pstmt.setString(3, courseCode.getCode());
             pstmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Data structure to hold raw total marks for calculation
+     */
+    private static class StudentMarks {
+        String studentRegNo;
+        double marks;
+
+        StudentMarks(String studentRegNo, double marks) {
+            this.studentRegNo = studentRegNo;
+            this.marks = marks;
+        }
+    }
+
+    /**
+     * Updates individual student marks for a specific course enrollment instance.
+     */
+    public void updateStudentMarks(String studentRegNo, CourseCode courseCode, int year, String semester, double marks) 
+            throws RecordNotFoundException {
+        String selectSql = "SELECT grade, grand_total_marks FROM enrollments " +
+                           "WHERE student_reg_no = ? AND course_code = ? AND enrollment_year = ? AND enrollment_semester = ?";
+        String updateSql = "UPDATE enrollments SET grand_total_marks = ? " +
+                           "WHERE student_reg_no = ? AND course_code = ? AND enrollment_year = ? AND enrollment_semester = ?";
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                String existingGrade = null;
+                double existingMarks = 0.0;
+                boolean recordFound = false;
+
+                try (PreparedStatement selectPstmt = conn.prepareStatement(selectSql)) {
+                    selectPstmt.setString(1, studentRegNo);
+                    selectPstmt.setString(2, courseCode.getCode());
+                    selectPstmt.setInt(3, year);
+                    selectPstmt.setString(4, semester);
+                    try (ResultSet rs = selectPstmt.executeQuery()) {
+                        if (rs.next()) {
+                            existingGrade = rs.getString("grade");
+                            existingMarks = rs.getDouble("grand_total_marks");
+                            recordFound = true;
+                        }
+                    }
+                }
+
+                if (!recordFound) {
+                    throw new RecordNotFoundException("Enrollment record not found to update marks for student: " + studentRegNo);
+                }
+
+                if (existingGrade != null && !existingGrade.trim().isEmpty() && !existingGrade.equals("NA")) {
+                    if (existingMarks == 0.0) {
+                        throw new IllegalStateException("Marked data cannot be overwritten without proper change in marks");
+                    }
+                }
+
+                try (PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
+                    updatePstmt.setDouble(1, marks);
+                    updatePstmt.setString(2, studentRegNo);
+                    updatePstmt.setString(3, courseCode.getCode());
+                    updatePstmt.setInt(4, year);
+                    updatePstmt.setString(5, semester);
+                    updatePstmt.executeUpdate();
+                }
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error updating student marks: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Computes relative grading strictly for a targeted cohort: Course + Year + Semester
+     */
+    public void calculateRelativeGrading(CourseCode courseCode, int year, String semester) 
+            throws RecordNotFoundException {
+        
+        String selectSql = "SELECT student_reg_no, grand_total_marks FROM enrollments " +
+                           "WHERE course_code = ? AND enrollment_year = ? AND enrollment_semester = ?";
+        
+        List<StudentMarks> cohortList = new ArrayList<>();
+        
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
+            
+            pstmt.setString(1, courseCode.getCode());
+            pstmt.setInt(2, year);
+            pstmt.setString(3, semester);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    cohortList.add(new StudentMarks(
+                        rs.getString("student_reg_no"),
+                        rs.getDouble("grand_total_marks")
+                    ));
+                }
+            }
+            
+            if (cohortList.isEmpty()) {
+                throw new RecordNotFoundException("No student enrollments found for the specified class batch.");
+            }
+            
+            // 1. Calculate Mean
+            double sum = 0;
+            for (StudentMarks sm : cohortList) {
+                sum += sm.marks;
+            }
+            double mean = sum / cohortList.size();
+            
+            // 2. Calculate Sample Standard Deviation
+            double stdev = 0;
+            if (cohortList.size() > 1) {
+                double varianceSum = 0;
+                for (StudentMarks sm : cohortList) {
+                    varianceSum += Math.pow(sm.marks - mean, 2);
+                }
+                stdev = Math.sqrt(varianceSum / (cohortList.size() - 1));
+            }
+            
+            // 3. Evaluate grades and persist them in a single batch transaction
+            String updateGradeSql = "UPDATE enrollments SET grade = ? " +
+                                    "WHERE student_reg_no = ? AND course_code = ? AND enrollment_year = ? AND enrollment_semester = ?";
+            
+            conn.setAutoCommit(false);
+            try (PreparedStatement updatePstmt = conn.prepareStatement(updateGradeSql)) {
+                for (StudentMarks sm : cohortList) {
+                    String assignedGrade = determineRelativeGrade(sm.marks, mean, stdev);
+                    
+                    updatePstmt.setString(1, assignedGrade);
+                    updatePstmt.setString(2, sm.studentRegNo);
+                    updatePstmt.setString(3, courseCode.getCode());
+                    updatePstmt.setInt(4, year);
+                    updatePstmt.setString(5, semester);
+                    updatePstmt.addBatch();
+                }
+                updatePstmt.executeBatch();
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw new SQLException("Failed batch operation during relative grade distribution calculation", e);
+            } finally {
+                conn.setAutoCommit(true);
+            }
+            
+        } catch (SQLException e) {
+            throw new RuntimeException("Database execution fault during relative grading calculation: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Maps performance strictly to your Python mathematical logic model boundaries
+     */
+    private String determineRelativeGrade(double marks, double mean, double stdev) {
+        // Absolute failure catch
+        if (marks < 40) {
+            return Grade.F.name(); // Assuming your Grade Enum has standard patterns
+        }
+        
+        if (marks >= mean + (1.5 * stdev)) {
+            return "S";
+        } else if (marks >= mean + stdev) {
+            return "A";
+        } else if (marks >= mean + (0.5 * stdev)) {
+            return "B";
+        } else if (marks >= mean) {
+            return "C";
+        } else if (marks >= mean - (0.5 * stdev)) {
+            return "D";
+        } else if (marks >= mean - stdev) {
+            return "E";
+        } else {
+            return "F";
         }
     }
 }

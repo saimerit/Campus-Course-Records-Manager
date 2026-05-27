@@ -158,10 +158,11 @@ public class MainApp extends Application {
         Button btnInstructors = createNavButton("Manage Faculty", "fas-chalkboard-teacher");
         Button btnCourses = createNavButton("Course Registry", "fas-book");
         Button btnEnrollments = createNavButton("Enrollments & Grades", "fas-id-card");
+        Button btnCohortGrading = createNavButton("Cohort Grading", "fas-calculator");
         Button btnInsights = createNavButton("Performance Insights", "fas-chart-bar");
         Button btnSystem = createNavButton("System & Backup Ops", "fas-database");
 
-        sidebar.getChildren().addAll(new Separator(), btnDashboard, btnStudents, btnInstructors, btnCourses, btnEnrollments, btnInsights, btnSystem);
+        sidebar.getChildren().addAll(new Separator(), btnDashboard, btnStudents, btnInstructors, btnCourses, btnEnrollments, btnCohortGrading, btnInsights, btnSystem);
         mainLayout.setLeft(sidebar);
 
         btnDashboard.setOnAction(e -> mainLayout.setCenter(createDashboardView()));
@@ -169,6 +170,7 @@ public class MainApp extends Application {
         btnInstructors.setOnAction(e -> mainLayout.setCenter(createInstructorsView()));
         btnCourses.setOnAction(e -> mainLayout.setCenter(createCoursesView()));
         btnEnrollments.setOnAction(e -> mainLayout.setCenter(createEnrollmentsView()));
+        btnCohortGrading.setOnAction(e -> mainLayout.setCenter(createCohortGradingView()));
         btnInsights.setOnAction(e -> mainLayout.setCenter(createPerformanceInsightsView()));
         btnSystem.setOnAction(e -> mainLayout.setCenter(createFileOperationsView()));
 
@@ -475,6 +477,9 @@ public class MainApp extends Application {
                 return false;
             }
             String[] headers = headerLine.split(",");
+            if (headers.length > 0 && headers[0].startsWith("\ufeff")) {
+                headers[0] = headers[0].substring(1);
+            }
             java.util.Set<String> headerSet = new java.util.HashSet<>();
             for (String h : headers) {
                 headerSet.add(h.trim().toLowerCase().replaceAll("\"", ""));
@@ -516,6 +521,12 @@ public class MainApp extends Application {
                 }
                 values.add(curVal.toString().trim());
                 rows.add(values.toArray(new String[0]));
+            }
+        }
+        if (!rows.isEmpty()) {
+            String[] firstRow = rows.get(0);
+            if (firstRow.length > 0 && firstRow[0].startsWith("\ufeff")) {
+                firstRow[0] = firstRow[0].substring(1);
             }
         }
         return rows;
@@ -1099,7 +1110,24 @@ public class MainApp extends Application {
             }
         });
 
-        table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colRegDate, colStatus, colCgpa, colProbCount);
+        TableColumn<Student, Integer> colGradedCredits = new TableColumn<>("Credits Completed");
+        colGradedCredits.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getGradedCredits()));
+        colGradedCredits.setCellFactory(column -> new TableCell<Student, Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    setText(String.valueOf(item));
+                    setStyle("-fx-font-weight: bold;");
+                    setAlignment(Pos.CENTER);
+                }
+            }
+        });
+
+        table.getColumns().addAll(colId, colRegNo, colName, colEmail, colDob, colPhone, colRegDate, colStatus, colCgpa, colGradedCredits, colProbCount);
         table.setMinHeight(300);
         table.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(table, Priority.ALWAYS);
@@ -1994,8 +2022,11 @@ public class MainApp extends Application {
         // Enrollments are somewhat complex because we can view them per student, but here we can just show a list of all enrollments
         TableView<Enrollment> table = new TableView<>();
         TableColumn<Enrollment, String> colStudent = new TableColumn<>("Student");
-        // Enrollment currently might just hold the Course and Grade, or it's mapped per student.
-        // Let's check: enrollmentService.getEnrollmentsForStudent() returns List<Enrollment> which has getCourse(), getGrade().
+        colStudent.setCellValueFactory(c -> new ReadOnlyStringWrapper(
+            c.getValue().getStudent() != null
+            ? c.getValue().getStudent().getRegNo() + " - " + c.getValue().getStudent().getFullName().toString()
+            : "N/A"
+        ));
         TableColumn<Enrollment, String> colCourse = new TableColumn<>("Course Code");
         colCourse.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCourse().getCourseCode().getCode()));
         TableColumn<Enrollment, String> colTitle = new TableColumn<>("Course Title");
@@ -2010,23 +2041,27 @@ public class MainApp extends Application {
         TableColumn<Enrollment, String> colGrade = new TableColumn<>("Grade");
         colGrade.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getGrade() != null ? c.getValue().getGrade().toString() : "Not Graded"));
 
-        table.getColumns().addAll(colCourse, colTitle, colYear, colSemester, colGrade);
+        table.getColumns().addAll(colStudent, colCourse, colTitle, colYear, colSemester, colGrade);
         table.setMinHeight(300);
         table.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(table, Priority.ALWAYS);
 
         TextField searchRegNo = new TextField();
-        searchRegNo.setPromptText("Enter Reg No...");
+        searchRegNo.setPromptText("Enter Reg No or Course Code...");
 
         Runnable refreshEnrollments = () -> {
-            String regNo = searchRegNo.getText().trim();
-            if (regNo.isEmpty()) {
-                showAlert(Alert.AlertType.WARNING, "Enter a Reg No first.");
+            String query = searchRegNo.getText().trim();
+            if (query.isEmpty()) {
+                showAlert(Alert.AlertType.WARNING, "Enter a Reg No or Course Code first.");
                 return;
             }
             runTaskWithProgress("Fetching Enrollments...", () -> {
-                List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(regNo);
-                Platform.runLater(() -> table.getItems().setAll(enrollments));
+                List<Enrollment> enrollments = enrollmentService.getEnrollmentsForStudent(query);
+                if (enrollments.isEmpty()) {
+                    enrollments = enrollmentService.getEnrollmentsForCourse(query);
+                }
+                final List<Enrollment> finalEnrollments = enrollments;
+                Platform.runLater(() -> table.getItems().setAll(finalEnrollments));
             }, null);
         };
 
@@ -2035,7 +2070,9 @@ public class MainApp extends Application {
                 int enrollmentYear = yearSpinner.getValue();
                 enrollmentService.enrollStudent(regNoField.getText(), new CourseCode(courseCodeField.getText()), enrollmentYear);
                 showAlert(Alert.AlertType.INFORMATION, "Enrolled successfully.");
-                if (regNoField.getText().trim().equalsIgnoreCase(searchRegNo.getText().trim())) {
+                String query = searchRegNo.getText().trim();
+                if (regNoField.getText().trim().equalsIgnoreCase(query) || 
+                    courseCodeField.getText().trim().equalsIgnoreCase(query)) {
                     refreshEnrollments.run();
                 }
             } catch (Exception ex) {
@@ -2047,7 +2084,9 @@ public class MainApp extends Application {
             try {
                 enrollmentService.unenrollStudent(regNoField.getText(), new CourseCode(courseCodeField.getText()));
                 showAlert(Alert.AlertType.INFORMATION, "Unenrolled successfully.");
-                if (regNoField.getText().trim().equalsIgnoreCase(searchRegNo.getText().trim())) {
+                String query = searchRegNo.getText().trim();
+                if (regNoField.getText().trim().equalsIgnoreCase(query) || 
+                    courseCodeField.getText().trim().equalsIgnoreCase(query)) {
                     refreshEnrollments.run();
                 }
             } catch (Exception ex) {
@@ -2060,7 +2099,9 @@ public class MainApp extends Application {
                 if (gradeCombo.getValue() == null) throw new IllegalArgumentException("Select a grade first.");
                 enrollmentService.recordGrade(regNoField.getText(), new CourseCode(courseCodeField.getText()), gradeCombo.getValue());
                 showAlert(Alert.AlertType.INFORMATION, "Grade recorded successfully.");
-                if (regNoField.getText().trim().equalsIgnoreCase(searchRegNo.getText().trim())) {
+                String query = searchRegNo.getText().trim();
+                if (regNoField.getText().trim().equalsIgnoreCase(query) || 
+                    courseCodeField.getText().trim().equalsIgnoreCase(query)) {
                     refreshEnrollments.run();
                 }
             } catch (Exception ex) {
@@ -2132,7 +2173,7 @@ public class MainApp extends Application {
         Button btnView = new Button("View Enrollments", new FontIcon("fas-search"));
         btnView.setOnAction(e -> refreshEnrollments.run());
         
-        HBox topBox = new HBox(10, new Label("Search:"), searchRegNo, btnView);
+        HBox topBox = new HBox(10, new Label("Search (Reg No / Course Code):"), searchRegNo, btnView);
         topBox.setAlignment(Pos.CENTER_LEFT);
         topBox.setPadding(new Insets(0, 0, 10, 0));
 
@@ -2166,7 +2207,11 @@ public class MainApp extends Application {
 
 
         setupAutocomplete(regNoField, () -> studentDict);
-        setupAutocomplete(searchRegNo, () -> studentDict);
+        setupAutocomplete(searchRegNo, () -> {
+            List<String> combined = new ArrayList<>(studentDict);
+            combined.addAll(courseDict);
+            return combined;
+        });
         setupAutocomplete(courseCodeField, () -> courseDict);
         
         
@@ -2575,8 +2620,270 @@ public class MainApp extends Application {
 
             runJavaFXTask(task, "Processing Probation Report...", () -> {
                 showAlert(Alert.AlertType.INFORMATION, "Student(s) successfully placed on probation under report " + report.getProbationId());
-                refreshTable.run();
             });
         });
+    }
+
+    private javafx.scene.Node createCohortGradingView() {
+        VBox layout = new VBox(20);
+        layout.setPadding(new Insets(20));
+
+        Label title = new Label("Cohort Relative Grading & Marks Upload");
+        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+
+        Label desc = new Label(
+            "Upload a CSV file containing student component marks. The system will calculate the grand total marks (20% assignments, 5% attendance, 15% labs, 20% mids, 40% endterms), update the student records, and dynamically calculate the relative grades for the affected cohorts."
+        );
+        desc.setWrapText(true);
+        desc.setStyle("-fx-text-fill: -color-fg-muted;");
+
+        HBox actionBox = new HBox(15);
+        actionBox.setAlignment(Pos.CENTER_LEFT);
+
+        Button btnUpload = new Button("Upload Marks CSV", new FontIcon("fas-upload"));
+        btnUpload.setStyle("-fx-background-color: -color-accent-emphasis; -fx-text-fill: -color-fg-emphasis; -fx-font-weight: bold;");
+
+        Button btnDownloadTemplate = new Button("Download CSV Template", new FontIcon("fas-download"));
+        btnDownloadTemplate.getStyleClass().add("flat");
+
+        actionBox.getChildren().addAll(btnUpload, btnDownloadTemplate);
+
+        Label tableLabel = new Label("CSV Data Preview");
+        tableLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        TableView<String[]> previewTable = new TableView<>();
+        previewTable.setPlaceholder(new Label("No CSV file uploaded yet."));
+        previewTable.setMinHeight(250);
+        previewTable.setPrefHeight(300);
+        previewTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        Label logLabel = new Label("Processing Logs");
+        logLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        TextArea logArea = new TextArea();
+        logArea.setEditable(false);
+        logArea.setPrefHeight(150);
+        logArea.setPromptText("Processing logs will be shown here.");
+        logArea.setStyle("-fx-font-family: 'Consolas', 'Courier New', monospace;");
+
+        Button btnProcess = new Button("Process & Recalculate Grades", new FontIcon("fas-play"));
+        btnProcess.setStyle("-fx-background-color: -color-success-emphasis; -fx-text-fill: -color-fg-emphasis; -fx-font-weight: bold;");
+        btnProcess.setDisable(true);
+
+        final List<String[]>[] loadedRows = new List[1];
+        final File[] selectedFile = new File[1];
+
+        String[] requiredFields = {"student_reg_no", "course_code", "enrollment_year", "enrollment_semester", "assignments", "attendance", "labs", "mids", "endterms"};
+
+        btnDownloadTemplate.setOnAction(e -> {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Save CSV Template");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+            chooser.setInitialFileName("marks_template.csv");
+            File file = chooser.showSaveDialog(mainLayout.getScene().getWindow());
+            if (file != null) {
+                try {
+                    Files.writeString(file.toPath(), String.join(",", requiredFields) + "\n" +
+                        "S001,CS101,2026,WINTER,80,100,90,75,85\n" +
+                        "S002,CS101,2026,WINTER,70,90,80,60,75\n");
+                    showAlert(Alert.AlertType.INFORMATION, "Template saved successfully to " + file.getName());
+                } catch (IOException ex) {
+                    showAlert(Alert.AlertType.ERROR, "Failed to save template: " + ex.getMessage());
+                }
+            }
+        });
+
+        btnUpload.setOnAction(e -> {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Select Marks CSV File");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+            File file = chooser.showOpenDialog(mainLayout.getScene().getWindow());
+            if (file != null) {
+                if (!verifyHeader(file.toPath(), requiredFields)) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid CSV format.\nExpected header fields (case-insensitive):\n" + String.join(", ", requiredFields));
+                    return;
+                }
+                try {
+                    List<String[]> rows = parseCsv(file.toPath());
+                    if (rows.isEmpty() || rows.size() <= 1) {
+                        showAlert(Alert.AlertType.ERROR, "The selected CSV file has no records.");
+                        return;
+                    }
+                    loadedRows[0] = rows;
+                    selectedFile[0] = file;
+
+                    previewTable.getColumns().clear();
+                    String[] headers = rows.get(0);
+                    for (int i = 0; i < headers.length; i++) {
+                        final int colIndex = i;
+                        TableColumn<String[], String> column = new TableColumn<>(headers[i]);
+                        column.setCellValueFactory(cd -> {
+                            String[] rowData = cd.getValue();
+                            String val = (rowData != null && colIndex < rowData.length) ? rowData[colIndex] : "";
+                            return new ReadOnlyStringWrapper(val);
+                        });
+                        previewTable.getColumns().add(column);
+                    }
+
+                    ObservableList<String[]> data = FXCollections.observableArrayList();
+                    for (int i = 1; i < rows.size(); i++) {
+                        data.add(rows.get(i));
+                    }
+                    previewTable.setItems(data);
+                    btnProcess.setDisable(false);
+                    logArea.appendText("Loaded CSV: " + file.getName() + " containing " + (rows.size() - 1) + " records.\n");
+
+                } catch (Exception ex) {
+                    showAlert(Alert.AlertType.ERROR, "Failed to read CSV: " + ex.getMessage());
+                }
+            }
+        });
+
+        btnProcess.setOnAction(e -> {
+            if (loadedRows[0] == null || selectedFile[0] == null) return;
+            
+            logArea.clear();
+            logArea.appendText("Starting relative grading calculation...\n");
+            btnProcess.setDisable(true);
+            btnUpload.setDisable(true);
+
+            Task<Void> task = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    List<String[]> rows = loadedRows[0];
+                    String[] headers = rows.get(0);
+
+                    int regIndex = -1, courseIndex = -1, yearIndex = -1, semIndex = -1;
+                    int assignmentsIndex = -1, attendanceIndex = -1, labsIndex = -1, midsIndex = -1, endtermsIndex = -1;
+                    for (int i = 0; i < headers.length; i++) {
+                        String h = headers[i].trim().toLowerCase();
+                        if (h.equals("student_reg_no")) regIndex = i;
+                        else if (h.equals("course_code")) courseIndex = i;
+                        else if (h.equals("enrollment_year")) yearIndex = i;
+                        else if (h.equals("enrollment_semester")) semIndex = i;
+                        else if (h.equals("assignments")) assignmentsIndex = i;
+                        else if (h.equals("attendance")) attendanceIndex = i;
+                        else if (h.equals("labs")) labsIndex = i;
+                        else if (h.equals("mids")) midsIndex = i;
+                        else if (h.equals("endterms")) endtermsIndex = i;
+                    }
+
+                    if (regIndex == -1 || courseIndex == -1 || yearIndex == -1 || semIndex == -1 ||
+                        assignmentsIndex == -1 || attendanceIndex == -1 || labsIndex == -1 || midsIndex == -1 || endtermsIndex == -1) {
+                        throw new Exception("Missing required columns in CSV header.");
+                    }
+
+                    int total = rows.size() - 1;
+                    int successCount = 0;
+                    int errorCount = 0;
+
+                    java.util.Set<String> uniqueCohorts = new java.util.LinkedHashSet<>();
+
+                    for (int i = 1; i < rows.size(); i++) {
+                        String[] row = rows.get(i);
+                        if (row.length < headers.length) {
+                            final String skipMsg = "Row " + i + ": Incomplete data. Skipping.\n";
+                            Platform.runLater(() -> logArea.appendText(skipMsg));
+                            errorCount++;
+                            continue;
+                        }
+
+                        String regNo = row[regIndex].trim();
+                        String courseStr = row[courseIndex].trim();
+                        String yearStr = row[yearIndex].trim();
+                        String semStr = row[semIndex].trim();
+                        String assignmentsStr = row[assignmentsIndex].trim();
+                        String attendanceStr = row[attendanceIndex].trim();
+                        String labsStr = row[labsIndex].trim();
+                        String midsStr = row[midsIndex].trim();
+                        String endtermsStr = row[endtermsIndex].trim();
+
+                        updateMessage("Processing student " + regNo + " (" + i + "/" + total + ")...");
+                        updateProgress(i, total);
+
+                        try {
+                            int year = Integer.parseInt(yearStr);
+                            double assignments = Double.parseDouble(assignmentsStr);
+                            double attendance = Double.parseDouble(attendanceStr);
+                            double labs = Double.parseDouble(labsStr);
+                            double mids = Double.parseDouble(midsStr);
+                            double endterms = Double.parseDouble(endtermsStr);
+
+                            double grandTotal = (assignments * 0.20) + (attendance * 0.05) + (labs * 0.15) + (mids * 0.20) + (endterms * 0.40);
+                            CourseCode courseCode = new CourseCode(courseStr);
+
+                            enrollmentService.updateStudentMarks(regNo, courseCode, year, semStr, grandTotal);
+                            final String successMsg = String.format("Row %d: Updated student %s with calculated grand total %.2f (assignments=%.1f, attendance=%.1f, labs=%.1f, mids=%.1f, endterms=%.1f).\n",
+                                    i, regNo, grandTotal, assignments, attendance, labs, mids, endterms);
+                            Platform.runLater(() -> logArea.appendText(successMsg));
+
+                            uniqueCohorts.add(courseStr + "," + year + "," + semStr);
+                            successCount++;
+
+                        } catch (NumberFormatException nfe) {
+                            final String numErrMsg = "Row " + i + ": Invalid numeric values in row. Skipping.\n";
+                            Platform.runLater(() -> logArea.appendText(numErrMsg));
+                            errorCount++;
+                        } catch (RecordNotFoundException rnfe) {
+                            final String notFoundMsg = "Row " + i + ": Enrollment record not found for student " + regNo + " in " + courseStr + " - " + semStr + " " + yearStr + ". Skipping.\n";
+                            Platform.runLater(() -> logArea.appendText(notFoundMsg));
+                            errorCount++;
+                        } catch (IllegalStateException ise) {
+                            final String iseMsg = "Row " + i + ": Error - Marked data cannot be overwritten without proper change in marks for student " + regNo + " in " + courseStr + ". Skipping.\n";
+                            Platform.runLater(() -> logArea.appendText(iseMsg));
+                            errorCount++;
+                        } catch (Exception ex) {
+                            final String exMsg = "Row " + i + ": Error - " + ex.getMessage() + ". Skipping.\n";
+                            Platform.runLater(() -> logArea.appendText(exMsg));
+                            errorCount++;
+                        }
+                    }
+
+                    Platform.runLater(() -> logArea.appendText("\nRecalculating cohort relative grading...\n"));
+
+                    int cohortIndex = 0;
+                    for (String cohort : uniqueCohorts) {
+                        String[] parts = cohort.split(",");
+                        String courseCodeStr = parts[0];
+                        int year = Integer.parseInt(parts[1]);
+                        String sem = parts[2];
+
+                        updateMessage("Recalculating grades for cohort " + courseCodeStr + " (" + (cohortIndex + 1) + "/" + uniqueCohorts.size() + ")...");
+                        try {
+                            enrollmentService.calculateRelativeGrading(new CourseCode(courseCodeStr), year, sem);
+                            final String cohortMsg = "Cohort " + courseCodeStr + " (" + sem + " " + year + "): Grades successfully recalculated.\n";
+                            Platform.runLater(() -> logArea.appendText(cohortMsg));
+                        } catch (Exception ex) {
+                            final String cohortErrMsg = "Cohort " + courseCodeStr + " (" + sem + " " + year + "): Calculation error - " + ex.getMessage() + "\n";
+                            Platform.runLater(() -> logArea.appendText(cohortErrMsg));
+                        }
+                        cohortIndex++;
+                    }
+
+                    final String summary = String.format("\nProcessing complete! Success: %d rows updated, Errors/Warnings: %d. Recalculated %d cohorts.\n",
+                            successCount, errorCount, uniqueCohorts.size());
+                    Platform.runLater(() -> logArea.appendText(summary));
+
+                    return null;
+                }
+            };
+
+            runJavaFXTask(task, "Processing Marks & Recalculating Grades...", () -> {
+                btnUpload.setDisable(false);
+                showAlert(Alert.AlertType.INFORMATION, "Marks processed and grades recalculated successfully!");
+            });
+        });
+
+        layout.getChildren().addAll(
+            title,
+            desc,
+            actionBox,
+            tableLabel,
+            previewTable,
+            btnProcess,
+            logLabel,
+            logArea
+        );
+        return layout;
     }
 }

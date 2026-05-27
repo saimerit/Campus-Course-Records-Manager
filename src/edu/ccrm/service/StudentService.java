@@ -48,7 +48,14 @@ public class StudentService {
 
     public List<Student> getAllStudentsSortedById() {
         List<Student> students = new ArrayList<>();
-        String sql = "SELECT * FROM students ORDER BY id";
+        String sql = "SELECT s.*, "
+                   + "(SELECT COALESCE(SUM(c.credits), 0) "
+                   + " FROM enrollments e "
+                   + " JOIN courses c ON e.course_code = c.code "
+                   + " WHERE e.student_reg_no = s.reg_no "
+                   + "   AND e.grade IS NOT NULL "
+                   + "   AND e.grade <> 'NA') as graded_credits "
+                   + "FROM students s ORDER BY s.id";
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -164,6 +171,15 @@ public class StudentService {
             }
         } catch (SQLException e) {
             // probation_count column might not exist yet during migration
+        }
+
+        try {
+            int dbGradedCredits = rs.getInt("graded_credits");
+            if (!rs.wasNull()) {
+                student.setGradedCredits(dbGradedCredits);
+            }
+        } catch (SQLException e) {
+            // graded_credits column might not exist yet during migration or individual select queries
         }
         
         return student;

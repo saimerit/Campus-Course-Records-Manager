@@ -16,6 +16,7 @@ public class Student extends Person {
     private final LocalDate registrationDate;
     private Double cgpa; // Can be null if not computed yet
     private int probationCount = 0;
+    private int gradedCredits = 0;
 
     public Student(int id, String regNo, Name fullName, String email, LocalDate dob, String phone) {
         super(id, fullName, email, dob, phone);
@@ -63,6 +64,14 @@ public class Student extends Person {
 
     public void setProbationCount(int probationCount) {
         this.probationCount = probationCount;
+    }
+
+    public int getGradedCredits() {
+        return gradedCredits;
+    }
+
+    public void setGradedCredits(int gradedCredits) {
+        this.gradedCredits = gradedCredits;
     }
 
     @Override

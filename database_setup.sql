@@ -47,6 +47,7 @@ CREATE TABLE ENROLLMENTS (
     grade VARCHAR2(2),
     enrollment_year NUMBER(4),
     enrollment_semester VARCHAR2(20),
+    grand_total_marks NUMBER(5,2) DEFAULT 0,
     PRIMARY KEY (student_reg_no, course_code),
     CONSTRAINT fk_student FOREIGN KEY (student_reg_no) REFERENCES STUDENTS(reg_no),
     CONSTRAINT fk_course FOREIGN KEY (course_code) REFERENCES COURSES(code)
